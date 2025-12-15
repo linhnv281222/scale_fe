@@ -1,0 +1,23 @@
+/* Dashboard component styles */
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Ensure echarts containers fill their parent */
+echarts {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Prevent any scrolling */
+::ng-deep .ant-table-body {
+  max-height: none !important;
+}
+
+::ng-deep .ant-progress-bg {
+  height: 10px !important;
+}

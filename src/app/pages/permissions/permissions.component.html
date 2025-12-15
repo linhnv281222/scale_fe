@@ -1,0 +1,256 @@
+<div class="flex h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
+  <!-- User List Sidebar -->
+  <aside
+    class="flex flex-col bg-white border-r border-gray-200 w-80 dark:bg-gray-800 dark:border-gray-700"
+  >
+    <div
+      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+        {{ "permissions.user" | translate }}
+      </h3>
+    </div>
+    <div class="flex flex-col flex-1 min-h-0">
+      <!-- Search User -->
+      <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+        <nz-input-group>
+          <input
+            type="text"
+            nz-input
+            [(ngModel)]="searchUser"
+            [placeholder]="'permissions.searchUser' | translate"
+            class="w-full"
+          />
+        </nz-input-group>
+      </div>
+
+      <!-- User List -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="p-2 space-y-1">
+          <div
+            *ngFor="let user of getFilteredUsers()"
+            (click)="selectUser(user.id!)"
+            [ngClass]="{
+              'bg-blue-50 dark:bg-blue-900/30 border-blue-500': isUserSelected(
+                user.id!
+              )
+            }"
+            class="p-3 transition-colors border border-transparent rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+          >
+            <div class="flex items-start gap-2">
+              <label
+                nz-checkbox
+                [nzChecked]="isUserSelected(user.id!)"
+                (nzCheckedChange)="selectUser(user.id!)"
+                (click)="$event.stopPropagation()"
+                class="mt-0.5 cursor-pointer flex-shrink-0"
+              ></label>
+              <div class="flex flex-col flex-1 min-w-0">
+                <span
+                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  {{ user.username }}
+                </span>
+                <span
+                  *ngIf="user.fullName"
+                  class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                >
+                  {{ user.fullName }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content - Permissions -->
+  <main class="flex flex-col flex-1 overflow-hidden">
+    <div class="flex flex-col flex-1 p-4 overflow-y-auto">
+      <!-- Header -->
+      <div class="mb-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">
+          {{ "permissions.title" | translate }}
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {{ "permissions.description" | translate }}
+        </p>
+      </div>
+
+      <!-- Selected Users Info -->
+      <div
+        *ngIf="selectedUserIds.length > 0"
+        class="px-4 py-2 mb-2 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <div class="text-sm font-medium text-blue-900 dark:text-blue-200">
+              {{ "permissions.selectedUsers" | translate }}
+            </div>
+            <div
+              class="mt-1 text-base font-semibold text-gray-900 dark:text-gray-100"
+            >
+              {{ getSelectedUsersNames() }}
+            </div>
+            <div
+              *ngIf="selectedUserIds.length > 1"
+              class="mt-1 text-xs text-blue-700 dark:text-blue-300"
+            >
+              {{ "permissions.multiSelectHint" | translate }}
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              *ngIf="selectedUserIds.length > 0"
+              nz-button
+              nzType="default"
+              nzSize="large"
+              (click)="clearSelection()"
+              class="flex items-center gap-2"
+            >
+              <span nz-icon nzType="close" nzTheme="outline"></span>
+              <span>{{ "common.clear" | translate }}</span>
+            </button>
+            <button
+              nz-button
+              nzType="primary"
+              nzSize="large"
+              (click)="savePermissions()"
+              [nzLoading]="saving"
+              class="flex items-center gap-2"
+            >
+              <span nz-icon nzType="save" nzTheme="outline"></span>
+              <span>{{ "common.save" | translate }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Permissions List -->
+      <div
+        *ngIf="selectedUserIds.length > 0"
+        class="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+      >
+        <div class="p-4">
+          <div class="mb-4">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              {{ "permissions.selectFunctions" | translate }}
+            </h3>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{
+                selectedUserIds.length > 1
+                  ? ("permissions.selectFunctionsMultiHint" | translate)
+                  : ("permissions.selectFunctionsHint" | translate)
+              }}
+            </p>
+          </div>
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              *ngFor="let func of functions"
+              class="flex items-start p-3 transition-all border rounded-lg cursor-pointer"
+              [ngClass]="{
+                'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50':
+                  !hasPermissionForSelectedUsers(func.code),
+                'border-blue-500 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20':
+                  hasPermissionForSelectedUsers(func.code)
+              }"
+              (click)="togglePermissionCard(func.code)"
+            >
+              <label
+                nz-checkbox
+                [nzChecked]="hasPermissionForSelectedUsers(func.code)"
+                (nzCheckedChange)="onPermissionChange(func.code, $event)"
+                (click)="$event.stopPropagation()"
+                class="mt-0.5 cursor-pointer"
+              ></label>
+              <div class="flex-1 ml-2">
+                <div
+                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
+                  {{ func.name }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {{ func.code }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        *ngIf="selectedUserIds.length === 0"
+        class="flex items-center justify-center flex-1 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+      >
+        <div class="max-w-md px-4 text-center">
+          <span
+            nz-icon
+            nzType="user"
+            nzTheme="outline"
+            class="text-6xl text-gray-300 dark:text-gray-600"
+          ></span>
+          <h3
+            class="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100"
+          >
+            {{ "permissions.selectUserTitle" | translate }}
+          </h3>
+          <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {{ "permissions.selectUserDescription" | translate }}
+          </p>
+          <div class="inline-block mt-6 text-left">
+            <div
+              class="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400"
+            >
+              <span
+                class="flex items-center justify-center flex-shrink-0 w-6 h-6 font-semibold text-blue-600 bg-blue-100 rounded-full dark:bg-blue-900/30 dark:text-blue-400"
+                >1</span
+              >
+              <div>
+                <div class="font-medium">
+                  {{ "permissions.step1Title" | translate }}
+                </div>
+                <div class="mt-1 text-xs">
+                  {{ "permissions.step1DescriptionMulti" | translate }}
+                </div>
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3 mt-3 text-sm text-gray-600 dark:text-gray-400"
+            >
+              <span
+                class="flex items-center justify-center flex-shrink-0 w-6 h-6 font-semibold text-blue-600 bg-blue-100 rounded-full dark:bg-blue-900/30 dark:text-blue-400"
+                >2</span
+              >
+              <div>
+                <div class="font-medium">
+                  {{ "permissions.step2Title" | translate }}
+                </div>
+                <div class="mt-1 text-xs">
+                  {{ "permissions.step2Description" | translate }}
+                </div>
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3 mt-3 text-sm text-gray-600 dark:text-gray-400"
+            >
+              <span
+                class="flex items-center justify-center flex-shrink-0 w-6 h-6 font-semibold text-blue-600 bg-blue-100 rounded-full dark:bg-blue-900/30 dark:text-blue-400"
+                >3</span
+              >
+              <div>
+                <div class="font-medium">
+                  {{ "permissions.step3Title" | translate }}
+                </div>
+                <div class="mt-1 text-xs">
+                  {{ "permissions.step3Description" | translate }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

@@ -1,0 +1,109 @@
+<nz-table
+  [nzData]="data"
+  [nzLoading]="loading"
+  [nzShowPagination]="false"
+  [nzNoResult]="noResultTemplate"
+  class="w-full"
+>
+  <thead>
+    <tr class="bg-gray-50 dark:bg-gray-800">
+      <th
+        class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+        style="width: 50px"
+      >
+        STT
+      </th>
+      <th
+        *ngFor="let col of columns"
+        class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+        [style.width]="col.width"
+      >
+        {{ col.displayName }}
+        <span *ngIf="col.required" class="text-red-500">*</span>
+      </th>
+      <th
+        *ngIf="showActions"
+        class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+        style="max-width: 150px; width: 150px"
+      >
+        {{ "common.actions" | translate }}
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr
+      *ngFor="let row of data; let i = index"
+      class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+    >
+      <td class="px-3 !py-2 whitespace-nowrap">
+        <span class="text-sm text-gray-900 dark:text-white">
+          {{ i + 1 }}
+        </span>
+      </td>
+      <td *ngFor="let col of columns" class="px-3 !py-2 whitespace-nowrap">
+        <span class="text-sm text-gray-900 dark:text-white">
+          {{ formatValue(getFieldValue(row, col.fieldKey), col) }}
+        </span>
+      </td>
+      <td *ngIf="showActions" class="px-3 !py-2 whitespace-nowrap">
+        <div class="flex items-center justify-center gap-2">
+          <button
+            *ngIf="view.observers.length > 0"
+            nz-button
+            nzType="text"
+            nzSize="small"
+            nz-tooltip
+            [nzTooltipTitle]="'common.view' | translate"
+            (click)="view.emit(row)"
+            class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+          >
+            <span
+              nz-icon
+              nzType="eye"
+              nzTheme="outline"
+              class="text-base"
+            ></span>
+          </button>
+          <button
+            *ngIf="edit.observers.length > 0"
+            nz-button
+            nzType="text"
+            nzSize="small"
+            nz-tooltip
+            [nzTooltipTitle]="'common.edit' | translate"
+            (click)="edit.emit(row)"
+            class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+          >
+            <span
+              nz-icon
+              nzType="edit"
+              nzTheme="outline"
+              class="text-base"
+            ></span>
+          </button>
+          <button
+            *ngIf="delete.observers.length > 0"
+            nz-button
+            nzType="text"
+            nzSize="small"
+            nz-tooltip
+            [nzTooltipTitle]="'common.delete' | translate"
+            (click)="delete.emit(row)"
+            class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+          >
+            <span
+              nz-icon
+              nzType="delete"
+              nzTheme="outline"
+              class="text-base"
+            ></span>
+          </button>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</nz-table>
+
+<ng-template #noResultTemplate>
+  <nz-empty></nz-empty>
+</ng-template>

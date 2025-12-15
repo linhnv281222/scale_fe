@@ -1,0 +1,149 @@
+<div class="flex h-full bg-gray-50 dark:bg-gray-900">
+  <!-- Filter Sidebar -->
+  <aside
+    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  >
+    <div
+      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+        {{ "filter.title" | translate }}
+      </h3>
+    </div>
+    <div class="flex-1 min-h-0 p-3">
+      <app-filter-sidebar
+        [fields]="filterFields"
+        (search)="onSearch($event)"
+        (reset)="onReset()"
+      ></app-filter-sidebar>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto">
+    <div class="p-1">
+      <!-- Table Container -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+      >
+    <!-- Table Header -->
+    <div
+      class="px-3 !py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+    >
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+          {{ "connectionStatus.title" | translate }}
+        </h2>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <nz-table
+      #basicTable
+      [nzData]="connectionStatuses"
+      [nzLoading]="loading"
+      [nzShowPagination]="false"
+      [nzNoResult]="noResultTemplate"
+      class="w-full"
+    >
+      <thead>
+        <tr class="bg-gray-50 dark:bg-gray-800">
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+            style="width: 50px;"
+          >
+            STT
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+          >
+            {{ "connectionStatus.scale" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+          >
+            {{ "connectionStatus.status" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+          >
+            {{ "connectionStatus.lastDataTime" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+          >
+            {{ "connectionStatus.timeWithoutData" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+          >
+            {{ "connectionStatus.errorMessage" | translate }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let status of connectionStatuses; let i = index"
+          [ngClass]="getRowClass(status)"
+          class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+              status.scale?.name || status.scaleId
+            }}</span>
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              [ngClass]="getStatusClass(status.status)"
+            >
+              {{ status.status }}
+            </span>
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <span [ngClass]="getLastDataTimeClass(status)" class="text-sm">
+              {{
+                status.lastDataTime
+                  ? (status.lastDataTime | date : "dd/MM/yyyy HH:mm:ss")
+                  : "-"
+              }}
+            </span>
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <span [ngClass]="getLastDataTimeClass(status)" class="text-sm font-medium">
+              {{ getTimeWithoutDataText(status.lastDataTime) }}
+            </span>
+          </td>
+          <td class="px-3 !py-2">
+            <span class="text-sm text-gray-900 dark:text-white">{{
+              status.errorMessage || "-"
+            }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </nz-table>
+
+    <ng-template #noResultTemplate>
+      <nz-empty></nz-empty>
+    </ng-template>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="connectionStatuses.length > 0"
+      class="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+    >
+      <app-pagination
+        [total]="total"
+        [currentPage]="pageIndex"
+        [currentSize]="pageSize"
+        (emitPage)="onPaginationChange($event)"
+        (goToChange)="onPaginationChange($event)"
+      ></app-pagination>
+    </div>
+  </div>
+    </div>
+  </main>
+</div>

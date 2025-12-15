@@ -1,0 +1,24 @@
+:host ::ng-deep .ant-table {
+  background: transparent;
+}
+
+:host ::ng-deep .ant-table-thead > tr > th {
+  background: transparent;
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.dark :host ::ng-deep .ant-table-thead > tr > th {
+  border-bottom-color: rgb(55 65 81);
+}
+
+:host ::ng-deep .ant-table-tbody > tr > td {
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.dark :host ::ng-deep .ant-table-tbody > tr > td {
+  border-bottom-color: rgb(55 65 81);
+}
+
+:host ::ng-deep .ant-pagination {
+  margin: 0;
+}

@@ -1,0 +1,150 @@
+<header
+  class="sticky top-0 z-50 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+>
+  <!-- Top bar with menu and user actions -->
+  <div class="px-3 !py-2 flex items-center justify-between">
+    <!-- Left side - Menu -->
+    <div class="flex-1 overflow-x-auto">
+      <nav class="flex items-center gap-1 whitespace-nowrap">
+        <ng-container *ngIf="menuItems && menuItems.length > 0">
+          <ng-container *ngFor="let item of menuItems; let i = index">
+            <!-- Menu item without children -->
+            <a
+              *ngIf="!item.children || item.children.length === 0"
+              [routerLink]="item.path"
+              routerLinkActive="bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400"
+              class="px-3 py-1.5 rounded text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors block whitespace-nowrap"
+              [routerLinkActiveOptions]="{ exact: false }"
+            >
+              {{ item.label | translate }}
+            </a>
+
+            <!-- Menu item with children -->
+            <ng-container *ngIf="item.children && item.children.length > 0">
+              <div
+                nz-dropdown
+                [nzDropdownMenu]="submenu"
+                nzTrigger="hover"
+                nzPlacement="bottomLeft"
+                class="relative dropdown-menu-item"
+              >
+                <div
+                  class="px-3 py-1.5 rounded text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                >
+                  <span class="flex-1">{{ item.label | translate }}</span>
+                  <span
+                    nz-icon
+                    nzType="down"
+                    nzTheme="outline"
+                    class="text-xs"
+                  ></span>
+                </div>
+              </div>
+
+              <!-- Submenu template -->
+              <nz-dropdown-menu
+                #submenu="nzDropdownMenu"
+                class="dropdown-submenu"
+              >
+                <ul
+                  nz-menu
+                  nzSelectable
+                  class="bg-white min-w-48 dark:bg-gray-800"
+                >
+                  <li
+                    nz-menu-item
+                    *ngFor="let child of item.children"
+                    class="p-0 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <a [routerLink]="child.path" class="block w-full px-4 py-2">
+                      {{ child.label | translate }}
+                    </a>
+                  </li>
+                </ul>
+              </nz-dropdown-menu>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+      </nav>
+    </div>
+
+    <!-- Right side - User Actions -->
+    <div class="flex items-center flex-shrink-0 gap-2">
+      <!-- Theme Toggle -->
+      <button
+        (click)="onToggleTheme()"
+        class="px-2 py-1 text-gray-600 transition-colors rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300"
+        [nzTooltipTitle]="
+          (isDarkMode ? 'common.lightMode' : 'common.darkMode') | translate
+        "
+        nz-tooltip
+      >
+        <span
+          *ngIf="!isDarkMode"
+          nz-icon
+          nzType="moon"
+          nzTheme="outline"
+          class="text-base"
+        ></span>
+        <span
+          *ngIf="isDarkMode"
+          nz-icon
+          nzType="sun"
+          nzTheme="outline"
+          class="text-base"
+        ></span>
+      </button>
+
+      <!-- Notifications -->
+      <button
+        class="relative px-2 py-1 text-gray-600 transition-colors rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300"
+        [nzTooltipTitle]="'common.notifications' | translate"
+        nz-tooltip
+      >
+        <span nz-icon nzType="bell" nzTheme="outline" class="text-base"></span>
+        <nz-badge
+          [nzCount]="0"
+          [nzShowZero]="false"
+          class="absolute -top-0.5 -right-0.5"
+        ></nz-badge>
+      </button>
+
+      <!-- User Menu -->
+      <div nz-dropdown [nzDropdownMenu]="userMenu" nzTrigger="click">
+        <div
+          class="flex items-center gap-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 transition-colors py-1"
+        >
+          <nz-avatar
+            nzSize="small"
+            nzIcon="user"
+            class="bg-blue-600"
+          ></nz-avatar>
+          <div class="hidden text-left md:block">
+            <div class="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {{ currentUser?.name || "User" }}
+            </div>
+          </div>
+          <span
+            nz-icon
+            nzType="down"
+            nzTheme="outline"
+            class="text-xs text-gray-500 dark:text-gray-400"
+          ></span>
+        </div>
+      </div>
+      <nz-dropdown-menu #userMenu="nzDropdownMenu">
+        <ul nz-menu nzSelectable class="bg-white min-w-48 dark:bg-gray-800">
+          <li
+            nz-menu-
+            (click)="logout()"
+            class="p-0 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <a class="block w-full px-4 py-2">
+              {{ "common.logout" | translate }}
+            </a>
+          </li>
+        </ul>
+      </nz-dropdown-menu>
+    </div>
+  </div>
+</header>

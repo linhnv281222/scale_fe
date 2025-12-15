@@ -1,0 +1,53 @@
+<nz-modal
+  [(nzVisible)]="visible"
+  [nzTitle]="title | translate"
+  [nzWidth]="520"
+  [nzMaskClosable]="false"
+  [nzClosable]="true"
+  (nzOnCancel)="onCancel()"
+  [nzFooter]="footerModal"
+  class="confirm-dialog-modal"
+>
+  <div *nzModalContent>
+    <!-- Question Message -->
+    <div class="mb-4 text-base text-gray-900 dark:text-gray-100">
+      {{ message }}
+    </div>
+
+    <!-- Warning Box -->
+    <div
+      class="flex items-start gap-3 p-3 border-l-4 border-red-500 rounded bg-red-50 dark:bg-red-900/20"
+    >
+      <span
+        nz-icon
+        nzType="exclamation-circle"
+        nzTheme="fill"
+        class="flex-shrink-0 text-lg text-red-600 dark:text-red-400 mt-0.5"
+      ></span>
+      <div class="flex-1">
+        <div class="mb-1 text-sm font-semibold text-red-800 dark:text-red-300">
+          {{ "common.note" | translate }}:
+        </div>
+        <div class="text-sm text-red-700 dark:text-red-400">
+          {{ warningMessage | translate }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Buttons -->
+  <ng-template #footerModal class="flex justify-end gap-2">
+    <button nz-button nzType="default" (click)="onCancel()" class="px-4">
+      {{ cancelText | translate }}
+    </button>
+    <button
+      nz-button
+      [nzType]="okType === 'danger' ? 'primary' : okType"
+      [nzDanger]="okType === 'danger'"
+      (click)="onOk()"
+      class="px-4"
+    >
+      {{ okText | translate }}
+    </button>
+  </ng-template>
+</nz-modal>

@@ -1,0 +1,112 @@
+<div class="flex flex-col h-full">
+  <!-- Scrollable Content Area -->
+  <div class="flex-1 pb-4 space-y-3 overflow-y-auto">
+    <div *ngFor="let field of fields" class="space-y-2">
+      <label
+        class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-200"
+      >
+        {{ field.label | translate }}
+      </label>
+
+      <!-- Text Input -->
+      <nz-input-group
+        *ngIf="field.type === 'text'"
+        [nzSuffix]="suffixIconSearch"
+        class="!mt-0"
+      >
+        <input
+          type="text"
+          nz-input
+          [(ngModel)]="filterData[field.key]"
+          [placeholder]="field.placeholder || '' | translate"
+          class="w-full"
+        />
+      </nz-input-group>
+      <ng-template #suffixIconSearch>
+        <span
+          nz-icon
+          nzType="search"
+          nzTheme="outline"
+          class="text-gray-400"
+        ></span>
+      </ng-template>
+
+      <!-- Select -->
+      <nz-select
+        *ngIf="field.type === 'select'"
+        [(ngModel)]="filterData[field.key]"
+        (ngModelChange)="field.onChange && field.onChange($event)"
+        [nzPlaceHolder]="field.placeholder || '' | translate"
+        [nzDropdownMatchSelectWidth]="false"
+        [nzPlacement]="'bottomLeft'"
+        nzAllowClear
+        class="w-full !mt-0"
+      >
+        <nz-option
+          *ngFor="let option of field.options"
+          [nzValue]="option.value"
+          [nzLabel]="option.label"
+        ></nz-option>
+      </nz-select>
+
+      <!-- Multiselect -->
+      <nz-select
+        *ngIf="field.type === 'multiselect'"
+        [(ngModel)]="filterData[field.key]"
+        [nzPlaceHolder]="field.placeholder || '' | translate"
+        [nzMode]="'multiple'"
+        [nzMaxTagCount]="1"
+        [nzDropdownMatchSelectWidth]="false"
+        [nzPlacement]="'bottomLeft'"
+        nzAllowClear
+        class="w-full !mt-0"
+      >
+        <nz-option
+          *ngFor="let option of field.options"
+          [nzValue]="option.value"
+          [nzLabel]="option.label"
+        ></nz-option>
+      </nz-select>
+
+      <!-- Date Range -->
+      <nz-range-picker
+        *ngIf="field.type === 'dateRange'"
+        [(ngModel)]="filterData[field.key]"
+        [nzPlaceHolder]="[
+          ('filter.from' | translate) +
+            ' ' +
+            (field.placeholder || '' | translate),
+          ('filter.to' | translate) +
+            ' ' +
+            (field.placeholder || '' | translate)
+        ]"
+        [nzFormat]="field.format || 'dd/MM/yyyy'"
+        [nzShowTime]="field.showTime || false"
+        class="w-full"
+      ></nz-range-picker>
+
+      <!-- Custom Template -->
+      <ng-container *ngIf="field.type === 'custom' && field.template">
+        <ng-container
+          *ngTemplateOutlet="
+            field.template;
+            context: { $implicit: filterData, field: field }
+          "
+        ></ng-container>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Fixed Button at Bottom -->
+  <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
+    <button
+      nz-button
+      nzType="primary"
+      (click)="onSearch()"
+      class="flex items-center justify-center w-full gap-2 rounded-md"
+    >
+      <span nz-icon nzType="search" nzTheme="outline"></span>
+      <span>{{ "filter.search" | translate }}</span>
+    </button>
+  </div>
+</div>

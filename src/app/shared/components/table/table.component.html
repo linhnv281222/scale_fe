@@ -1,0 +1,169 @@
+<div
+  class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+>
+  <nz-table
+    #basicTable
+    [nzData]="data"
+    [nzLoading]="loading"
+    [nzPageSize]="pageSize"
+    [nzPageIndex]="pageIndex"
+    [nzShowPagination]="false"
+    [nzNoResult]="noResultTemplate"
+    class="w-full"
+  >
+    <thead>
+      <tr class="bg-blue-50 dark:bg-gray-700">
+        <th
+          class="px-4 py-3 !text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+          style="width: 50px;"
+        >
+          STT
+        </th>
+        <th
+          *ngFor="let col of columns"
+          [style.width]="col.width"
+          class="px-4 py-3 !text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+        >
+          {{ col.title | translate }}
+        </th>
+        <th
+          *ngIf="showActions"
+          class="px-4 py-3 !text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+          style="max-width: 150px; width: 150px;"
+        >
+          {{ "common.actions" | translate }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngFor="let item of basicTable.data; let i = index">
+        <tr
+          class="transition-colors border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+          [ngClass]="{
+            'bg-white dark:bg-gray-800': i % 2 === 0,
+            'bg-gray-50 dark:bg-gray-800/50': i % 2 === 1
+          }"
+        >
+          <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
+            <span>{{ i + 1 }}</span>
+          </td>
+          <td
+            *ngFor="let col of columns"
+            class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap"
+          >
+            <ng-container *ngIf="col.template; else defaultCell">
+              <ng-container
+                *ngTemplateOutlet="
+                  col.template;
+                  context: { $implicit: item, column: col }
+                "
+              ></ng-container>
+            </ng-container>
+            <ng-template #defaultCell>
+              {{ item[col.key] }}
+            </ng-template>
+          </td>
+          <td *ngIf="showActions" class="px-4 py-3 text-sm">
+            <div class="flex items-center justify-center gap-2">
+              <ng-container *ngIf="actionTemplate; else defaultActions">
+                <ng-container
+                  *ngTemplateOutlet="
+                    actionTemplate;
+                    context: { $implicit: item }
+                  "
+                ></ng-container>
+              </ng-container>
+              <ng-template #defaultActions>
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  (click)="onEdit(item)"
+                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <span nz-icon nzType="edit" nzTheme="outline"></span>
+                </button>
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  (click)="onDelete(item)"
+                  class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  <span nz-icon nzType="delete" nzTheme="outline"></span>
+                </button>
+              </ng-template>
+            </div>
+          </td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </nz-table>
+
+  <ng-template #noResultTemplate>
+    <nz-empty></nz-empty>
+  </ng-template>
+
+  <div
+    *ngIf="showPagination && total > 0 && data.length > 0"
+    class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+  >
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-700 dark:text-gray-300"
+          >{{ "common.page" | translate }}:</span
+        >
+        <nz-select
+          [ngModel]="pageSize"
+          (ngModelChange)="onPageSizeChange($event)"
+          class="w-24"
+          nzSize="small"
+          [nzDropdownMatchSelectWidth]="false"
+          [nzPlacement]="'bottomLeft'"
+        >
+          <nz-option
+            *ngFor="let size of [10, 20, 50, 100]"
+            [nzValue]="size"
+            [nzLabel]="size + ('common.perPage' | translate)"
+          ></nz-option>
+        </nz-select>
+      </div>
+      <div class="text-sm text-gray-700 dark:text-gray-300">
+        {{ "common.page" | translate }} {{ pageIndex }}
+        {{ "common.of" | translate }} {{ Math.ceil(total / pageSize) }} ({{
+          total
+        }}
+        {{ "common.records" | translate }})
+      </div>
+      <div class="flex items-center justify-center gap-2">
+        <button
+          nz-button
+          nzType="default"
+          nzSize="small"
+          [disabled]="pageIndex === 1"
+          (click)="onPageIndexChange(pageIndex - 1)"
+        >
+          <span nz-icon nzType="left" nzTheme="outline"></span>
+        </button>
+        <nz-pagination
+          [nzPageIndex]="pageIndex"
+          [nzTotal]="total"
+          [nzPageSize]="pageSize"
+          [nzShowSizeChanger]="false"
+          [nzShowQuickJumper]="true"
+          (nzPageIndexChange)="onPageIndexChange($event)"
+          [nzSimple]="true"
+        ></nz-pagination>
+        <button
+          nz-button
+          nzType="default"
+          nzSize="small"
+          [disabled]="pageIndex >= Math.ceil(total / pageSize)"
+          (click)="onPageIndexChange(pageIndex + 1)"
+        >
+          <span nz-icon nzType="right" nzTheme="outline"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,233 @@
+<div class="flex h-full bg-gray-50 dark:bg-gray-900">
+  <!-- Filter Sidebar -->
+  <aside
+    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  >
+    <div
+      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+        {{ "filter.title" | translate }}
+      </h3>
+    </div>
+    <div class="flex-1 min-h-0 p-3">
+      <app-filter-sidebar
+        [fields]="filterFields"
+        (search)="onSearch($event)"
+        (reset)="onReset()"
+      ></app-filter-sidebar>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto">
+    <div class="p-1">
+      <!-- Page Title and Add Button -->
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
+          {{ "scales.manufacturers" | translate }}
+        </h2>
+        <button
+          nz-button
+          nzType="primary"
+          (click)="openAddModal()"
+          class="flex items-center gap-2"
+        >
+          <span nz-icon nzType="plus" nzTheme="outline"></span>
+          <span>{{ "common.addNew" | translate }}</span>
+        </button>
+      </div>
+
+      <!-- Table Container -->
+      <div
+        class="overflow-hidden bg-white border border-gray-200 rounded dark:bg-gray-800 dark:border-gray-700"
+      >
+        <nz-table
+          #basicTable
+          [nzData]="manufacturers"
+          [nzLoading]="loading"
+          [nzShowPagination]="false"
+          [nzFrontPagination]="false"
+          [nzNoResult]="noResultTemplate"
+          [nzScroll]="{ x: 'auto', y: 'calc(100vh - 203px)' }"
+          class="w-full"
+        >
+          <thead>
+            <tr class="bg-blue-600 dark:bg-blue-700">
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                style="width: 50px;"
+              >
+                STT
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.manufacturer" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.code" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "common.status" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                style="max-width: 150px; width: 150px;"
+              >
+                {{ "common.actions" | translate }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let manufacturer of manufacturers; let i = index"
+              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+            >
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span
+                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                  >{{ manufacturer.name }}</span
+                >
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  manufacturer.code
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span
+                  *ngIf="manufacturer.status === 'active'"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                >
+                  {{ "common.active" | translate }}
+                </span>
+                <span
+                  *ngIf="manufacturer.status === 'inactive'"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                >
+                  {{ "common.inactive" | translate }}
+                </span>
+                <span
+                  *ngIf="!manufacturer.status"
+                  class="text-sm text-gray-500 dark:text-gray-400"
+                  >-</span
+                >
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <div class="flex items-center gap-2 justify-center">
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                    (click)="viewManufacturer(manufacturer)"
+                    [nzTooltipTitle]="'common.view' | translate"
+                    nz-tooltip
+                  >
+                    <span
+                      nz-icon
+                      nzType="eye"
+                      nzTheme="outline"
+                      class="text-base"
+                    ></span>
+                  </button>
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    (click)="openEditModal(manufacturer)"
+                    [nzTooltipTitle]="'common.edit' | translate"
+                    nz-tooltip
+                  >
+                    <span
+                      nz-icon
+                      nzType="edit"
+                      nzTheme="outline"
+                      class="text-base"
+                    ></span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+
+        <ng-template #noResultTemplate>
+          <nz-empty></nz-empty>
+        </ng-template>
+
+        <!-- Pagination -->
+        <div
+          *ngIf="manufacturers.length > 0"
+          class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+        >
+          <app-pagination
+            [total]="total"
+            [currentPage]="pageIndex"
+            [currentSize]="pageSize"
+            (emitPage)="onPaginationChange($event)"
+            (goToChange)="onPaginationChange($event)"
+          ></app-pagination>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<nz-modal
+  [(nzVisible)]="isModalVisible"
+  [nzTitle]="(isEditMode ? 'common.edit' : 'common.addNew') | translate"
+  (nzOnCancel)="isModalVisible = false"
+  (nzOnOk)="saveManufacturer()"
+  [nzOkLoading]="saving"
+>
+  <div *nzModalContent>
+    <!-- Dynamic Form -->
+    <app-dynamic-form
+      *ngIf="formFields.length > 0"
+      [fields]="formFields"
+      [(model)]="dataManufacturer"
+      (modelChange)="dataManufacturer = $event"
+    ></app-dynamic-form>
+
+    <!-- Fallback to static form if configs not loaded -->
+    <div *ngIf="formFields.length === 0">
+      <div class="mb-4">
+        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ "scales.manufacturerName" | translate }}<span class="text-red-500 ml-1">*</span>
+        </label>
+        <nz-input-group>
+          <input type="text" nz-input [(ngModel)]="dataManufacturer.name" [placeholder]="'scales.enterManufacturerName' | translate" class="w-full" required />
+        </nz-input-group>
+      </div>
+      <div class="mb-4">
+        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ "scales.manufacturerCode" | translate }}<span class="text-red-500 ml-1">*</span>
+        </label>
+        <nz-input-group>
+          <input type="text" nz-input [(ngModel)]="dataManufacturer.code" [placeholder]="'scales.enterManufacturerCode' | translate" class="w-full" required />
+        </nz-input-group>
+      </div>
+    </div>
+  </div>
+</nz-modal>
+
+<!-- Confirm Delete Dialog -->
+<app-confirm-dialog
+  [(visible)]="isConfirmVisible"
+  [title]="'common.confirmDelete'"
+  [message]="deleteMessage"
+  [warningMessage]="'common.deleteWarning'"
+  [okText]="'common.delete'"
+  [cancelText]="'common.cancel'"
+  (confirmed)="onDeleteConfirmed()"
+></app-confirm-dialog>

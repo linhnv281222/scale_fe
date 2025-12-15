@@ -1,0 +1,90 @@
+<aside
+  class="fixed left-0 top-0 h-screen bg-gray-900 border-r border-gray-800 transition-all duration-300 overflow-y-auto"
+  [class.w-64]="!isCollapsed"
+  [class.w-20]="isCollapsed"
+>
+  <!-- User Info Section -->
+  <div class="p-4 border-b border-gray-800" *ngIf="!isCollapsed">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+        A
+      </div>
+      <div class="flex-1">
+        <div class="text-white font-medium text-sm">Nhà máy ABC</div>
+        <div class="text-gray-400 text-xs">Quản trị viên</div>
+      </div>
+    </div>
+  </div>
+  
+  <nav class="p-4">
+    <ul class="space-y-1">
+      <li *ngFor="let item of menuItems">
+        <!-- Menu item with children -->
+        <div *ngIf="item.children && item.children.length > 0">
+          <button
+            (click)="toggleSubmenu(item)"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+            [class.bg-blue-600]="isActive(item.path)"
+            [class.text-white]="isActive(item.path)"
+            [class.text-gray-300]="!isActive(item.path)"
+          >
+            <span *ngIf="item.icon" nz-icon [nzType]="item.icon" nzTheme="outline" class="text-lg"></span>
+            <span *ngIf="!isCollapsed" class="flex-1 text-left font-medium">{{ item.label | translate }}</span>
+            <span
+              *ngIf="!isCollapsed"
+              nz-icon
+              [nzType]="item.expanded ? 'down' : 'right'"
+              nzTheme="outline"
+              class="text-xs"
+            ></span>
+          </button>
+          
+          <!-- Submenu -->
+          <ul
+            *ngIf="item.expanded && !isCollapsed"
+            class="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-4"
+          >
+            <li *ngFor="let child of item.children">
+              <a
+                [routerLink]="child.path"
+                routerLinkActive="bg-blue-600 text-white"
+                class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 transition-colors"
+              >
+                {{ child.label | translate }}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Menu item without children -->
+        <a
+          *ngIf="!item.children || item.children.length === 0"
+          [routerLink]="item.path"
+          routerLinkActive="bg-blue-600 text-white"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+          [class.justify-center]="isCollapsed"
+          [class.text-white]="isActive(item.path)"
+          [nzTooltipTitle]="isCollapsed ? item.label : ''"
+          nz-tooltip
+          [nzTooltipPlacement]="'right'"
+        >
+          <span *ngIf="item.icon" nz-icon [nzType]="item.icon" nzTheme="outline" class="text-lg"></span>
+          <span *ngIf="!isCollapsed" class="font-medium">{{ item.label | translate }}</span>
+        </a>
+      </li>
+    </ul>
+    
+    <!-- Logout Button -->
+    <div class="mt-auto pt-4 border-t border-gray-800">
+      <a
+        routerLink="/logout"
+        class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
+        [class.justify-center]="isCollapsed"
+      >
+        <span nz-icon nzType="logout" nzTheme="outline" class="text-lg"></span>
+        <span *ngIf="!isCollapsed" class="font-medium">{{ 'common.logout' | translate }}</span>
+      </a>
+    </div>
+  </nav>
+</aside>
+

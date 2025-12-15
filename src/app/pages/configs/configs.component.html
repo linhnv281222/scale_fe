@@ -1,0 +1,394 @@
+<div class="flex h-full bg-gray-50 dark:bg-gray-900">
+  <!-- Filter Sidebar -->
+  <aside
+    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  >
+    <div
+      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+        {{ "filter.title" | translate }}
+      </h3>
+    </div>
+    <div class="flex-1 min-h-0 p-3">
+      <app-filter-sidebar
+        [fields]="filterFields"
+        (search)="onSearch($event)"
+        (reset)="onReset()"
+      ></app-filter-sidebar>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto">
+    <div class="p-1">
+      <!-- Table Container -->
+      <div
+        class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+      >
+        <!-- Table Header -->
+        <div
+          class="px-3 !py-2 bg-white border-b border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ "configs.title" | translate }}
+            </h2>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <nz-table
+          #basicTable
+          [nzData]="filteredModules"
+          [nzLoading]="loading"
+          [nzShowPagination]="false"
+          [nzNoResult]="noResultTemplate"
+          class="w-full"
+        >
+          <thead>
+            <tr class="bg-gray-50 dark:bg-gray-800">
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+                style="width: 50px"
+              >
+                STT
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+              >
+                {{ "configs.module" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+              >
+                {{ "configs.fieldCount" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+                style="max-width: 150px; width: 150px;"
+              >
+                {{ "common.actions" | translate }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let module of filteredModules; let i = index"
+              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  i + 1
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span
+                  class="text-sm font-medium text-gray-900 dark:text-white"
+                  >{{ module.name }}</span
+                >
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  module.fieldCount
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    nz-tooltip
+                    [nzTooltipTitle]="'common.edit' | translate"
+                    (click)="openFieldsModal(module)"
+                    class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    <span
+                      nz-icon
+                      nzType="edit"
+                      nzTheme="outline"
+                      class="text-base"
+                    ></span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+
+        <ng-template #noResultTemplate>
+          <nz-empty></nz-empty>
+        </ng-template>
+
+        <!-- Pagination -->
+        <div
+          *ngIf="modules.length > 0"
+          class="bg-white border-t border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <app-pagination
+            [total]="total"
+            [currentPage]="pageIndex"
+            [currentSize]="pageSize"
+            (emitPage)="onPaginationChange($event)"
+            (goToChange)="onPaginationChange($event)"
+          ></app-pagination>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal for managing fields of a module -->
+<nz-modal
+  [(nzVisible)]="isFieldsModalVisible"
+  [nzTitle]="
+    selectedModule ? 'Cấu hình trường dữ liệu: ' + selectedModule.name : ''
+  "
+  (nzOnCancel)="isFieldsModalVisible = false; cancelEditMode()"
+  [nzWidth]="'80%'"
+>
+  <div *nzModalContent>
+    <div class="flex items-center justify-between mb-4">
+      <p class="text-sm text-gray-900 dark:text-white">
+        {{ "configs.manageFieldsDescription" | translate }}
+      </p>
+      <div class="flex items-center gap-2">
+        <button
+          nz-button
+          nzType="primary"
+          (click)="addNewField()"
+          class="flex items-center gap-2"
+        >
+          <span nz-icon nzType="plus" nzTheme="outline"></span>
+          <span>{{ "common.addNew" | translate }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Fields Table -->
+    <nz-table
+      [nzData]="moduleFields"
+      [nzLoading]="fieldsLoading"
+      [nzShowPagination]="false"
+      [nzNoResult]="noFieldsTemplate"
+      class="w-full"
+    >
+      <thead>
+        <tr class="bg-gray-50 dark:bg-gray-800">
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+            style="width: 50px"
+          >
+            STT
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
+            {{ "configs.fieldKey" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
+            {{ "configs.displayName" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
+            {{ "configs.dataType" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
+            {{ "configs.description" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
+            {{ "configs.required" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
+            {{ "configs.width" | translate }}
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
+            {{ "common.actions" | translate }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let field of moduleFields; let i = index"
+          class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <input
+              type="text"
+              nz-input
+              [ngModel]="
+                getEditingField(field, i)?.fieldKey || field.fieldKey || field.key || ''
+              "
+              (ngModelChange)="updateEditingField(field, 'fieldKey', $event, i)"
+              class="w-full text-sm"
+            />
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <input
+              type="text"
+              nz-input
+              [ngModel]="
+                getEditingField(field, i)?.displayName || field.displayName || ''
+              "
+              (ngModelChange)="updateEditingField(field, 'displayName', $event, i)"
+              class="w-full text-sm"
+            />
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <nz-select
+              [ngModel]="getEditingField(field, i)?.dataType || field.dataType || ConfigDataType.STRING"
+              (ngModelChange)="updateEditingField(field, 'dataType', $event, i)"
+              class="w-full"
+              [nzDropdownMatchSelectWidth]="false"
+              [nzPlacement]="'bottomLeft'"
+            >
+              <nz-option
+                [nzValue]="ConfigDataType.STRING"
+                nzLabel="STRING"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.TEXTAREA"
+                nzLabel="TEXTAREA"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.NUMBER"
+                nzLabel="NUMBER"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.INTEGER"
+                nzLabel="INTEGER"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.DECIMAL"
+                nzLabel="DECIMAL"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.BOOLEAN"
+                nzLabel="BOOLEAN"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.DATETIME"
+                nzLabel="DATETIME"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.DATE"
+                nzLabel="DATE"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.TIME"
+                nzLabel="TIME"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.SELECT"
+                nzLabel="SELECT"
+              ></nz-option>
+              <nz-option
+                [nzValue]="ConfigDataType.MULTISELECT"
+                nzLabel="MULTISELECT"
+              ></nz-option>
+            </nz-select>
+          </td>
+          <td class="px-3 !py-2">
+            <input
+              type="text"
+              nz-input
+              [ngModel]="
+                getEditingField(field, i)?.description || field.description || ''
+              "
+              (ngModelChange)="updateEditingField(field, 'description', $event, i)"
+              class="w-full text-sm"
+            />
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <label
+              nz-checkbox
+              [ngModel]="
+                getEditingField(field, i)?.required ?? field.required ?? false
+              "
+              (ngModelChange)="updateEditingField(field, 'required', $event, i)"
+            ></label>
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <input
+              type="text"
+              nz-input
+              [ngModel]="
+                getEditingField(field, i)?.width || field.width || '150px'
+              "
+              (ngModelChange)="updateEditingField(field, 'width', $event, i)"
+              class="w-full text-sm"
+            />
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <div class="flex items-center justify-center gap-2">
+              <button
+                nz-button
+                nzType="text"
+                nzSize="small"
+                nz-tooltip
+                [nzTooltipTitle]="'common.delete' | translate"
+                (click)="deleteField(field, i)"
+                class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+              >
+                <span
+                  nz-icon
+                  nzType="delete"
+                  nzTheme="outline"
+                  class="text-base"
+                ></span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </nz-table>
+
+    <ng-template #noFieldsTemplate>
+      <nz-empty [nzNotFoundContent]="'configs.noFields' | translate"></nz-empty>
+    </ng-template>
+  </div>
+  <div *nzModalFooter>
+    <button
+      nz-button
+      nzType="default"
+      (click)="isFieldsModalVisible = false; cancelEditMode()"
+      [disabled]="saving"
+    >
+      {{ "common.cancel" | translate }}
+    </button>
+    <button
+      nz-button
+      nzType="primary"
+      (click)="saveAllFields()"
+      [nzLoading]="saving"
+    >
+      {{ "common.save" | translate }}
+    </button>
+  </div>
+</nz-modal>
+
+<!-- Confirm Delete Dialog -->
+<app-confirm-dialog
+  [(visible)]="isConfirmVisible"
+  [title]="'common.confirmDelete'"
+  [message]="deleteFieldMessage"
+  [warningMessage]="'common.deleteWarning'"
+  [okText]="'common.delete'"
+  [cancelText]="'common.cancel'"
+  (confirmed)="onDeleteFieldConfirmed()"
+></app-confirm-dialog>

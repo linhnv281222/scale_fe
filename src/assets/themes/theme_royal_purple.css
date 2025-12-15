@@ -1,0 +1,28 @@
+/* Color header của cả trang web */
+.color-header {
+  background-color: #9747ff !important;
+}
+.color-text-header {
+  color: #fff !important;
+}
+
+/* color sider */
+.color-text-sider {
+  color: #9747ff !important;
+}
+.color-item-sidebar {
+  background-color: #9747ff !important;
+}
+
+/* color border bao quanh content của web */
+.color-border {
+  border: 1px solid rgba(151, 71, 255, 0.5) !important;
+}
+
+/* Color header của table */
+.color-header-row {
+  background-color: #d1b4f8 !important;
+}
+.ant-table-thead > tr > th {
+  background-color: #d1b4f8 !important;
+}

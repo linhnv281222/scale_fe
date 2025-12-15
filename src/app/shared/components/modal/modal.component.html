@@ -1,0 +1,19 @@
+<nz-modal
+  [(nzVisible)]="visible"
+  [nzTitle]="title"
+  [nzWidth]="width"
+  [nzMaskClosable]="maskClosable"
+  (nzOnCancel)="onCancel()"
+  (nzOnOk)="onOk()"
+>
+  <ng-container *nzModalContent>
+    <ng-content></ng-content>
+  </ng-container>
+  <div *nzModalFooter>
+    <button nz-button nzType="default" (click)="onCancel()">{{ cancelText }}</button>
+    <button nz-button nzType="primary" (click)="onOk()" [nzLoading]="loading">
+      {{ okText }}
+    </button>
+  </div>
+</nz-modal>
+

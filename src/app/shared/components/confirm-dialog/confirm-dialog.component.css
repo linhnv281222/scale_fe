@@ -1,0 +1,26 @@
+::ng-deep .confirm-dialog-modal .ant-modal-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+::ng-deep .confirm-dialog-modal .ant-modal-title {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+::ng-deep .confirm-dialog-modal .ant-modal-close {
+  color: #6b7280;
+}
+
+::ng-deep .confirm-dialog-modal .ant-modal-close:hover {
+  color: #1f2937;
+}
+
+::ng-deep .dark .confirm-dialog-modal .ant-modal-close {
+  color: #9ca3af;
+}
+
+::ng-deep .dark .confirm-dialog-modal .ant-modal-close:hover {
+  color: #f9fafb;
+}
+

@@ -1,0 +1,207 @@
+<div class="flex h-full bg-gray-50 dark:bg-gray-900">
+  <!-- Filter Sidebar (only for historical data) -->
+  <aside
+    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  >
+    <div
+      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+        {{ "filter.title" | translate }}
+      </h3>
+    </div>
+    <div class="flex-1 min-h-0 p-3">
+      <app-filter-sidebar
+        [fields]="filterFields"
+        [filterData]="filterData"
+        (search)="onSearch($event)"
+        (reset)="onReset()"
+      ></app-filter-sidebar>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto">
+    <div class="p-1 space-y-4">
+      <!-- Current Data Table -->
+      <div
+        class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+      >
+        <!-- Table Header -->
+        <div
+          class="px-3 !py-2 bg-white border-b border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ "scaleData.currentData" | translate }}
+            </h2>
+          </div>
+        </div>
+
+        <!-- Current Data Table -->
+        <nz-table
+          #currentTable
+          [nzData]="currentData"
+          [nzLoading]="currentDataLoading"
+          [nzShowPagination]="false"
+          [nzNoResult]="noCurrentDataTemplate"
+          class="w-full"
+        >
+          <thead>
+            <tr class="bg-gray-50 dark:bg-gray-800">
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                style="width: 50px"
+              >
+                STT
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scales.name" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scaleData.weight" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scaleData.timestamp" | translate }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let data of currentData; let i = index"
+              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  i + 1
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+                  data.scale?.name || data.scaleId
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  data.weight
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  data.timestamp | date : "dd/MM/yyyy HH:mm:ss"
+                }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+
+        <ng-template #noCurrentDataTemplate>
+          <nz-empty></nz-empty>
+        </ng-template>
+      </div>
+
+      <!-- Historical Data Table -->
+      <div
+        class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+      >
+        <!-- Table Header -->
+        <div
+          class="px-3 !py-2 bg-white border-b border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ "scaleData.historicalData" | translate }}
+            </h2>
+          </div>
+        </div>
+
+        <!-- Historical Data Table -->
+        <nz-table
+          #historicalTable
+          [nzData]="historicalData"
+          [nzLoading]="historicalDataLoading"
+          [nzShowPagination]="false"
+          [nzNoResult]="noHistoricalDataTemplate"
+          class="w-full"
+        >
+          <thead>
+            <tr class="bg-gray-50 dark:bg-gray-800">
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                style="width: 50px"
+              >
+                STT
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scales.name" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scaleData.weight" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scaleData.timestamp" | translate }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let data of historicalData; let i = index"
+              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  (pageIndex - 1) * pageSize + i + 1
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+                  data.scale?.name || data.scaleId
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  data.weight
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  data.timestamp | date : "dd/MM/yyyy HH:mm:ss"
+                }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+
+        <ng-template #noHistoricalDataTemplate>
+          <nz-empty></nz-empty>
+        </ng-template>
+
+        <!-- Pagination -->
+        <div
+          *ngIf="historicalData.length > 0"
+          class="bg-white border-t border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <app-pagination
+            [total]="total"
+            [currentPage]="pageIndex"
+            [currentSize]="pageSize"
+            (emitPage)="onPaginationChange($event)"
+            (goToChange)="onPaginationChange($event)"
+          ></app-pagination>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

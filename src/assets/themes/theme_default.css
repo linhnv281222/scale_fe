@@ -1,0 +1,50 @@
+/* Color header của cả trang web */
+.color-header {
+  /* background-color: #2a3884 !important; */
+  color: #ffffff;
+  background: linear-gradient(64deg, #00a653 0%, #00aeee 100%);
+}
+.color-text-header {
+  color: #fff !important;
+}
+
+/* color sider */
+.color-text-sider {
+  color: #1890ff !important;
+}
+.color-item-sidebar {
+  background-color: #2c73eb !important;
+}
+
+/* color border bao quanh content của web */
+.color-border {
+  border: 1px solid rgba(44, 115, 235, 0.5) !important;
+}
+
+/* Color header của table */
+.color-header-row {
+  /* background-color: #ccdbeb !important; */
+  background-color: #ccebfb !important;
+}
+
+/* Color button của table */
+.fn-css-label {
+  background: linear-gradient(64deg, #00a653 0%, #00aeee 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fn-bg-default {
+  background: #00aeee;
+  color: #ffffff;
+}
+
+.fn-bg-header-default {
+  background: rgba(0, 174, 238, 0.25);
+}
+
+.ant-table-thead > tr > th {
+  /* background-color: #ccdbeb !important; */
+  background-color: #ccebfb !important;
+}
