@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { Config, ConfigDataType, ConfigCategory } from '../../models';
+import { Config, ConfigCategory, ConfigDataType } from '../../models';
 import { HttpService } from '../../services/http.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
-import { TableColumn } from '../../shared/components/table/table.component';
 
 @Component({
   selector: 'app-configs',
@@ -23,7 +22,7 @@ export class ConfigsComponent implements OnInit {
   selectedModule: any = null;
   moduleFields: Config[] = [];
   fieldsLoading = false;
-  
+
   saving = false;
 
   // Inline editing
@@ -54,22 +53,29 @@ export class ConfigsComponent implements OnInit {
     // Load all configs to group by module
     this.http.get<Config[]>('api/configs', {}).subscribe({
       next: (data: any) => {
-        const allConfigs = Array.isArray(data) ? data : (data?.data || []);
-        
+        const allConfigs = Array.isArray(data) ? data : data?.data || [];
+
         // Group configs by module and create module list
         const moduleMap = new Map<string, any>();
-        
+
         // Add system configs
         moduleMap.set('system', {
           id: 'system',
           name: 'Hệ thống',
           code: 'system',
-          fieldCount: allConfigs.filter((c: Config) => c.module === 'system' && c.category === ConfigCategory.SYSTEM_CONFIG).length,
+          fieldCount: allConfigs.filter(
+            (c: Config) =>
+              c.module === 'system' &&
+              c.category === ConfigCategory.SYSTEM_CONFIG
+          ).length,
         });
 
         // Group field metadata by module
         allConfigs
-          .filter((c: Config) => c.category === ConfigCategory.FIELD_METADATA && c.module)
+          .filter(
+            (c: Config) =>
+              c.category === ConfigCategory.FIELD_METADATA && c.module
+          )
           .forEach((config: Config) => {
             if (!moduleMap.has(config.module!)) {
               const moduleName = this.getModuleDisplayName(config.module!);
@@ -96,11 +102,11 @@ export class ConfigsComponent implements OnInit {
 
   getModuleDisplayName(moduleCode: string): string {
     const moduleNames: { [key: string]: string } = {
-      'users': 'Quản lý Tài khoản',
-      'scales': 'Quản lý Cân',
-      'locations': 'Quản lý Vị trí',
-      'shifts': 'Quản lý Ca',
-      'system': 'Hệ thống',
+      users: 'Quản lý Tài khoản',
+      scales: 'Quản lý Cân',
+      locations: 'Quản lý Vị trí',
+      shifts: 'Quản lý Ca',
+      system: 'Hệ thống',
     };
     return moduleNames[moduleCode] || moduleCode;
   }
@@ -128,34 +134,55 @@ export class ConfigsComponent implements OnInit {
 
   loadModuleFields(): void {
     this.fieldsLoading = true;
-    this.http.get<Config[]>('api/configs', { module: this.selectedModule.code }).subscribe({
-      next: (data: any) => {
-        const allConfigs = Array.isArray(data) ? data : (data?.data || []);
-        // Filter only field metadata for this module, or system configs if module is system
-        if (this.selectedModule.code === 'system') {
-          this.moduleFields = allConfigs.filter((c: Config) => 
-            c.module === 'system' && c.category === ConfigCategory.SYSTEM_CONFIG
-          );
-        } else {
-          this.moduleFields = allConfigs.filter((c: Config) => 
-            c.module === this.selectedModule.code && c.category === ConfigCategory.FIELD_METADATA
-          );
-        }
-        // Initialize editing fields with current values
-        if (this.isEditMode) {
-          this.editingFields.clear();
-          this.moduleFields.forEach((field) => {
-            if (field.id) {
-              this.editingFields.set(field.id, { ...field });
-            }
+    this.http
+      .get<Config[]>('api/configs', { module: this.selectedModule.code })
+      .subscribe({
+        next: (data: any) => {
+          const allConfigs = Array.isArray(data) ? data : data?.data || [];
+          // Filter only field metadata for this module, or system configs if module is system
+          if (this.selectedModule.code === 'system') {
+            this.moduleFields = allConfigs.filter(
+              (c: Config) =>
+                c.module === 'system' &&
+                c.category === ConfigCategory.SYSTEM_CONFIG
+            );
+          } else {
+            this.moduleFields = allConfigs.filter(
+              (c: Config) =>
+                c.module === this.selectedModule.code &&
+                c.category === ConfigCategory.FIELD_METADATA
+            );
+          }
+
+          // Sort: DATE and DATETIME first, then others
+          this.moduleFields.sort((a, b) => {
+            const aIsDate =
+              a.dataType === ConfigDataType.DATE ||
+              a.dataType === ConfigDataType.DATETIME;
+            const bIsDate =
+              b.dataType === ConfigDataType.DATE ||
+              b.dataType === ConfigDataType.DATETIME;
+
+            if (aIsDate && !bIsDate) return -1;
+            if (!aIsDate && bIsDate) return 1;
+            return 0;
           });
-        }
-        this.fieldsLoading = false;
-      },
-      error: () => {
-        this.fieldsLoading = false;
-      },
-    });
+
+          // Initialize editing fields with current values
+          if (this.isEditMode) {
+            this.editingFields.clear();
+            this.moduleFields.forEach((field) => {
+              if (field.id) {
+                this.editingFields.set(field.id, { ...field });
+              }
+            });
+          }
+          this.fieldsLoading = false;
+        },
+        error: () => {
+          this.fieldsLoading = false;
+        },
+      });
   }
 
   // Add new field row
@@ -170,7 +197,11 @@ export class ConfigsComponent implements OnInit {
       description: '',
       required: false,
       width: '150px',
-      category: this.selectedModule.code === 'system' ? ConfigCategory.SYSTEM_CONFIG : ConfigCategory.FIELD_METADATA,
+      queryable: false,
+      category:
+        this.selectedModule.code === 'system'
+          ? ConfigCategory.SYSTEM_CONFIG
+          : ConfigCategory.FIELD_METADATA,
       module: this.selectedModule.code,
     };
     this.moduleFields.push(newField);
@@ -204,7 +235,11 @@ export class ConfigsComponent implements OnInit {
         description: field.description || '',
         required: field.required || false,
         width: field.width || '150px',
-        category: this.selectedModule.code === 'system' ? ConfigCategory.SYSTEM_CONFIG : ConfigCategory.FIELD_METADATA,
+        queryable: field.queryable || false,
+        category:
+          this.selectedModule.code === 'system'
+            ? ConfigCategory.SYSTEM_CONFIG
+            : ConfigCategory.FIELD_METADATA,
         module: this.selectedModule.code,
         fieldKey: fieldKey,
         displayName: field.displayName || '',
@@ -216,20 +251,24 @@ export class ConfigsComponent implements OnInit {
         createPromises.push(this.http.post('api/configs', data).toPromise());
       } else {
         // Existing field - update
-        updatePromises.push(this.http.put(`api/configs/${id}`, data).toPromise());
+        updatePromises.push(
+          this.http.put(`api/configs/${id}`, data).toPromise()
+        );
       }
     });
 
-    Promise.all([...updatePromises, ...createPromises]).then(() => {
-      this.saving = false;
-      this.isEditMode = false;
-      this.editingFields.clear();
-      this.newFieldCounter = 0;
-      this.loadModuleFields();
-      this.loadModules(); // Refresh module list to update field count
-    }).catch(() => {
-      this.saving = false;
-    });
+    Promise.all([...updatePromises, ...createPromises])
+      .then(() => {
+        this.saving = false;
+        this.isEditMode = false;
+        this.editingFields.clear();
+        this.newFieldCounter = 0;
+        this.loadModuleFields();
+        this.loadModules(); // Refresh module list to update field count
+      })
+      .catch(() => {
+        this.saving = false;
+      });
   }
 
   getFieldId(field: Config, index: number): number | string {
@@ -251,18 +290,23 @@ export class ConfigsComponent implements OnInit {
     return this.editingFields.get(fieldId) || null;
   }
 
-  updateEditingField(field: Config, property: string, value: any, index: number): void {
+  updateEditingField(
+    field: Config,
+    property: string,
+    value: any,
+    index: number
+  ): void {
     const fieldId = this.getFieldId(field, index);
     let editingField = this.editingFields.get(fieldId);
-    
+
     if (!editingField) {
       // Create new editing field if not exists
       editingField = { ...field };
     }
-    
+
     (editingField as any)[property] = value;
     this.editingFields.set(fieldId, editingField);
-    
+
     // Also update the field in moduleFields for immediate UI update
     (field as any)[property] = value;
   }
@@ -275,7 +319,7 @@ export class ConfigsComponent implements OnInit {
       this.moduleFields = this.moduleFields.filter((f, i) => i !== index);
       return;
     }
-    
+
     // For existing fields, show confirm dialog
     this.confirmDeleteField(field);
   }
@@ -306,7 +350,9 @@ export class ConfigsComponent implements OnInit {
   // Getter for delete field message
   get deleteFieldMessage(): string {
     if (!this.fieldToDelete) return '';
-    return `Bạn có chắc chắn muốn xóa trường "${this.fieldToDelete.displayName || this.fieldToDelete.fieldKey}"?`;
+    return `Bạn có chắc chắn muốn xóa trường "${
+      this.fieldToDelete.displayName || this.fieldToDelete.fieldKey
+    }"?`;
   }
 
   onPageIndexChange(page: number): void {

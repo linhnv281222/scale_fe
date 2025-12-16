@@ -29,6 +29,7 @@ export interface Config {
   displayName?: string; // Tên hiển thị (ví dụ: 'Tên đăng nhập')
   required?: boolean; // Trường bắt buộc
   width?: string; // Độ rộng cột (ví dụ: '150px', '200px')
+  queryable?: boolean; // Có được thêm vào phần truy vấn chi tiết hay không
   isSystemConfig?: boolean; // Có phải cấu hình hệ thống không
   createdAt?: Date;
   updatedAt?: Date;

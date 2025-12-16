@@ -45,7 +45,7 @@
         <nz-option
           *ngFor="let option of field.options"
           [nzValue]="option.value"
-          [nzLabel]="option.label"
+          [nzLabel]="option.label | translate"
         ></nz-option>
       </nz-select>
 
@@ -64,7 +64,7 @@
         <nz-option
           *ngFor="let option of field.options"
           [nzValue]="option.value"
-          [nzLabel]="option.label"
+          [nzLabel]="option.label | translate"
         ></nz-option>
       </nz-select>
 

@@ -66,7 +66,7 @@
               </th>
               <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
-                style="max-width: 150px; width: 150px;"
+                style="max-width: 150px; width: 150px"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -215,6 +215,11 @@
           <th
             class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
           >
+            Truy vấn
+          </th>
+          <th
+            class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+          >
             {{ "common.actions" | translate }}
           </th>
         </tr>
@@ -225,14 +230,19 @@
           class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
         >
           <td class="px-3 !py-2 whitespace-nowrap">
-            <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
+            <span class="text-sm text-gray-900 dark:text-white">{{
+              i + 1
+            }}</span>
           </td>
           <td class="px-3 !py-2 whitespace-nowrap">
             <input
               type="text"
               nz-input
               [ngModel]="
-                getEditingField(field, i)?.fieldKey || field.fieldKey || field.key || ''
+                getEditingField(field, i)?.fieldKey ||
+                field.fieldKey ||
+                field.key ||
+                ''
               "
               (ngModelChange)="updateEditingField(field, 'fieldKey', $event, i)"
               class="w-full text-sm"
@@ -243,15 +253,23 @@
               type="text"
               nz-input
               [ngModel]="
-                getEditingField(field, i)?.displayName || field.displayName || ''
+                getEditingField(field, i)?.displayName ||
+                field.displayName ||
+                ''
               "
-              (ngModelChange)="updateEditingField(field, 'displayName', $event, i)"
+              (ngModelChange)="
+                updateEditingField(field, 'displayName', $event, i)
+              "
               class="w-full text-sm"
             />
           </td>
           <td class="px-3 !py-2 whitespace-nowrap">
             <nz-select
-              [ngModel]="getEditingField(field, i)?.dataType || field.dataType || ConfigDataType.STRING"
+              [ngModel]="
+                getEditingField(field, i)?.dataType ||
+                field.dataType ||
+                ConfigDataType.STRING
+              "
               (ngModelChange)="updateEditingField(field, 'dataType', $event, i)"
               class="w-full"
               [nzDropdownMatchSelectWidth]="false"
@@ -308,9 +326,13 @@
               type="text"
               nz-input
               [ngModel]="
-                getEditingField(field, i)?.description || field.description || ''
+                getEditingField(field, i)?.description ||
+                field.description ||
+                ''
               "
-              (ngModelChange)="updateEditingField(field, 'description', $event, i)"
+              (ngModelChange)="
+                updateEditingField(field, 'description', $event, i)
+              "
               class="w-full text-sm"
             />
           </td>
@@ -333,6 +355,17 @@
               (ngModelChange)="updateEditingField(field, 'width', $event, i)"
               class="w-full text-sm"
             />
+          </td>
+          <td class="px-3 !py-2 whitespace-nowrap">
+            <label
+              nz-checkbox
+              [ngModel]="
+                getEditingField(field, i)?.queryable ?? field.queryable ?? false
+              "
+              (ngModelChange)="
+                updateEditingField(field, 'queryable', $event, i)
+              "
+            ></label>
           </td>
           <td class="px-3 !py-2 whitespace-nowrap">
             <div class="flex items-center justify-center gap-2">
