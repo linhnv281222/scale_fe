@@ -21,6 +21,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 // Page Components
 import { IconsProviderModule } from './icons-provider.module';
+import { ActivityMonitoringComponent } from './pages/activity-monitoring/activity-monitoring.component';
 import { ConfigsComponent } from './pages/configs/configs.component';
 import { ConnectionStatusComponent } from './pages/connection-status/connection-status.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
@@ -29,6 +30,7 @@ import { LocationsComponent } from './pages/locations/locations.component';
 import { LoginComponent } from './pages/login/login.component';
 import { PermissionsComponent } from './pages/permissions/permissions.component';
 import { ProtocolsComponent } from './pages/protocols/protocols.component';
+import { RolesComponent } from './pages/roles/roles.component';
 import { ScaleDataComponent } from './pages/scale-data/scale-data.component';
 import { ScaleManufacturersComponent } from './pages/scale-manufacturers/scale-manufacturers.component';
 import { ScaleReportComponent } from './pages/scale-report/scale-report.component';
@@ -37,6 +39,7 @@ import { ShiftReportComponent } from './pages/shift-report/shift-report.componen
 import { ShiftsComponent } from './pages/shifts/shifts.component';
 import { TemplatesComponent } from './pages/templates/templates.component';
 import { UsersComponent } from './pages/users/users.component';
+import { WebsiteSettingsComponent } from './pages/website-settings/website-settings.component';
 import { SharedModule } from './shared/components/components.module';
 
 //
@@ -78,6 +81,7 @@ const ngxUiLoaderConfig: NgxUiLoaderConfig = {
   declarations: [
     AppComponent,
     // Page Components
+    ActivityMonitoringComponent,
     DashboardComponent,
     LocationsComponent,
     ScalesComponent,
@@ -86,6 +90,7 @@ const ngxUiLoaderConfig: NgxUiLoaderConfig = {
     ShiftsComponent,
     UsersComponent,
     PermissionsComponent,
+    RolesComponent,
     ConfigsComponent,
     ScaleDataComponent,
     ScaleReportComponent,
@@ -94,6 +99,7 @@ const ngxUiLoaderConfig: NgxUiLoaderConfig = {
     LicensesComponent,
     ConnectionStatusComponent,
     LoginComponent,
+    WebsiteSettingsComponent,
   ],
   bootstrap: [AppComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

@@ -1,9 +1,10 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Location } from '../../models';
 import { ConfigService } from '../../services/config.service';
-import { HttpService } from '../../services/http.service';
+import { LocationService } from '../../services/location.service';
 import { PageActionService } from '../../services/page-action.service';
 import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
@@ -16,28 +17,25 @@ import { FilterField } from '../../shared/components/filter-sidebar/filter-sideb
 })
 export class LocationsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  Math = Math; // Expose Math to template
   locations: Location[] = [];
   flatLocations: Location[] = [];
-  treeData: any[] = [];
   loading = false;
   pageIndex = 1;
   pageSize = 20;
   total = 0;
   isModalVisible = false;
   isEditMode = false;
+  isViewMode = false;
   saving = false;
   selectedLocation: Location | null = null;
   parentLocations: Location[] = [];
   filterData: any = {};
-  expandedIds: Set<number> = new Set(); // Track expanded nodes
+  expandedIds: Set<number> = new Set();
 
-  // Dynamic form and table
   formFields: DynamicFormField[] = [];
   tableColumns: DynamicTableColumn[] = [];
   loadingConfigs = false;
 
-  // Form data object
   dataLocation: any = {};
 
   filterFields: FilterField[] = [
@@ -72,13 +70,15 @@ export class LocationsComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private http: HttpService,
+    private locationService: LocationService,
     private configService: ConfigService,
-    private pageActionService: PageActionService
+    private pageActionService: PageActionService,
+    private cdr: ChangeDetectorRef,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
-    this.loadConfigs();
+    // this.loadConfigs();
     this.loadLocations();
     this.pageActionService.addNew$
       .pipe(takeUntil(this.destroy$))
@@ -115,123 +115,159 @@ export class LocationsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadLocations(): void {
+  async loadLocations(): Promise<void> {
     this.loading = true;
-    this.http
-      .get<Location[]>('api/locations', {
+    try {
+      let treeData: Location[] = [];
+      try {
+        treeData = await this.locationService.getLocationsTree();
+      } catch (error) {
+        this.toastr.error('Có lỗi xảy ra vui lòng thử lại');
+      }
+
+      if (treeData && treeData.length > 0) {
+        this.locations = treeData;
+        this.total = this.countAllNodes(treeData);
+      } else {
+      const response = await this.locationService.getLocations({
         page: this.pageIndex,
         size: this.pageSize,
         ...this.filterData,
-      })
-      .subscribe({
-        next: (data: any) => {
-          this.locations = Array.isArray(data) ? data : data?.data || [];
-          this.total = data?.total || this.locations.length;
-          this.buildTreeData();
-          this.flattenLocations();
-          this.loadParentLocations();
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
       });
+        if (response && response.data) {
+          const allItems = response.data;
+          const rootItems = allItems.filter((item) => !item.parent_id && !item.parentId);
+
+          this.locations = this.buildTreeFromFlat(allItems, rootItems);
+          this.total = allItems.length;
+        }
+      }
+
+      this.expandedIds.clear();
+      this.locations.forEach((item) => {
+        if (item.id && item.children && item.children.length > 0) {
+          this.expandedIds.add(item.id);
+        }
+      });
+        this.flattenLocations();
+        this.loadParentLocations();
+    } catch (error) {
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private buildTreeFromFlat(allItems: Location[], rootItems: Location[]): Location[] {
+    const buildChildren = (parentId: number): Location[] => {
+      return allItems
+        .filter((item) => (item.parent_id === parentId || item.parentId === parentId))
+        .map((item) => ({
+          ...item,
+          children: buildChildren(item.id!),
+        }));
+    };
+
+    return rootItems.map((item) => ({
+      ...item,
+      children: buildChildren(item.id!),
+    }));
+  }
+
+  private countAllNodes(items: Location[]): number {
+    let count = 0;
+    const countNodes = (nodes: Location[]) => {
+      nodes.forEach((node) => {
+        count++;
+        if (node.children && node.children.length > 0) {
+          countNodes(node.children);
+        }
+      });
+    };
+    countNodes(items);
+    return count;
   }
 
   loadParentLocations(): void {
-    // Load tất cả locations để có thể chọn làm parent
-    // Khi edit, sẽ filter để loại trừ chính location đó và children
-    this.parentLocations = [...this.locations];
-  }
-
-  buildTreeData(): void {
-    this.treeData = this.buildTree(this.locations);
-  }
-
-  buildTree(items: Location[], parentId?: number): any[] {
-    return items
-      .filter((item) => item.parentId === parentId)
-      .map((item) => ({
-        title: item.name,
-        key: item.id,
-        children: this.buildTree(items, item.id),
-      }));
+    const allLocations: Location[] = [];
+    const flatten = (items: Location[]) => {
+      items.forEach((item) => {
+        allLocations.push(item);
+        if (item.children && item.children.length > 0) {
+          flatten(item.children);
+        }
+      });
+    };
+    flatten(this.locations);
+    this.parentLocations = allLocations;
   }
 
   flattenLocations(): void {
     this.flatLocations = [];
-    const pathIsLast: boolean[] = []; // Track if each level in path is last
+    const pathIsLast: boolean[] = [];
 
     const buildFlat = (
       items: Location[],
-      parentId?: number,
       level: number = 0,
       parent?: Location
     ) => {
-      const children = items.filter((item) => item.parentId === parentId);
-      children.forEach((item, index) => {
-        const isLastChild = index === children.length - 1;
+      items.forEach((item, index) => {
+        const isLastChild = index === items.length - 1;
 
-        // Update path tracking
         if (level < pathIsLast.length) {
           pathIsLast[level] = isLastChild;
         } else {
           pathIsLast.push(isLastChild);
         }
 
-        // Create array of isLast flags for each level up to current
         const levelIsLast: boolean[] = [];
         for (let i = 0; i < level; i++) {
           levelIsLast.push(pathIsLast[i] || false);
         }
 
-        const locationWithMeta = {
+        if (item.parent_id && !item.parentId) {
+          item.parentId = item.parent_id;
+        }
+
+        const hasChildren = !!(item.children && item.children.length > 0);
+        const locationWithMeta: any = {
           ...item,
+          children: item.children,
           level,
           parent,
-          hasChildren: items.some((child) => child.parentId === item.id),
+          hasChildren: hasChildren,
           isLast: isLastChild,
-          levelIsLast: levelIsLast, // Array indicating if each level is last
+          levelIsLast: levelIsLast,
         };
         this.flatLocations.push(locationWithMeta);
 
-        // Only include children if this item is expanded or it's root level
-        if (level === 0 || this.expandedIds.has(item.id!)) {
-          buildFlat(items, item.id, level + 1, item);
+        if (hasChildren && this.expandedIds.has(item.id!)) {
+          buildFlat(item.children || [], level + 1, item);
         }
       });
     };
     buildFlat(this.locations);
   }
 
-  toggleExpand(location: Location, event?: Event): void {
+  toggleExpand(location: any, event?: Event): void {
     if (event) {
       event.stopPropagation();
+      event.preventDefault();
     }
-    if (location.id) {
-      if (this.expandedIds.has(location.id)) {
-        this.expandedIds.delete(location.id);
-        // Also collapse all descendants
-        this.collapseDescendants(location.id);
+
+    const locationId = location.id;
+    if (!locationId) {
+      console.warn('Location ID not found');
+      return;
+    }
+
+    if (this.expandedIds.has(locationId)) {
+      this.expandedIds.delete(locationId);
       } else {
-        this.expandedIds.add(location.id);
+      this.expandedIds.add(locationId);
       }
+
       this.flattenLocations();
-    }
-  }
-
-  collapseDescendants(parentId: number): void {
-    const children = this.locations.filter((loc) => loc.parentId === parentId);
-    children.forEach((child) => {
-      if (child.id) {
-        this.expandedIds.delete(child.id);
-        this.collapseDescendants(child.id);
-      }
-    });
-  }
-
-  hasChildren(locationId: number): boolean {
-    return this.locations.some((loc) => loc.parentId === locationId);
+    this.cdr.detectChanges();
   }
 
   getLocationIcon(type?: string): string {
@@ -284,99 +320,193 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
   openAddModal(): void {
     this.isEditMode = false;
+    this.isViewMode = false;
     this.selectedLocation = null;
-    // Load tất cả locations để có thể chọn làm parent
     this.loadParentLocations();
-    this.dataLocation = {};
-    this.formFields.forEach((field) => {
-      this.dataLocation[field.fieldKey] = '';
-    });
-    this.dataLocation.status = 'active';
+    this.dataLocation = {
+      code: '',
+      name: '',
+      parentId: null,
+    };
     this.isModalVisible = true;
   }
 
-  openEditModal(location: Location): void {
+  async openEditModal(location: Location): Promise<void> {
+    if (!location.id) {
+      return;
+    }
+
     this.isEditMode = true;
+    this.isViewMode = false;
     this.selectedLocation = location;
+    this.loading = true;
+
+    try {
+      // Gọi API GET để lấy data mới nhất
+      const locationData = await this.locationService.getLocationById(location.id);
+
+      if (locationData) {
+        this.selectedLocation = locationData;
 
     // Filter parentLocations để loại trừ chính location đó và các children
-    this.parentLocations = this.locations.filter((loc) => {
-      if (loc.id === location.id) return false;
-      // Loại trừ các children (recursive check)
-      return !this.isDescendant(location.id!, loc);
-    });
+        const allLocations: Location[] = [];
+        const flatten = (items: Location[]) => {
+          items.forEach((item) => {
+            if (item.id !== locationData.id && !this.isDescendant(locationData.id!, item)) {
+              allLocations.push(item);
+            }
+            if (item.children && item.children.length > 0) {
+              flatten(item.children);
+            }
+          });
+        };
+        flatten(this.locations);
+        this.parentLocations = allLocations;
 
-    this.dataLocation = {};
-    this.formFields.forEach((field) => {
-      this.dataLocation[field.fieldKey] =
-        (location as any)[field.fieldKey] || '';
-    });
+        this.dataLocation = {
+          code: locationData.code,
+          name: locationData.name,
+          parentId: locationData.parentId || locationData.parent_id || null,
+        };
     this.isModalVisible = true;
+      }
+    } catch (error) {
+      this.toastr.error('Không thể tải dữ liệu vị trí');
+    } finally {
+      this.loading = false;
+    }
   }
 
   private isDescendant(parentId: number, location: Location): boolean {
-    if (location.parentId === parentId) return true;
-    const parent = this.locations.find((l) => l.id === location.parentId);
-    if (!parent) return false;
-    return this.isDescendant(parentId, parent);
+    if (location.parentId === parentId || location.parent_id === parentId) {
+      return true;
+    }
+    // Check recursively in children
+    if (location.children && location.children.length > 0) {
+      return location.children.some((child) => this.isDescendant(parentId, child));
+    }
+    return false;
   }
 
-  saveLocation(): void {
+  async saveLocation(): Promise<void> {
     // Validation
     if (!this.dataLocation.name || !this.dataLocation.code) {
       return;
     }
 
     this.saving = true;
-    const data: any = { ...this.dataLocation };
+    try {
+      let result: { success: boolean; data?: Location };
 
-    // Remove null/undefined values
-    if (!data.type) {
-      delete data.type;
+      if (this.isEditMode) {
+        const data: { name: string; parentId?: number } = {
+          name: this.dataLocation.name,
+        };
+        if (this.dataLocation.parentId) {
+          data.parentId = this.dataLocation.parentId;
+        }
+        result = await this.locationService.updateLocation(this.selectedLocation?.id!, data);
+      } else {
+        const createData: { code: string; name: string; parentId?: number } = {
+        code: this.dataLocation.code,
+        name: this.dataLocation.name,
+      };
+      if (this.dataLocation.parentId) {
+          createData.parentId = this.dataLocation.parentId;
+      }
+        result = await this.locationService.createLocation(createData);
+      }
+
+      if (result.success) {
+        this.toastr.success('Thành công');
+      this.isModalVisible = false;
+      await this.loadLocations();
+      } else {
+        this.toastr.error('Thất bại');
+      }
+    } catch (error) {
+      this.toastr.error('Thất bại');
+    } finally {
+      this.saving = false;
     }
-
-    if (!data.parentId) {
-      delete data.parentId;
-    }
-
-    const request = this.isEditMode
-      ? this.http.put(`api/locations/${this.selectedLocation?.id}`, data)
-      : this.http.post('api/locations', data);
-
-    request.subscribe({
-      next: () => {
-        this.saving = false;
-        this.isModalVisible = false;
-        this.loadLocations();
-      },
-      error: () => {
-        this.saving = false;
-      },
-    });
   }
 
-  viewLocation(location: Location): void {
-    // Mở modal xem chi tiết hoặc có thể mở edit modal ở chế độ readonly
-    this.openEditModal(location);
+  async viewLocation(location: Location): Promise<void> {
+    if (!location.id) {
+      return;
+    }
+
+    this.isViewMode = true;
+    this.isEditMode = false;
+    this.selectedLocation = location;
+    this.loading = true;
+
+    try {
+      const locationData = await this.locationService.getLocationById(location.id);
+
+      if (locationData) {
+        this.selectedLocation = locationData;
+
+        const allLocations: Location[] = [];
+        const flatten = (items: Location[]) => {
+          items.forEach((item) => {
+            if (item.id !== locationData.id && !this.isDescendant(locationData.id!, item)) {
+              allLocations.push(item);
+            }
+            if (item.children && item.children.length > 0) {
+              flatten(item.children);
+            }
+          });
+        };
+        flatten(this.locations);
+        this.parentLocations = allLocations;
+
+        this.dataLocation = {
+          code: locationData.code,
+          name: locationData.name,
+          parentId: locationData.parentId || locationData.parent_id || null,
+        };
+        this.isModalVisible = true;
+      }
+    } catch (error) {
+      this.toastr.error('Không thể tải dữ liệu vị trí');
+    } finally {
+      this.loading = false;
+    }
   }
 
-  // Confirm dialog
+  closeViewModal(): void {
+    this.isModalVisible = false;
+    this.isViewMode = false;
+  }
+
+  // Confirm delete modal
   isConfirmVisible = false;
   locationToDelete: Location | null = null;
+  deleting = false;
 
   confirmDelete(location: Location): void {
     this.locationToDelete = location;
     this.isConfirmVisible = true;
   }
 
-  onDeleteConfirmed(): void {
-    if (this.locationToDelete?.id) {
-      this.http.delete(`api/locations/${this.locationToDelete.id}`).subscribe({
-        next: () => {
-          this.loadLocations();
-          this.locationToDelete = null;
-        },
-      });
+  async onDeleteConfirmed(): Promise<void> {
+    if (!this.locationToDelete?.id) {
+      return;
+    }
+
+    this.deleting = true;
+      try {
+        const success = await this.locationService.deleteLocation(this.locationToDelete.id);
+        if (success) {
+        this.toastr.success('Xóa vị trí thành công');
+        this.isConfirmVisible = false;
+        this.locationToDelete = null;
+          await this.loadLocations();
+        }
+      } catch (error) {
+    } finally {
+      this.deleting = false;
     }
   }
 
@@ -386,9 +516,6 @@ export class LocationsComponent implements OnInit, OnDestroy {
     return `Bạn có chắc chắn muốn xóa vị trí "${this.locationToDelete.name}"?`;
   }
 
-  onTreeNodeClick(event: any): void {
-    // Handle tree node click
-  }
 
   onPaginationChange(event: { page: number; size: number }): void {
     this.pageIndex = event.page;

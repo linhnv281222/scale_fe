@@ -5,7 +5,7 @@ import { Config, ConfigCategory, ConfigDataType } from '../models';
 import { DynamicFormField } from '../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../shared/components/dynamic-table/dynamic-table.component';
 import { FilterField } from '../shared/components/filter-sidebar/filter-sidebar.component';
-import { HttpService } from './http.service';
+import { BaseApiService } from './base-api.service';
 
 @Injectable({
   providedIn: 'root',
@@ -13,14 +13,14 @@ import { HttpService } from './http.service';
 export class ConfigService {
   private configsCache: Config[] = [];
 
-  constructor(private http: HttpService) {}
+  constructor(private baseApi: BaseApiService) {}
 
   /**
    * Load all configs for a specific module
    */
   loadModuleConfigs(module: string): Observable<Config[]> {
-    return this.http
-      .get<Config[]>('api/configs', {
+    return this.baseApi
+      .get<{ data: Config[] }>('configs', {
         module,
         category: ConfigCategory.FIELD_METADATA,
       })

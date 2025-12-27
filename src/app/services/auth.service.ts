@@ -1,9 +1,16 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { HttpService } from './http.service';
 import { User } from '../models';
+import { BaseService } from './base.service';
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  userId: number;
+  username: string;
+  fullName: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -12,30 +19,86 @@ export class AuthService {
   private currentUser: User | null = null;
 
   constructor(
-    private http: HttpService,
+    private baseService: BaseService,
     private router: Router
   ) {
     this.loadUserFromStorage();
   }
 
-  login(username: string, password: string): Observable<any> {
-    return this.http.post('api/auth/login', { username, password }).pipe(
-      tap((response: any) => {
-        if (response.token) {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('user', JSON.stringify(response.user));
-          this.currentUser = response.user;
+  async login(username: string, password: string): Promise<boolean> {
+    try {
+      const res = await this.baseService.postData('auth/login', { username, password });
+      if (res && res.success === true && res.data) {
+        const loginData = res.data;
+        if (loginData.accessToken) {
+          localStorage.setItem('token', loginData.accessToken);
+          localStorage.setItem('refreshToken', loginData.refreshToken);
+          localStorage.setItem('tokenType', loginData.tokenType || 'Bearer');
+
+          const user: User = {
+            id: loginData.userId,
+            username: loginData.username,
+            fullName: loginData.fullName
+          };
+          localStorage.setItem('user', JSON.stringify(user));
+          this.currentUser = user;
+          return true;
         }
-      })
-    );
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
   }
 
-  logout(): void {
+  async refreshToken(): Promise<boolean> {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        this.clearAuthData();
+        this.router.navigate(['/login']);
+        return false;
+      }
+
+      const res = await this.baseService.postData('auth/refresh', { refreshToken });
+      if (res && res.success === true && res.data) {
+        const loginData = res.data;
+        if (loginData.accessToken) {
+          localStorage.setItem('token', loginData.accessToken);
+          if (loginData.refreshToken) {
+            localStorage.setItem('refreshToken', loginData.refreshToken);
+          }
+          return true;
+        }
+      }
+      this.clearAuthData();
+      this.router.navigate(['/login']);
+      return false;
+    } catch (error) {
+      this.clearAuthData();
+      this.router.navigate(['/login']);
+      return false;
+    }
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await this.baseService.postData('auth/logout', {});
+    } catch (error) {
+      // Nếu API logout fail, vẫn clear local data
+    } finally {
+      this.clearAuthData();
+      this.router.navigate(['/login']);
+    }
+  }
+
+  private clearAuthData(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('tokenType');
     localStorage.removeItem('user');
     localStorage.removeItem('userRoles');
     this.currentUser = null;
-    this.router.navigate(['/login']);
   }
 
   isAuthenticated(): boolean {
@@ -50,9 +113,37 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken');
+  }
+
   getUserRoles(): string[] {
     const roles = localStorage.getItem('userRoles');
     return roles ? JSON.parse(roles) : [];
+  }
+
+  async getMe(): Promise<User | null> {
+    try {
+      const res = await this.baseService.getData('auth/me');
+      if (res && res.success === true && res.data) {
+        const userData = res.data;
+        const user: User = {
+          id: userData.id,
+          username: userData.username,
+          fullName: userData.fullName,
+        };
+        localStorage.setItem('user', JSON.stringify(user));
+        if (userData.roles && Array.isArray(userData.roles)) {
+          const roleCodes = userData.roles.map((r: any) => r.code || r.name).filter(Boolean);
+          localStorage.setItem('userRoles', JSON.stringify(roleCodes));
+        }
+        this.currentUser = user;
+        return user;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
   }
 
   private loadUserFromStorage(): void {

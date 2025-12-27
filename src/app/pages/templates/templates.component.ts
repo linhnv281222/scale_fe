@@ -3,12 +3,12 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Template, TemplateType } from '../../models';
-import { HttpService } from '../../services/http.service';
 import { ConfigService } from '../../services/config.service';
 import { PageActionService } from '../../services/page-action.service';
-import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
+import { TemplateService } from '../../services/template.service';
 import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
+import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
   selector: 'app-templates',
@@ -55,7 +55,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private http: HttpService,
+    private templateService: TemplateService,
     private configService: ConfigService,
     private fb: FormBuilder,
     private pageActionService: PageActionService
@@ -69,7 +69,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadConfigs();
+    // this.loadConfigs();
     this.loadTemplates();
     this.pageActionService.addNew$
       .pipe(takeUntil(this.destroy$))
@@ -106,23 +106,20 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadTemplates(): void {
+  async loadTemplates(): Promise<void> {
     this.loading = true;
-    this.http
-      .get<Template[]>('api/templates', {
+    try {
+      const data = await this.templateService.getTemplates({
         page: 1,
         size: 1000,
-      })
-      .subscribe({
-        next: (data: any) => {
-          this.allTemplates = Array.isArray(data) ? data : data?.data || [];
-          this.applyFilters();
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
       });
+      this.allTemplates = data.data || [];
+      this.applyFilters();
+    } catch (error) {
+      this.allTemplates = [];
+    } finally {
+      this.loading = false;
+    }
   }
 
   applyFilters(): void {
@@ -180,7 +177,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     this.isModalVisible = true;
   }
 
-  saveTemplate(): void {
+  async saveTemplate(): Promise<void> {
     if (this.templateForm.invalid) {
       return;
     }
@@ -188,20 +185,27 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     this.saving = true;
     const data = this.templateForm.value;
 
-    const request = this.isEditMode
-      ? this.http.put(`api/templates/${this.selectedTemplate?.id}`, data)
-      : this.http.post('api/templates', data);
-
-    request.subscribe({
-      next: () => {
-        this.saving = false;
-        this.isModalVisible = false;
-        this.loadTemplates();
-      },
-      error: () => {
-        this.saving = false;
-      },
-    });
+    try {
+      if (this.isEditMode && this.selectedTemplate?.id) {
+        const formData = new FormData();
+        Object.keys(data).forEach((key) => {
+          formData.append(key, data[key]);
+        });
+        await this.templateService.updateTemplate(this.selectedTemplate.id, formData);
+      } else {
+        const formData = new FormData();
+        Object.keys(data).forEach((key) => {
+          formData.append(key, data[key]);
+        });
+        await this.templateService.createTemplate(formData);
+      }
+      this.isModalVisible = false;
+      await this.loadTemplates();
+    } catch (error) {
+      console.error('Error saving template:', error);
+    } finally {
+      this.saving = false;
+    }
   }
 
   getTemplateTypeLabel(type: TemplateType): string {
@@ -219,14 +223,15 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     this.isConfirmVisible = true;
   }
 
-  onDeleteConfirmed(): void {
+  async onDeleteConfirmed(): Promise<void> {
     if (this.templateToDelete?.id) {
-      this.http.delete(`api/templates/${this.templateToDelete.id}`).subscribe({
-        next: () => {
-          this.loadTemplates();
-          this.templateToDelete = null;
-        },
-      });
+      try {
+        await this.templateService.deleteTemplate(this.templateToDelete.id);
+        await this.loadTemplates();
+        this.templateToDelete = null;
+      } catch (error) {
+        console.error('Error deleting template:', error);
+      }
     }
   }
 

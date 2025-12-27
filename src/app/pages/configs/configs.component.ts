@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Config, ConfigCategory, ConfigDataType } from '../../models';
-import { HttpService } from '../../services/http.service';
+import { ConfigApiService } from '../../services/config-api.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
@@ -42,62 +42,57 @@ export class ConfigsComponent implements OnInit {
     },
   ];
 
-  constructor(private http: HttpService) {}
+  constructor(private configApiService: ConfigApiService) {}
 
   ngOnInit(): void {
     this.loadModules();
   }
 
-  loadModules(): void {
+  async loadModules(): Promise<void> {
     this.loading = true;
-    // Load all configs to group by module
-    this.http.get<Config[]>('api/configs', {}).subscribe({
-      next: (data: any) => {
-        const allConfigs = Array.isArray(data) ? data : data?.data || [];
+    try {
+      const data = await this.configApiService.getConfigs({});
+      const allConfigs = Array.isArray(data) ? data : data?.data || [];
 
-        // Group configs by module and create module list
-        const moduleMap = new Map<string, any>();
+      const moduleMap = new Map<string, any>();
 
-        // Add system configs
-        moduleMap.set('system', {
-          id: 'system',
-          name: 'Hệ thống',
-          code: 'system',
-          fieldCount: allConfigs.filter(
-            (c: Config) =>
-              c.module === 'system' &&
-              c.category === ConfigCategory.SYSTEM_CONFIG
-          ).length,
+      moduleMap.set('system', {
+        id: 'system',
+        name: 'Hệ thống',
+        code: 'system',
+        fieldCount: allConfigs.filter(
+          (c: Config) =>
+            c.module === 'system' && c.category === ConfigCategory.SYSTEM_CONFIG
+        ).length,
+      });
+
+      allConfigs
+        .filter(
+          (c: Config) =>
+            c.category === ConfigCategory.FIELD_METADATA && c.module
+        )
+        .forEach((config: Config) => {
+          if (!moduleMap.has(config.module!)) {
+            const moduleName = this.getModuleDisplayName(config.module!);
+            moduleMap.set(config.module!, {
+              id: config.module,
+              name: moduleName,
+              code: config.module,
+              fieldCount: 0,
+            });
+          }
+          const module = moduleMap.get(config.module!);
+          module.fieldCount++;
         });
 
-        // Group field metadata by module
-        allConfigs
-          .filter(
-            (c: Config) =>
-              c.category === ConfigCategory.FIELD_METADATA && c.module
-          )
-          .forEach((config: Config) => {
-            if (!moduleMap.has(config.module!)) {
-              const moduleName = this.getModuleDisplayName(config.module!);
-              moduleMap.set(config.module!, {
-                id: config.module,
-                name: moduleName,
-                code: config.module,
-                fieldCount: 0,
-              });
-            }
-            const module = moduleMap.get(config.module!);
-            module.fieldCount++;
-          });
-
-        this.modules = Array.from(moduleMap.values());
-        this.total = this.modules.length;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      },
-    });
+      this.modules = Array.from(moduleMap.values());
+      this.total = this.modules.length;
+    } catch (error) {
+      this.modules = [];
+      this.total = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   getModuleDisplayName(moduleCode: string): string {
@@ -132,57 +127,52 @@ export class ConfigsComponent implements OnInit {
     this.loadModuleFields();
   }
 
-  loadModuleFields(): void {
+  async loadModuleFields(): Promise<void> {
     this.fieldsLoading = true;
-    this.http
-      .get<Config[]>('api/configs', { module: this.selectedModule.code })
-      .subscribe({
-        next: (data: any) => {
-          const allConfigs = Array.isArray(data) ? data : data?.data || [];
-          // Filter only field metadata for this module, or system configs if module is system
-          if (this.selectedModule.code === 'system') {
-            this.moduleFields = allConfigs.filter(
-              (c: Config) =>
-                c.module === 'system' &&
-                c.category === ConfigCategory.SYSTEM_CONFIG
-            );
-          } else {
-            this.moduleFields = allConfigs.filter(
-              (c: Config) =>
-                c.module === this.selectedModule.code &&
-                c.category === ConfigCategory.FIELD_METADATA
-            );
-          }
-
-          // Sort: DATE and DATETIME first, then others
-          this.moduleFields.sort((a, b) => {
-            const aIsDate =
-              a.dataType === ConfigDataType.DATE ||
-              a.dataType === ConfigDataType.DATETIME;
-            const bIsDate =
-              b.dataType === ConfigDataType.DATE ||
-              b.dataType === ConfigDataType.DATETIME;
-
-            if (aIsDate && !bIsDate) return -1;
-            if (!aIsDate && bIsDate) return 1;
-            return 0;
-          });
-
-          // Initialize editing fields with current values
-          if (this.isEditMode) {
-            this.editingFields.clear();
-            this.moduleFields.forEach((field) => {
-              if (field.id) {
-                this.editingFields.set(field.id, { ...field });
-              }
-            });
-          }
-          this.fieldsLoading = false;
-        },
-        error: () => {
-          this.fieldsLoading = false;
-        },
+    try {
+      const data = await this.configApiService.getConfigs({
+        module: this.selectedModule.code,
       });
+      const allConfigs = Array.isArray(data) ? data : data?.data || [];
+      if (this.selectedModule.code === 'system') {
+        this.moduleFields = allConfigs.filter(
+          (c: Config) =>
+            c.module === 'system' && c.category === ConfigCategory.SYSTEM_CONFIG
+        );
+      } else {
+        this.moduleFields = allConfigs.filter(
+          (c: Config) =>
+            c.module === this.selectedModule.code &&
+            c.category === ConfigCategory.FIELD_METADATA
+        );
+      }
+
+      this.moduleFields.sort((a, b) => {
+        const aIsDate =
+          a.dataType === ConfigDataType.DATE ||
+          a.dataType === ConfigDataType.DATETIME;
+        const bIsDate =
+          b.dataType === ConfigDataType.DATE ||
+          b.dataType === ConfigDataType.DATETIME;
+
+        if (aIsDate && !bIsDate) return -1;
+        if (!aIsDate && bIsDate) return 1;
+        return 0;
+      });
+
+      if (this.isEditMode) {
+        this.editingFields.clear();
+        this.moduleFields.forEach((field) => {
+          if (field.id) {
+            this.editingFields.set(field.id, { ...field });
+          }
+        });
+      }
+    } catch (error) {
+      this.moduleFields = [];
+    } finally {
+      this.fieldsLoading = false;
+    }
   }
 
   // Add new field row
@@ -245,14 +235,11 @@ export class ConfigsComponent implements OnInit {
         displayName: field.displayName || '',
       };
 
-      // Check if it's a new field (tempId starts with 'new-') or existing field
       if (typeof id === 'string' && id.startsWith('new-')) {
-        // New field - create
-        createPromises.push(this.http.post('api/configs', data).toPromise());
+        createPromises.push(this.configApiService.createConfig(data));
       } else {
-        // Existing field - update
         updatePromises.push(
-          this.http.put(`api/configs/${id}`, data).toPromise()
+          this.configApiService.updateConfig(id as number, data)
         );
       }
     });
@@ -333,17 +320,17 @@ export class ConfigsComponent implements OnInit {
     this.isConfirmVisible = true;
   }
 
-  onDeleteFieldConfirmed(): void {
+  async onDeleteFieldConfirmed(): Promise<void> {
     if (this.fieldToDelete?.id) {
-      this.http.delete(`api/configs/${this.fieldToDelete.id}`).subscribe({
-        next: () => {
-          // Remove from editingFields if exists
-          this.editingFields.delete(this.fieldToDelete!.id!);
-          this.loadModuleFields();
-          this.loadModules(); // Refresh module list
-          this.fieldToDelete = null;
-        },
-      });
+      try {
+        await this.configApiService.deleteConfig(this.fieldToDelete.id);
+        this.editingFields.delete(this.fieldToDelete.id);
+        await this.loadModuleFields();
+        await this.loadModules();
+        this.fieldToDelete = null;
+      } catch (error) {
+        console.error('Error deleting field:', error);
+      }
     }
   }
 

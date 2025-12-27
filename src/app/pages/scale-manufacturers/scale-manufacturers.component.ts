@@ -1,15 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { ScaleManufacturer } from '../../models';
-import { HttpService } from '../../services/http.service';
 import { ConfigService } from '../../services/config.service';
-import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
+import { ScaleManufacturerService } from '../../services/scale-manufacturer.service';
 import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
+import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
   selector: 'app-scale-manufacturers',
   templateUrl: './scale-manufacturers.component.html',
-  styleUrls: ['./scale-manufacturers.component.css']
+  styleUrls: ['./scale-manufacturers.component.css'],
 })
 export class ScaleManufacturersComponent implements OnInit {
   manufacturers: ScaleManufacturer[] = [];
@@ -22,7 +22,7 @@ export class ScaleManufacturersComponent implements OnInit {
   saving = false;
   selectedManufacturer: ScaleManufacturer | null = null;
   filterData: any = {};
-  
+
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
   tableColumns: DynamicTableColumn[] = [];
@@ -43,16 +43,16 @@ export class ScaleManufacturersComponent implements OnInit {
       label: 'scales.manufacturerCode',
       type: 'text',
       placeholder: 'scales.enterManufacturerCode',
-    }
+    },
   ];
 
   constructor(
-    private http: HttpService,
+    private scaleManufacturerService: ScaleManufacturerService,
     private configService: ConfigService
   ) {}
 
   ngOnInit(): void {
-    this.loadConfigs();
+    // this.loadConfigs();
     this.loadManufacturers();
   }
 
@@ -79,24 +79,22 @@ export class ScaleManufacturersComponent implements OnInit {
     });
   }
 
-  loadManufacturers(): void {
+  async loadManufacturers(): Promise<void> {
     this.loading = true;
-    this.http
-      .get<ScaleManufacturer[]>('api/scale-manufacturers', {
+    try {
+      const data = await this.scaleManufacturerService.getScaleManufacturers({
         page: this.pageIndex,
         size: this.pageSize,
         ...this.filterData,
-      })
-      .subscribe({
-        next: (data: any) => {
-          this.manufacturers = Array.isArray(data) ? data : data?.data || [];
-          this.total = data?.total || this.manufacturers.length;
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
       });
+      this.manufacturers = data.data || [];
+      this.total = data.total || this.manufacturers.length;
+    } catch (error) {
+      this.manufacturers = [];
+      this.total = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   onSearch(filters: any): void {
@@ -135,7 +133,7 @@ export class ScaleManufacturersComponent implements OnInit {
     this.isModalVisible = true;
   }
 
-  saveManufacturer(): void {
+  async saveManufacturer(): Promise<void> {
     // Validation
     if (!this.dataManufacturer.name || !this.dataManufacturer.code) {
       return;
@@ -144,20 +142,22 @@ export class ScaleManufacturersComponent implements OnInit {
     this.saving = true;
     const data = { ...this.dataManufacturer };
 
-    const request = this.isEditMode
-      ? this.http.put(`api/scale-manufacturers/${this.selectedManufacturer?.id}`, data)
-      : this.http.post('api/scale-manufacturers', data);
-
-    request.subscribe({
-      next: () => {
-        this.saving = false;
-        this.isModalVisible = false;
-        this.loadManufacturers();
-      },
-      error: () => {
-        this.saving = false;
-      },
-    });
+    try {
+      if (this.isEditMode && this.selectedManufacturer?.id) {
+        await this.scaleManufacturerService.updateScaleManufacturer(
+          this.selectedManufacturer.id,
+          data
+        );
+      } else {
+        await this.scaleManufacturerService.createScaleManufacturer(data);
+      }
+      this.isModalVisible = false;
+      await this.loadManufacturers();
+    } catch (error) {
+      console.error('Error saving manufacturer:', error);
+    } finally {
+      this.saving = false;
+    }
   }
 
   // Confirm dialog
@@ -169,14 +169,17 @@ export class ScaleManufacturersComponent implements OnInit {
     this.isConfirmVisible = true;
   }
 
-  onDeleteConfirmed(): void {
+  async onDeleteConfirmed(): Promise<void> {
     if (this.manufacturerToDelete?.id) {
-      this.http.delete(`api/scale-manufacturers/${this.manufacturerToDelete.id}`).subscribe({
-        next: () => {
-          this.loadManufacturers();
-          this.manufacturerToDelete = null;
-        },
-      });
+      try {
+        await this.scaleManufacturerService.deleteScaleManufacturer(
+          this.manufacturerToDelete.id
+        );
+        await this.loadManufacturers();
+        this.manufacturerToDelete = null;
+      } catch (error) {
+        console.error('Error deleting manufacturer:', error);
+      }
     }
   }
 

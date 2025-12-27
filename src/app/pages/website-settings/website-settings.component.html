@@ -1,0 +1,322 @@
+<div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+  <main class="flex flex-col flex-1 overflow-hidden">
+    <div
+      class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+    >
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        {{ "websiteSettings.title" | translate }}
+      </h1>
+    </div>
+
+    <div class="flex-1 overflow-auto">
+      <div class="p-6 max-w-4xl mx-auto">
+        <div class="p-6 bg-white rounded-lg shadow-sm dark:bg-gray-800">
+          <div class="space-y-6">
+            <div>
+              <h3
+                class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {{ "websiteSettings.basicInfo" | translate }}
+              </h3>
+              <div class="space-y-4">
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.siteName" | translate
+                    }}<span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      [(ngModel)]="settings.siteName"
+                      [placeholder]="
+                        'websiteSettings.siteNamePlaceholder' | translate
+                      "
+                      class="w-full"
+                      required
+                    />
+                  </nz-input-group>
+                </div>
+
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.description" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <textarea
+                      nz-input
+                      [(ngModel)]="settings.description"
+                      [placeholder]="
+                        'websiteSettings.descriptionPlaceholder' | translate
+                      "
+                      rows="3"
+                      class="w-full"
+                    ></textarea>
+                  </nz-input-group>
+                </div>
+
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.copyright" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      [(ngModel)]="settings.copyright"
+                      [placeholder]="
+                        'websiteSettings.copyrightPlaceholder' | translate
+                      "
+                      class="w-full"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <h3
+                class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {{ "websiteSettings.logoAndImages" | translate }}
+              </h3>
+              <div class="space-y-6">
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.mainLogo" | translate }}
+                  </label>
+                  <div class="flex items-start gap-4">
+                    <div
+                      *ngIf="logoPreview"
+                      class="relative flex-shrink-0 w-32 h-32 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <img
+                        [src]="logoPreview"
+                        alt="Logo preview"
+                        class="w-full h-full object-contain"
+                      />
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        nzDanger
+                        (click)="removeLogo()"
+                        class="absolute top-1 right-1"
+                      >
+                        <span nz-icon nzType="close" nzTheme="outline"></span>
+                      </button>
+                    </div>
+                    <div class="flex-1">
+                      <nz-upload
+                        [nzBeforeUpload]="beforeUploadLogo"
+                        [nzShowUploadList]="false"
+                      >
+                        <button nz-button nzType="default">
+                          <span
+                            nz-icon
+                            nzType="upload"
+                            nzTheme="outline"
+                          ></span>
+                          {{ "websiteSettings.selectLogo" | translate }}
+                        </button>
+                      </nz-upload>
+                      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {{ "websiteSettings.logoRecommendation" | translate }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.favicon" | translate }}
+                  </label>
+                  <div class="flex items-start gap-4">
+                    <div
+                      *ngIf="faviconPreview"
+                      class="relative flex-shrink-0 w-16 h-16 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <img
+                        [src]="faviconPreview"
+                        alt="Favicon preview"
+                        class="w-full h-full object-contain"
+                      />
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        nzDanger
+                        (click)="removeFavicon()"
+                        class="absolute top-0 right-0"
+                      >
+                        <span nz-icon nzType="close" nzTheme="outline"></span>
+                      </button>
+                    </div>
+                    <div class="flex-1">
+                      <nz-upload
+                        [nzBeforeUpload]="beforeUploadFavicon"
+                        [nzShowUploadList]="false"
+                      >
+                        <button nz-button nzType="default">
+                          <span
+                            nz-icon
+                            nzType="upload"
+                            nzTheme="outline"
+                          ></span>
+                          {{ "websiteSettings.selectFavicon" | translate }}
+                        </button>
+                      </nz-upload>
+                      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {{
+                          "websiteSettings.faviconRecommendation" | translate
+                        }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.loginLogo" | translate }}
+                  </label>
+                  <div class="flex items-start gap-4">
+                    <div
+                      *ngIf="loginLogoPreview"
+                      class="relative flex-shrink-0 w-32 h-32 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <img
+                        [src]="loginLogoPreview"
+                        alt="Login logo preview"
+                        class="w-full h-full object-contain"
+                      />
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        nzDanger
+                        (click)="removeLoginLogo()"
+                        class="absolute top-1 right-1"
+                      >
+                        <span nz-icon nzType="close" nzTheme="outline"></span>
+                      </button>
+                    </div>
+                    <div class="flex-1">
+                      <nz-upload
+                        [nzBeforeUpload]="beforeUploadLoginLogo"
+                        [nzShowUploadList]="false"
+                      >
+                        <button nz-button nzType="default">
+                          <span
+                            nz-icon
+                            nzType="upload"
+                            nzTheme="outline"
+                          ></span>
+                          {{ "websiteSettings.selectLoginLogo" | translate }}
+                        </button>
+                      </nz-upload>
+                      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {{
+                          "websiteSettings.loginLogoRecommendation" | translate
+                        }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <h3
+                class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {{ "websiteSettings.colors" | translate }}
+              </h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.primaryColor" | translate }}
+                  </label>
+                  <div class="flex items-center gap-3">
+                    <input
+                      type="color"
+                      [(ngModel)]="settings.primaryColor"
+                      class="w-16 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                    />
+                    <nz-input-group>
+                      <input
+                        type="text"
+                        nz-input
+                        [(ngModel)]="settings.primaryColor"
+                        placeholder="#2563eb"
+                        class="flex-1"
+                      />
+                    </nz-input-group>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "websiteSettings.secondaryColor" | translate }}
+                  </label>
+                  <div class="flex items-center gap-3">
+                    <input
+                      type="color"
+                      [(ngModel)]="settings.secondaryColor"
+                      class="w-16 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                    />
+                    <nz-input-group>
+                      <input
+                        type="text"
+                        nz-input
+                        [(ngModel)]="settings.secondaryColor"
+                        placeholder="#64748b"
+                        class="flex-1"
+                      />
+                    </nz-input-group>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700"
+            >
+              <button
+                nz-button
+                nzType="default"
+                (click)="loadSettings()"
+                [disabled]="saving"
+              >
+                {{ "common.cancel" | translate }}
+              </button>
+              <button
+                nz-button
+                nzType="primary"
+                (click)="saveSettings()"
+                [nzLoading]="saving"
+              >
+                {{ "websiteSettings.saveConfiguration" | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

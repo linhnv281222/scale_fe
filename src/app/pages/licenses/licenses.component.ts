@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { License } from '../../models';
 import { ConfigService } from '../../services/config.service';
-import { HttpService } from '../../services/http.service';
+import { LicenseService } from '../../services/license.service';
 import { PageActionService } from '../../services/page-action.service';
 import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
@@ -55,7 +55,7 @@ export class LicensesComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private http: HttpService,
+    private licenseService: LicenseService,
     private configService: ConfigService,
     private fb: FormBuilder,
     private pageActionService: PageActionService
@@ -68,7 +68,7 @@ export class LicensesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadConfigs();
+    // this.loadConfigs();
     this.loadLicenses();
     this.pageActionService.addNew$
       .pipe(takeUntil(this.destroy$))
@@ -105,24 +105,22 @@ export class LicensesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadLicenses(): void {
+  async loadLicenses(): Promise<void> {
     this.loading = true;
-    this.http
-      .get<License[]>('api/licenses', {
+    try {
+      const data = await this.licenseService.getLicenses({
         page: this.pageIndex,
         size: this.pageSize,
         ...this.filterData,
-      })
-      .subscribe({
-        next: (data: any) => {
-          this.licenses = Array.isArray(data) ? data : data?.data || [];
-          this.total = data?.total || this.licenses.length;
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
       });
+      this.licenses = data.data || [];
+      this.total = data.total || this.licenses.length;
+    } catch (error) {
+      this.licenses = [];
+      this.total = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   openAddModal(): void {
@@ -147,7 +145,7 @@ export class LicensesComponent implements OnInit, OnDestroy {
     this.isModalVisible = true;
   }
 
-  saveLicense(): void {
+  async saveLicense(): Promise<void> {
     if (this.licenseForm.invalid) {
       return;
     }
@@ -155,20 +153,19 @@ export class LicensesComponent implements OnInit, OnDestroy {
     this.saving = true;
     const data = this.licenseForm.value;
 
-    const request = this.isEditMode
-      ? this.http.put(`api/licenses/${this.selectedLicense?.id}`, data)
-      : this.http.post('api/licenses', data);
-
-    request.subscribe({
-      next: () => {
-        this.saving = false;
-        this.isModalVisible = false;
-        this.loadLicenses();
-      },
-      error: () => {
-        this.saving = false;
-      },
-    });
+    try {
+      if (this.isEditMode && this.selectedLicense?.id) {
+        await this.licenseService.updateLicense(this.selectedLicense.id, data);
+      } else {
+        await this.licenseService.createLicense(data);
+      }
+      this.isModalVisible = false;
+      await this.loadLicenses();
+    } catch (error) {
+      console.error('Error saving license:', error);
+    } finally {
+      this.saving = false;
+    }
   }
 
   // Confirm dialog
@@ -180,14 +177,15 @@ export class LicensesComponent implements OnInit, OnDestroy {
     this.isConfirmVisible = true;
   }
 
-  onDeleteConfirmed(): void {
+  async onDeleteConfirmed(): Promise<void> {
     if (this.licenseToDelete?.id) {
-      this.http.delete(`api/licenses/${this.licenseToDelete.id}`).subscribe({
-        next: () => {
-          this.loadLicenses();
-          this.licenseToDelete = null;
-        },
-      });
+      try {
+        await this.licenseService.deleteLicense(this.licenseToDelete.id);
+        await this.loadLicenses();
+        this.licenseToDelete = null;
+      } catch (error) {
+        console.error('Error deleting license:', error);
+      }
     }
   }
 

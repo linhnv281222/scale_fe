@@ -1,0 +1,254 @@
+<div class="flex h-full bg-gray-50 dark:bg-gray-900">
+  <!-- Filter Sidebar -->
+  <aside
+    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  >
+    <div
+      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    >
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+        {{ "filter.title" | translate }}
+      </h3>
+    </div>
+    <div class="flex-1 min-h-0 p-3">
+      <app-filter-sidebar
+        [fields]="filterFields"
+        (search)="onSearch($event)"
+        (reset)="onReset()"
+      ></app-filter-sidebar>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto">
+    <div class="p-1 space-y-4">
+      <!-- Current Activity Data Table -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+      >
+        <!-- Table Header -->
+        <div
+          class="px-3 !py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ "activityMonitoring.currentData" | translate }}
+            </h2>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <nz-table
+          #basicTable
+          [nzData]="activityData"
+          [nzLoading]="loading"
+          [nzShowPagination]="false"
+          [nzNoResult]="noResultTemplate"
+          class="w-full"
+        >
+          <thead>
+            <tr class="bg-gray-50 dark:bg-gray-800">
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                style="width: 50px;"
+              >
+                STT
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scales.name" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "connectionStatus.status" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scaleData.weight" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "connectionStatus.lastDataTime" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "connectionStatus.timeWithoutData" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "connectionStatus.errorMessage" | translate }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let item of activityData; let i = index"
+              [ngClass]="getRowClass(item)"
+              (click)="onRowClick(item)"
+            >
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  (pageIndex - 1) * pageSize + i + 1
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+                  item.scale?.name || item.scaleId
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [ngClass]="getStatusClass(item.status)"
+                >
+                  {{ item.status }}
+                </span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  item.currentWeight !== undefined && item.currentWeight !== null
+                    ? item.currentWeight
+                    : "-"
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span [ngClass]="getLastDataTimeClass(item)" class="text-sm">
+                  {{ formatDate(item.lastDataTime) }}
+                </span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span [ngClass]="getLastDataTimeClass(item)" class="text-sm font-medium">
+                  {{ getTimeWithoutDataText(item) }}
+                </span>
+              </td>
+              <td class="px-3 !py-2">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  item.errorMessage || "-"
+                }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+
+        <ng-template #noResultTemplate>
+          <nz-empty></nz-empty>
+        </ng-template>
+
+        <!-- Pagination -->
+        <div
+          *ngIf="activityData.length > 0"
+          class="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
+          <app-pagination
+            [total]="total"
+            [currentPage]="pageIndex"
+            [currentSize]="pageSize"
+            (emitPage)="onPaginationChange($event)"
+            (goToChange)="onPaginationChange($event)"
+          ></app-pagination>
+        </div>
+      </div>
+
+      <!-- Historical Data Table (shown when row is clicked) -->
+      <div
+        *ngIf="showHistoricalData && selectedScale"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+      >
+        <!-- Table Header -->
+        <div
+          class="px-3 !py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              {{ "activityMonitoring.historicalData" | translate }} - {{ selectedScale.name }}
+            </h2>
+            <button
+              (click)="closeHistoricalData()"
+              class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <i nz-icon nzType="close" nzTheme="outline"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Historical Data Table -->
+        <nz-table
+          #historicalTable
+          [nzData]="historicalData"
+          [nzLoading]="historicalDataLoading"
+          [nzShowPagination]="false"
+          [nzNoResult]="noHistoricalDataTemplate"
+          class="w-full"
+        >
+          <thead>
+            <tr class="bg-gray-50 dark:bg-gray-800">
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                style="width: 50px"
+              >
+                STT
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scaleData.weight" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                {{ "scaleData.timestamp" | translate }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let data of historicalData; let i = index"
+              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  (historicalPageIndex - 1) * historicalPageSize + i + 1
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  data.weight
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  data.timestamp | date : "dd/MM/yyyy HH:mm:ss"
+                }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+
+        <ng-template #noHistoricalDataTemplate>
+          <nz-empty></nz-empty>
+        </ng-template>
+
+        <!-- Pagination -->
+        <div
+          *ngIf="historicalData.length > 0"
+          class="bg-white border-t border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <app-pagination
+            [total]="historicalTotal"
+            [currentPage]="historicalPageIndex"
+            [currentSize]="historicalPageSize"
+            (emitPage)="onHistoricalPaginationChange($event)"
+            (goToChange)="onHistoricalPaginationChange($event)"
+          ></app-pagination>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+

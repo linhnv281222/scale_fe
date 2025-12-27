@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 // import { MenuItem } from './shared/components/layout/sidebar/sidebar.component';
 
@@ -15,6 +15,26 @@ export class AppComponent implements OnInit {
       label: 'menu.dashboard',
       icon: 'dashboard',
       path: '/dashboard',
+    },
+    {
+      label: 'menu.activityMonitoring',
+      icon: 'monitor',
+      path: '/activity-monitoring',
+    },
+    {
+      label: 'menu.reports',
+      icon: 'file-text',
+      path: '/reports',
+      children: [
+        {
+          label: 'reports.scaleReport',
+          path: '/reports/scale-report',
+        },
+        {
+          label: 'reports.shiftReport',
+          path: '/reports/shift-report',
+        },
+      ],
     },
     {
       label: 'menu.manageInfo',
@@ -44,9 +64,9 @@ export class AppComponent implements OnInit {
       ],
     },
     {
-      label: 'menu.manageLoginInfo',
+      label: 'menu.manageUsers',
       icon: 'user',
-      path: '/manage-accounts',
+      path: '/manage-users',
       children: [
         {
           label: 'users.title',
@@ -56,47 +76,30 @@ export class AppComponent implements OnInit {
           label: 'permissions.title',
           path: '/manage-permissions',
         },
+        {
+          label: 'roles.title',
+          path: '/manage-roles',
+        },
+        {
+          label: 'licenses.title',
+          path: '/manage-licenses',
+        },
       ],
     },
     {
-      label: 'menu.manageConfigs',
+      label: 'menu.configs',
       icon: 'setting',
-      path: '/manage-configs',
-    },
-    {
-      label: 'menu.dataCollection',
-      icon: 'cloud-download',
-      path: '/data-collection',
-    },
-    {
-      label: 'menu.reports',
-      icon: 'file-text',
-      path: '/reports',
+      path: '/configs',
       children: [
         {
-          label: 'reports.scaleReport',
-          path: '/reports/scale-report',
+          label: 'configs.title',
+          path: '/manage-configs',
         },
         {
-          label: 'reports.shiftReport',
-          path: '/reports/shift-report',
+          label: 'templates.title',
+          path: '/manage-templates',
         },
       ],
-    },
-    {
-      label: 'menu.manageTemplates',
-      icon: 'file-done',
-      path: '/manage-templates',
-    },
-    {
-      label: 'menu.manageLicenses',
-      icon: 'key',
-      path: '/manage-licenses',
-    },
-    {
-      label: 'menu.connectionStatus',
-      icon: 'wifi',
-      path: '/connection-status',
     },
   ];
 
@@ -105,7 +108,7 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     // Check if current route is login page
     this.checkLoginPage();
-    
+
     // Listen to route changes
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))

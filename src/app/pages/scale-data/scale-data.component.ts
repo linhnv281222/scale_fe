@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { ScaleData, Scale } from '../../models';
-import { HttpService } from '../../services/http.service';
+import { Scale, ScaleData } from '../../models';
 import { PageActionService } from '../../services/page-action.service';
+import { ScaleDataService } from '../../services/scale-data.service';
+import { ScaleService } from '../../services/scale.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
@@ -13,11 +14,11 @@ import { FilterField } from '../../shared/components/filter-sidebar/filter-sideb
 })
 export class ScaleDataComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  
+
   // Current data (latest data for each scale)
   currentData: ScaleData[] = [];
   currentDataLoading = false;
-  
+
   // Historical data (with pagination and filters)
   historicalData: ScaleData[] = [];
   historicalDataLoading = false;
@@ -25,10 +26,10 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
   pageSize = 20;
   total = 0;
   filterData: any = {};
-  
+
   // Scales list for filter
   scales: Scale[] = [];
-  
+
   filterFields: FilterField[] = [
     {
       key: 'scaleId',
@@ -46,7 +47,8 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private http: HttpService,
+    private scaleService: ScaleService,
+    private scaleDataService: ScaleDataService,
     private pageActionService: PageActionService
   ) {}
 
@@ -54,7 +56,7 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
     this.loadScales();
     this.loadCurrentData();
     this.loadHistoricalData();
-    
+
     // Auto-refresh current data every 30 seconds
     interval(30000)
       .pipe(takeUntil(this.destroy$))
@@ -68,61 +70,63 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadScales(): void {
-    this.http.get<Scale[]>('api/scales', {}).subscribe({
-      next: (data: any) => {
-        const allScales = Array.isArray(data) ? data : (data?.data || []);
-        this.scales = allScales;
-        // Update filter options
-        const scaleField = this.filterFields.find(f => f.key === 'scaleId');
-        if (scaleField) {
-          scaleField.options = allScales.map((scale: Scale) => ({
-            label: scale.name,
-            value: scale.id,
-          }));
-        }
-      },
-    });
+  async loadScales(): Promise<void> {
+    try {
+      const data = await this.scaleService.getScales({});
+      const allScales = Array.isArray(data) ? data : data?.data || [];
+      this.scales = allScales;
+      const scaleField = this.filterFields.find((f) => f.key === 'scaleId');
+      if (scaleField) {
+        scaleField.options = allScales.map((scale: Scale) => ({
+          label: scale.name,
+          value: scale.id,
+        }));
+      }
+    } catch (error) {
+      this.scales = [];
+    }
   }
 
-  loadCurrentData(): void {
+  async loadCurrentData(): Promise<void> {
     this.currentDataLoading = true;
-    this.http.get<ScaleData[]>('api/scale-data/current', {}).subscribe({
-      next: (data: any) => {
-        this.currentData = Array.isArray(data) ? data : (data?.data || []);
-        this.currentDataLoading = false;
-      },
-      error: () => {
-        this.currentDataLoading = false;
-      },
-    });
+    try {
+      const data = await this.scaleDataService.getCurrentScaleData({});
+      this.currentData = Array.isArray(data) ? data : data?.data || [];
+    } catch (error) {
+      this.currentData = [];
+    } finally {
+      this.currentDataLoading = false;
+    }
   }
 
-  loadHistoricalData(): void {
+  async loadHistoricalData(): Promise<void> {
     this.historicalDataLoading = true;
     const params: any = {
       page: this.pageIndex,
       size: this.pageSize,
       ...this.filterData,
     };
-    
-    // Handle date range
-    if (this.filterData.dateRange && Array.isArray(this.filterData.dateRange) && this.filterData.dateRange.length === 2) {
+
+    if (
+      this.filterData.dateRange &&
+      Array.isArray(this.filterData.dateRange) &&
+      this.filterData.dateRange.length === 2
+    ) {
       params.dateFrom = this.filterData.dateRange[0];
       params.dateTo = this.filterData.dateRange[1];
       delete params.dateRange;
     }
-    
-    this.http.get<ScaleData[]>('api/scale-data', params).subscribe({
-      next: (data: any) => {
-        this.historicalData = Array.isArray(data) ? data : (data?.data || []);
-        this.total = data?.total || this.historicalData.length;
-        this.historicalDataLoading = false;
-      },
-      error: () => {
-        this.historicalDataLoading = false;
-      },
-    });
+
+    try {
+      const data = await this.scaleDataService.getScaleData(params);
+      this.historicalData = Array.isArray(data) ? data : data?.data || [];
+      this.total = data?.total || this.historicalData.length;
+    } catch (error) {
+      this.historicalData = [];
+      this.total = 0;
+    } finally {
+      this.historicalDataLoading = false;
+    }
   }
 
   onSearch(filters: any): void {

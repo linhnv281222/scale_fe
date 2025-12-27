@@ -1,15 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { Shift } from '../../models';
-import { HttpService } from '../../services/http.service';
 import { ConfigService } from '../../services/config.service';
-import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
+import { ShiftService } from '../../services/shift.service';
 import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
+import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
   selector: 'app-shifts',
   templateUrl: './shifts.component.html',
-  styleUrls: ['./shifts.component.css']
+  styleUrls: ['./shifts.component.css'],
 })
 export class ShiftsComponent implements OnInit {
   shifts: Shift[] = [];
@@ -22,7 +22,7 @@ export class ShiftsComponent implements OnInit {
   saving = false;
   selectedShift: Shift | null = null;
   filterData: any = {};
-  
+
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
   tableColumns: DynamicTableColumn[] = [];
@@ -51,12 +51,12 @@ export class ShiftsComponent implements OnInit {
   ];
 
   constructor(
-    private http: HttpService,
+    private shiftService: ShiftService,
     private configService: ConfigService
   ) {}
 
   ngOnInit(): void {
-    this.loadConfigs();
+    // this.loadConfigs();
     this.loadShifts();
   }
 
@@ -83,24 +83,22 @@ export class ShiftsComponent implements OnInit {
     });
   }
 
-  loadShifts(): void {
+  async loadShifts(): Promise<void> {
     this.loading = true;
-    this.http
-      .get<Shift[]>('api/shifts', {
+    try {
+      const data = await this.shiftService.getShifts({
         page: this.pageIndex,
         size: this.pageSize,
         ...this.filterData,
-      })
-      .subscribe({
-        next: (data: any) => {
-          this.shifts = Array.isArray(data) ? data : data?.data || [];
-          this.total = data?.total || this.shifts.length;
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
       });
+      this.shifts = Array.isArray(data) ? data : data?.data || [];
+      this.total = data?.total || this.shifts.length;
+    } catch (error) {
+      this.shifts = [];
+      this.total = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   onSearch(filters: any): void {
@@ -140,29 +138,31 @@ export class ShiftsComponent implements OnInit {
     this.isModalVisible = true;
   }
 
-  saveShift(): void {
-    // Validation
-    if (!this.dataShift.name || !this.dataShift.startTime || !this.dataShift.endTime) {
+  async saveShift(): Promise<void> {
+    if (
+      !this.dataShift.name ||
+      !this.dataShift.startTime ||
+      !this.dataShift.endTime
+    ) {
       return;
     }
 
     this.saving = true;
     const data = { ...this.dataShift };
 
-    const request = this.isEditMode
-      ? this.http.put(`api/shifts/${this.selectedShift?.id}`, data)
-      : this.http.post('api/shifts', data);
-
-    request.subscribe({
-      next: () => {
-        this.saving = false;
-        this.isModalVisible = false;
-        this.loadShifts();
-      },
-      error: () => {
-        this.saving = false;
-      },
-    });
+    try {
+      if (this.isEditMode) {
+        await this.shiftService.updateShift(this.selectedShift?.id!, data);
+      } else {
+        await this.shiftService.createShift(data);
+      }
+      this.isModalVisible = false;
+      await this.loadShifts();
+    } catch (error) {
+      console.error('Error saving shift:', error);
+    } finally {
+      this.saving = false;
+    }
   }
 
   // Confirm dialog
@@ -174,14 +174,15 @@ export class ShiftsComponent implements OnInit {
     this.isConfirmVisible = true;
   }
 
-  onDeleteConfirmed(): void {
+  async onDeleteConfirmed(): Promise<void> {
     if (this.shiftToDelete?.id) {
-      this.http.delete(`api/shifts/${this.shiftToDelete.id}`).subscribe({
-        next: () => {
-          this.loadShifts();
-          this.shiftToDelete = null;
-        },
-      });
+      try {
+        await this.shiftService.deleteShift(this.shiftToDelete.id);
+        await this.loadShifts();
+        this.shiftToDelete = null;
+      } catch (error) {
+        console.error('Error deleting shift:', error);
+      }
     }
   }
 

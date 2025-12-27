@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { Protocol, ProtocolType } from '../../models';
-import { HttpService } from '../../services/http.service';
 import { ConfigService } from '../../services/config.service';
-import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
+import { ProtocolService } from '../../services/protocol.service';
 import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
-import { TranslateService } from '@ngx-translate/core';
+import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
   selector: 'app-protocols',
@@ -23,7 +23,7 @@ export class ProtocolsComponent implements OnInit {
   saving = false;
   selectedProtocol: Protocol | null = null;
   filterData: any = {};
-  
+
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
   tableColumns: DynamicTableColumn[] = [];
@@ -67,13 +67,13 @@ export class ProtocolsComponent implements OnInit {
   ];
 
   constructor(
-    private http: HttpService,
+    private protocolService: ProtocolService,
     private configService: ConfigService,
     private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
-    this.loadConfigs();
+    // this.loadConfigs();
     this.loadProtocols();
   }
 
@@ -100,24 +100,22 @@ export class ProtocolsComponent implements OnInit {
     });
   }
 
-  loadProtocols(): void {
+  async loadProtocols(): Promise<void> {
     this.loading = true;
-    this.http
-      .get<Protocol[]>('api/protocols', {
+    try {
+      const data = await this.protocolService.getProtocols({
         page: this.pageIndex,
         size: this.pageSize,
         ...this.filterData,
-      })
-      .subscribe({
-        next: (data: any) => {
-          this.protocols = Array.isArray(data) ? data : data?.data || [];
-          this.total = data?.total || this.protocols.length;
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
       });
+      this.protocols = Array.isArray(data) ? data : data?.data || [];
+      this.total = data?.total || this.protocols.length;
+    } catch (error) {
+      this.protocols = [];
+      this.total = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   onSearch(filters: any): void {
@@ -157,8 +155,7 @@ export class ProtocolsComponent implements OnInit {
   }
 
 
-  saveProtocol(): void {
-    // Validation
+  async saveProtocol(): Promise<void> {
     if (!this.dataProtocol.name || !this.dataProtocol.code || !this.dataProtocol.type) {
       return;
     }
@@ -166,20 +163,19 @@ export class ProtocolsComponent implements OnInit {
     this.saving = true;
     const data = { ...this.dataProtocol };
 
-    const request = this.isEditMode
-      ? this.http.put(`api/protocols/${this.selectedProtocol?.id}`, data)
-      : this.http.post('api/protocols', data);
-
-    request.subscribe({
-      next: () => {
-        this.saving = false;
-        this.isModalVisible = false;
-        this.loadProtocols();
-      },
-      error: () => {
-        this.saving = false;
-      },
-    });
+    try {
+      if (this.isEditMode) {
+        await this.protocolService.updateProtocol(this.selectedProtocol?.id!, data);
+      } else {
+        await this.protocolService.createProtocol(data);
+      }
+      this.isModalVisible = false;
+      await this.loadProtocols();
+    } catch (error) {
+      console.error('Error saving protocol:', error);
+    } finally {
+      this.saving = false;
+    }
   }
 
   // Confirm dialog
@@ -191,14 +187,15 @@ export class ProtocolsComponent implements OnInit {
     this.isConfirmVisible = true;
   }
 
-  onDeleteConfirmed(): void {
+  async onDeleteConfirmed(): Promise<void> {
     if (this.protocolToDelete?.id) {
-      this.http.delete(`api/protocols/${this.protocolToDelete.id}`).subscribe({
-        next: () => {
-          this.loadProtocols();
-          this.protocolToDelete = null;
-        },
-      });
+      try {
+        await this.protocolService.deleteProtocol(this.protocolToDelete.id);
+        await this.loadProtocols();
+        this.protocolToDelete = null;
+      } catch (error) {
+        console.error('Error deleting protocol:', error);
+      }
     }
   }
 

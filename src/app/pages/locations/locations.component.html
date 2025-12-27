@@ -22,10 +22,21 @@
   <!-- Main Content -->
   <main class="flex-1 overflow-y-auto">
     <div class="p-1">
-      <!-- Page Title -->
-      <h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-gray-200">
-        {{ "locations.title" | translate }}
-      </h2>
+      <!-- Page Title and Add Button -->
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
+          {{ "locations.title" | translate }}
+        </h2>
+        <button
+          nz-button
+          nzType="primary"
+          (click)="openAddModal()"
+          class="flex items-center gap-2"
+        >
+          <span nz-icon nzType="plus" nzTheme="outline"></span>
+          <span>{{ "common.addNew" | translate }}</span>
+        </button>
+      </div>
 
       <!-- Table Container -->
       <div
@@ -280,6 +291,22 @@
                       class="text-base"
                     ></span>
                   </button>
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                    (click)="confirmDelete(location)"
+                    [nzTooltipTitle]="'common.delete' | translate"
+                    nz-tooltip
+                  >
+                    <span
+                      nz-icon
+                      nzType="delete"
+                      nzTheme="outline"
+                      class="text-base"
+                    ></span>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -308,140 +335,82 @@
   </main>
 </div>
 
-<!-- Add/Edit Modal -->
+<!-- Add/Edit/View Modal -->
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isEditMode ? 'locations.edit' : 'locations.addNew') | translate"
-  (nzOnCancel)="isModalVisible = false"
-  (nzOnOk)="saveLocation()"
+  [nzTitle]="(isViewMode ? 'common.view' : (isEditMode ? 'common.edit' : 'common.addNew')) | translate"
+  (nzOnCancel)="closeViewModal()"
+  (nzOnOk)="isViewMode ? closeViewModal() : saveLocation()"
   [nzOkLoading]="saving"
-  [nzWidth]="'60%'"
+  [nzOkText]="isViewMode ? ('common.close' | translate) : ('common.save' | translate)"
+  [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
 >
   <div *nzModalContent>
-    <!-- Dynamic Form -->
-    <app-dynamic-form
-      *ngIf="formFields.length > 0"
-      [fields]="formFields"
-      [(model)]="dataLocation"
-      (modelChange)="dataLocation = $event"
-    ></app-dynamic-form>
-
-    <!-- Fallback to static form if configs not loaded -->
-    <div *ngIf="formFields.length === 0">
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "locations.name" | translate
-          }}<span class="ml-1 text-red-500">*</span>
-        </label>
-        <nz-input-group>
-          <input
-            type="text"
-            nz-input
-            [(ngModel)]="dataLocation.name"
-            [placeholder]="'locations.enterName' | translate"
-            class="w-full"
-            required
-          />
-        </nz-input-group>
-      </div>
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "locations.code" | translate
-          }}<span class="ml-1 text-red-500">*</span>
-        </label>
-        <nz-input-group>
-          <input
-            type="text"
-            nz-input
-            [(ngModel)]="dataLocation.code"
-            [placeholder]="'locations.enterCode' | translate"
-            class="w-full"
-            required
-          />
-        </nz-input-group>
-      </div>
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "locations.type" | translate }}
-        </label>
-        <nz-select
-          [(ngModel)]="dataLocation.type"
+    <div class="mb-4">
+      <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        {{ "locations.code" | translate }}<span class="ml-1 text-red-500">*</span>
+      </label>
+      <nz-input-group>
+        <input
+          type="text"
+          nz-input
+          [(ngModel)]="dataLocation.code"
+          [placeholder]="'locations.enterCode' | translate"
           class="w-full"
-          [nzDropdownMatchSelectWidth]="false"
-          [nzPlacement]="'bottomLeft'"
-          nzAllowClear
-        >
-          <nz-option nzValue="Nhà máy" nzLabel="Nhà máy"></nz-option>
-          <nz-option nzValue="Khu vực" nzLabel="Khu vực"></nz-option>
-          <nz-option nzValue="Dây chuyền" nzLabel="Dây chuyền"></nz-option>
-          <nz-option nzValue="Trạm cân" nzLabel="Trạm cân"></nz-option>
-        </nz-select>
-      </div>
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "common.status" | translate }}
-        </label>
-        <nz-select
-          [(ngModel)]="dataLocation.status"
+          [disabled]="isEditMode || isViewMode"
+          required
+        />
+      </nz-input-group>
+    </div>
+    <div class="mb-4">
+      <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        {{ "locations.name" | translate }}<span class="ml-1 text-red-500">*</span>
+      </label>
+      <nz-input-group>
+        <input
+          type="text"
+          nz-input
+          [(ngModel)]="dataLocation.name"
+          [placeholder]="'locations.enterName' | translate"
           class="w-full"
-          [nzDropdownMatchSelectWidth]="false"
-          [nzPlacement]="'bottomLeft'"
-          nzAllowClear
-        >
-          <nz-option
-            nzValue="active"
-            [nzLabel]="'common.active' | translate"
-          ></nz-option>
-          <nz-option
-            nzValue="paused"
-            [nzLabel]="'common.paused' | translate"
-          ></nz-option>
-          <nz-option
-            nzValue="inactive"
-            [nzLabel]="'common.inactive' | translate"
-          ></nz-option>
-        </nz-select>
-      </div>
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "locations.parent" | translate }}
-        </label>
-        <nz-select
-          [(ngModel)]="dataLocation.parentId"
-          [nzPlaceHolder]="'locations.selectParent' | translate"
-          [nzDropdownMatchSelectWidth]="false"
-          [nzPlacement]="'bottomLeft'"
-          nzAllowClear
-          class="w-full"
-        >
-          <nz-option
-            *ngFor="let loc of parentLocations"
-            [nzValue]="loc.id"
-            [nzLabel]="loc.name"
-          ></nz-option>
-        </nz-select>
-      </div>
+          [disabled]="isViewMode"
+          required
+        />
+      </nz-input-group>
+    </div>
+    <div class="mb-4">
+      <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        {{ "locations.parent" | translate }}
+      </label>
+      <nz-select
+        [(ngModel)]="dataLocation.parentId"
+        [nzPlaceHolder]="'locations.selectParent' | translate"
+        [nzDropdownMatchSelectWidth]="false"
+        [nzPlacement]="'bottomLeft'"
+        nzAllowClear
+        nzShowSearch
+        [nzDisabled]="isViewMode"
+        class="w-full"
+      >
+        <nz-option
+          *ngFor="let loc of parentLocations"
+          [nzValue]="loc.id"
+          [nzLabel]="loc.name"
+        ></nz-option>
+      </nz-select>
     </div>
   </div>
 </nz-modal>
 
-<!-- Confirm Delete Dialog -->
-<app-confirm-dialog
+<!-- Confirm Delete Modal -->
+<app-modal
   [(visible)]="isConfirmVisible"
-  [title]="'common.confirmDelete'"
-  [message]="deleteMessage"
-  [warningMessage]="'common.deleteWarning'"
-  [okText]="'common.delete'"
-  [cancelText]="'common.cancel'"
-  (confirmed)="onDeleteConfirmed()"
-></app-confirm-dialog>
+  [title]="'common.confirmDelete' | translate"
+  [okText]="'common.delete' | translate"
+  [cancelText]="'common.cancel' | translate"
+  [loading]="deleting"
+  (ok)="onDeleteConfirmed()"
+  (cancel)="isConfirmVisible = false"
+>
+  <p>{{ deleteMessage }}</p>
+</app-modal>

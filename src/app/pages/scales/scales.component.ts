@@ -1,18 +1,20 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
+import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
-  Config,
-  License,
-  Protocol,
-  ProtocolType,
-  Scale,
-  ScaleConnectionConfig,
-  ScaleType,
+    Protocol,
+    ProtocolType,
+    Scale,
+    ScaleConnectionConfig,
+    ScaleType,
 } from '../../models';
+import { ConfigApiService } from '../../services/config-api.service';
 import { ConfigService } from '../../services/config.service';
-import { HttpService } from '../../services/http.service';
 import { PageActionService } from '../../services/page-action.service';
+import { ProtocolService } from '../../services/protocol.service';
+import { ScaleService } from '../../services/scale.service';
 import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
 import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
@@ -35,6 +37,56 @@ export class ScalesComponent implements OnInit, OnDestroy {
   selectedScale: Scale | null = null;
   filterData: any = {};
 
+  isConfigModalVisible = false;
+  savingConfig = false;
+  scaleConfig: any = {
+    protocol: 'MODBUS_TCP',
+    poll_interval: 1000,
+    conn_params: { ip: '', port: 502 },
+    data_1: {
+      name: '',
+      start_registers: 0,
+      num_registers: 1,
+      is_used: false,
+      data_type: 'Integer',
+    },
+    data_2: {
+      name: '',
+      start_registers: 0,
+      num_registers: 1,
+      is_used: false,
+      data_type: 'Integer',
+    },
+    data_3: {
+      name: '',
+      start_registers: 0,
+      num_registers: 1,
+      is_used: false,
+      data_type: 'Integer',
+    },
+    data_4: {
+      name: '',
+      start_registers: 0,
+      num_registers: 1,
+      is_used: false,
+      data_type: 'Integer',
+    },
+    data_5: {
+      name: '',
+      start_registers: 0,
+      num_registers: 1,
+      is_used: false,
+      data_type: 'Integer',
+    },
+  };
+  expandedChannels: { [key: number]: boolean } = {
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+    5: false,
+  };
+
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
   tableColumns: DynamicTableColumn[] = [];
@@ -42,8 +94,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
 
   // Data for dropdowns
   protocols: Protocol[] = [];
-  licenses: License[] = [];
-  defaultReadCycle: number = 60; // Default 60 seconds
+  defaultReadCycle: number = 60;
 
   // Form data object
   dataScale: any = {};
@@ -96,16 +147,19 @@ export class ScalesComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private http: HttpService,
+    private scaleService: ScaleService,
+    private protocolService: ProtocolService,
+    private configApiService: ConfigApiService,
     private configService: ConfigService,
-    private pageActionService: PageActionService
+    private pageActionService: PageActionService,
+    private translate: TranslateService,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
-    this.loadConfigs();
+    // this.loadConfigs();
     this.loadProtocols();
     this.loadDefaultReadCycle();
-    this.loadLicenses();
     this.loadScales();
 
     // Subscribe to add new action
@@ -154,61 +208,50 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadProtocols(): void {
-    this.http.get<Protocol[]>('api/protocols', { status: 'active' }).subscribe({
-      next: (data: any) => {
-        this.protocols = Array.isArray(data) ? data : data?.data || [];
-      },
-    });
+  async loadProtocols(): Promise<void> {
+    try {
+      const data = await this.protocolService.getProtocols({
+        status: 'active',
+      });
+      this.protocols = Array.isArray(data) ? data : data?.data || [];
+    } catch (error) {
+      this.protocols = [];
+    }
   }
 
-  loadDefaultReadCycle(): void {
-    this.http.get<Config>('api/configs/defaultReadCycle').subscribe({
-      next: (data: any) => {
-        if (data?.value) {
-          this.defaultReadCycle = parseInt(data.value, 10) || 60;
-          // Update readCycle if not in edit mode
-          if (!this.isEditMode) {
-            this.dataScale.readCycle = this.defaultReadCycle;
-          }
-        }
-      },
-      error: () => {
-        // Use default if API fails
-        this.defaultReadCycle = 60;
+  async loadDefaultReadCycle(): Promise<void> {
+    try {
+      const data = await this.configApiService.getDefaultReadCycle();
+      if (data?.value) {
+        this.defaultReadCycle = parseInt(data.value, 10) || 60;
         if (!this.isEditMode) {
-          this.dataScale.readCycle = 60;
+          this.dataScale.readCycle = this.defaultReadCycle;
         }
-      },
-    });
+      }
+    } catch (error) {
+      this.defaultReadCycle = 60;
+      if (!this.isEditMode) {
+        this.dataScale.readCycle = 60;
+      }
+    }
   }
 
-  loadLicenses(): void {
-    this.http.get<License[]>('api/licenses', { isActive: true }).subscribe({
-      next: (data: any) => {
-        this.licenses = Array.isArray(data) ? data : data?.data || [];
-      },
-    });
-  }
-
-  loadScales(): void {
+  async loadScales(): Promise<void> {
     this.loading = true;
-    this.http
-      .get<Scale[]>('api/scales', {
+    try {
+      const data = await this.scaleService.getScales({
         page: this.pageIndex,
         size: this.pageSize,
         ...this.filterData,
-      })
-      .subscribe({
-        next: (data: any) => {
-          this.scales = Array.isArray(data) ? data : data?.data || [];
-          this.total = data?.total || this.scales.length;
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        },
       });
+      this.scales = Array.isArray(data) ? data : data?.data || [];
+      this.total = data?.total || this.scales.length;
+    } catch (error) {
+      this.scales = [];
+      this.total = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   onSearch(filters: any): void {
@@ -223,79 +266,36 @@ export class ScalesComponent implements OnInit, OnDestroy {
   }
 
   openAddModal(): void {
-    // Check license before opening modal
-    this.checkLicenseBeforeAdd().then((canAdd) => {
-      if (!canAdd) {
-        return;
-      }
-
-      this.isEditMode = false;
-      this.selectedScale = null;
-      // Initialize dataScale with default values from form fields
-      this.dataScale = {};
-      if (this.formFields.length > 0) {
-        this.formFields.forEach((field: DynamicFormField) => {
-          this.dataScale[field.fieldKey] = '';
-        });
-      } else {
-        // Fallback defaults
-        this.dataScale = {
-          name: '',
-          code: '',
-          scaleType: ScaleType.INPUT,
-          protocolId: null,
-          readCycle: this.defaultReadCycle,
-          modbusTcpIp: '',
-          modbusTcpPort: null,
-          modbusRtuPort: '',
-          modbusRtuBaudRate: null,
-          modbusRtuDataBits: 8,
-          modbusRtuStopBits: 1,
-          modbusRtuParity: 'NONE',
-          sabusConfig: '',
-        };
-      }
-      // Set defaults for scales
-      this.dataScale.scaleType = ScaleType.INPUT;
-      this.dataScale.readCycle = this.defaultReadCycle;
-      this.isModalVisible = true;
-    });
-  }
-
-  checkLicenseBeforeAdd(): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (this.licenses.length === 0) {
-        // No license found, allow but warn
-        resolve(true);
-        return;
-      }
-
-      // Get active license
-      const activeLicense = this.licenses.find((l) => l.isActive);
-      if (!activeLicense) {
-        resolve(true);
-        return;
-      }
-
-      // Check current scales count
-      this.http.get<{ total: number }>('api/scales/count').subscribe({
-        next: (data: any) => {
-          const currentCount = data?.total || this.scales.length;
-          if (currentCount >= activeLicense.maxScales) {
-            alert(
-              `Đã đạt giới hạn số lượng cân cho phép (${activeLicense.maxScales}). Vui lòng nâng cấp license.`
-            );
-            resolve(false);
-          } else {
-            resolve(true);
-          }
-        },
-        error: () => {
-          // If check fails, allow but warn
-          resolve(true);
-        },
+    this.isEditMode = false;
+    this.selectedScale = null;
+    // Initialize dataScale with default values from form fields
+    this.dataScale = {};
+    if (this.formFields.length > 0) {
+      this.formFields.forEach((field: DynamicFormField) => {
+        this.dataScale[field.fieldKey] = '';
       });
-    });
+    } else {
+      // Fallback defaults
+      this.dataScale = {
+        name: '',
+        code: '',
+        scaleType: ScaleType.INPUT,
+        protocolId: null,
+        readCycle: this.defaultReadCycle,
+        modbusTcpIp: '',
+        modbusTcpPort: null,
+        modbusRtuPort: '',
+        modbusRtuBaudRate: null,
+        modbusRtuDataBits: 8,
+        modbusRtuStopBits: 1,
+        modbusRtuParity: 'NONE',
+        sabusConfig: '',
+      };
+    }
+    // Set defaults for scales
+    this.dataScale.scaleType = ScaleType.INPUT;
+    this.dataScale.readCycle = this.defaultReadCycle;
+    this.isModalVisible = true;
   }
 
   openEditModal(scale: Scale): void {
@@ -447,24 +447,13 @@ export class ScalesComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Check license for new scales
-    if (!this.isEditMode) {
-      this.checkLicenseBeforeAdd().then((canAdd) => {
-        if (!canAdd) {
-          return;
-        }
-        this.performSave();
-      });
-    } else {
-      this.performSave();
-    }
+    this.performSave();
   }
 
-  performSave(): void {
+  async performSave(): Promise<void> {
     this.saving = true;
     const protocolType = this.selectedProtocolType as ProtocolType;
 
-    // Build connection config
     const connectionConfig: ScaleConnectionConfig = {
       protocolType: protocolType,
     };
@@ -497,20 +486,19 @@ export class ScalesComponent implements OnInit, OnDestroy {
       connectionConfig: connectionConfig,
     };
 
-    const request = this.isEditMode
-      ? this.http.put(`api/scales/${this.selectedScale?.id}`, data)
-      : this.http.post('api/scales', data);
-
-    request.subscribe({
-      next: () => {
-        this.saving = false;
-        this.isModalVisible = false;
-        this.loadScales();
-      },
-      error: () => {
-        this.saving = false;
-      },
-    });
+    try {
+      if (this.isEditMode) {
+        await this.scaleService.updateScale(this.selectedScale?.id!, data);
+      } else {
+        await this.scaleService.createScale(data);
+      }
+      this.isModalVisible = false;
+      await this.loadScales();
+    } catch (error) {
+      console.error('Error saving scale:', error);
+    } finally {
+      this.saving = false;
+    }
   }
 
   // Confirm dialog
@@ -522,14 +510,15 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.isConfirmVisible = true;
   }
 
-  onDeleteConfirmed(): void {
+  async onDeleteConfirmed(): Promise<void> {
     if (this.scaleToDelete?.id) {
-      this.http.delete(`api/scales/${this.scaleToDelete.id}`).subscribe({
-        next: () => {
-          this.loadScales();
-          this.scaleToDelete = null;
-        },
-      });
+      try {
+        await this.scaleService.deleteScale(this.scaleToDelete.id);
+        await this.loadScales();
+        this.scaleToDelete = null;
+      } catch (error) {
+        console.error('Error deleting scale:', error);
+      }
     }
   }
 
@@ -543,5 +532,235 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.pageIndex = event.page;
     this.pageSize = event.size;
     this.loadScales();
+  }
+
+  async openConfigModal(scale: Scale): Promise<void> {
+    if (!scale.id) return;
+
+    this.selectedScale = scale;
+    this.isConfigModalVisible = true;
+
+    try {
+      const config = await this.scaleService.getScaleConfig(scale.id);
+      if (config && config.success === true && config.data) {
+        const configData = config.data;
+        this.scaleConfig = {
+          protocol: configData.protocol || 'MODBUS_TCP',
+          poll_interval: configData.poll_interval || 1000,
+          conn_params: configData.conn_params || { ip: '', port: 502 },
+          data_1: configData.data_1 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_2: configData.data_2 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_3: configData.data_3 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_4: configData.data_4 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_5: configData.data_5 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+        };
+
+        for (let i = 1; i <= 5; i++) {
+          const channel = this.scaleConfig[`data_${i}`];
+          if (channel && channel.is_used) {
+            this.expandedChannels[i] = true;
+          }
+        }
+      } else if (config) {
+        const configData = config;
+        this.scaleConfig = {
+          protocol: configData.protocol || 'MODBUS_TCP',
+          poll_interval: configData.poll_interval || 1000,
+          conn_params: configData.conn_params || { ip: '', port: 502 },
+          data_1: configData.data_1 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_2: configData.data_2 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_3: configData.data_3 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_4: configData.data_4 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_5: configData.data_5 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+        };
+
+        for (let i = 1; i <= 5; i++) {
+          const channel = this.scaleConfig[`data_${i}`];
+          if (channel && channel.is_used) {
+            this.expandedChannels[i] = true;
+          }
+        }
+      } else {
+        this.resetConfig();
+      }
+    } catch (error) {
+      this.resetConfig();
+    }
+  }
+
+  resetConfig(): void {
+    this.scaleConfig = {
+      protocol: 'MODBUS_TCP',
+      poll_interval: 1000,
+      conn_params: { ip: '', port: 502 },
+      data_1: {
+        name: '',
+        start_registers: 0,
+        num_registers: 1,
+        is_used: false,
+        data_type: 'Integer',
+      },
+      data_2: {
+        name: '',
+        start_registers: 0,
+        num_registers: 1,
+        is_used: false,
+        data_type: 'Integer',
+      },
+      data_3: {
+        name: '',
+        start_registers: 0,
+        num_registers: 1,
+        is_used: false,
+        data_type: 'Integer',
+      },
+      data_4: {
+        name: '',
+        start_registers: 0,
+        num_registers: 1,
+        is_used: false,
+        data_type: 'Integer',
+      },
+      data_5: {
+        name: '',
+        start_registers: 0,
+        num_registers: 1,
+        is_used: false,
+        data_type: 'Integer',
+      },
+    };
+    this.expandedChannels = {
+      1: false,
+      2: false,
+      3: false,
+      4: false,
+      5: false,
+    };
+  }
+
+  toggleChannel(channelNum: number): void {
+    this.expandedChannels[channelNum] = !this.expandedChannels[channelNum];
+  }
+
+  onChannelToggle(channelNum: number, checked: boolean): void {
+    if (checked) {
+      this.expandedChannels[channelNum] = true;
+    }
+  }
+
+  async saveConfig(): Promise<void> {
+    if (!this.selectedScale?.id) return;
+
+    if (!this.scaleConfig.protocol || !this.scaleConfig.conn_params) {
+      return;
+    }
+
+    if (this.scaleConfig.poll_interval < 100) {
+      return;
+    }
+
+    this.savingConfig = true;
+    try {
+      const configData: any = {
+        protocol: this.scaleConfig.protocol,
+        poll_interval: this.scaleConfig.poll_interval,
+        conn_params: this.scaleConfig.conn_params,
+      };
+
+      for (let i = 1; i <= 5; i++) {
+        const channel = this.scaleConfig[`data_${i}`];
+        if (channel && channel.is_used) {
+          configData[`data_${i}`] = {
+            name: channel.name,
+            start_registers: channel.start_registers,
+            num_registers: channel.num_registers,
+            is_used: true,
+          };
+        } else {
+          configData[`data_${i}`] = { is_used: false };
+        }
+      }
+
+      await this.scaleService.updateScaleConfig(
+        this.selectedScale.id,
+        configData
+      );
+      this.isConfigModalVisible = false;
+      this.loadScales();
+    } catch (error) {
+      console.error('Error saving config:', error);
+    } finally {
+      this.savingConfig = false;
+    }
+  }
+
+  getChannelLabel(channelNum: number): string {
+    const channel = this.scaleConfig[`data_${channelNum}`];
+    const channelLabel =
+      this.translate.instant('scales.channel') + ' ' + channelNum;
+    if (channel?.is_used && channel?.name) {
+      return `${channelLabel}: ${channel.name}`;
+    }
+    return `${channelLabel}: (Not configured)`;
   }
 }

@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
 import { Scale, ScaleData, ScaleType } from '../../models';
-import { HttpService } from '../../services/http.service';
+import { ReportService } from '../../services/report.service';
+import { ScaleService } from '../../services/scale.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 interface ScaleReportData extends ScaleData {
@@ -66,7 +67,10 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     },
   ];
 
-  constructor(private http: HttpService) {}
+  constructor(
+    private scaleService: ScaleService,
+    private reportService: ReportService
+  ) {}
 
   ngOnInit(): void {
     this.loadScales();
@@ -78,15 +82,14 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadScales(): void {
-    this.http.get<Scale[]>('api/scales', { page: 1, size: 1000 }).subscribe({
-      next: (data: any) => {
-        this.scales = Array.isArray(data) ? data : data?.data || [];
-        // Update filterFields options for multiselect
-        this.updateScaleOptions();
-      },
-      error: () => {},
-    });
+  async loadScales(): Promise<void> {
+    try {
+      const data = await this.scaleService.getScales({});
+      this.scales = Array.isArray(data) ? data : data?.data || [];
+      this.updateScaleOptions();
+    } catch (error) {
+      this.scales = [];
+    }
   }
 
   updateScaleOptions(): void {
@@ -112,7 +115,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadReportData(): void {
+  async loadReportData(): Promise<void> {
     this.loading = true;
     const params: any = {};
 
@@ -129,18 +132,23 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       params.scaleIds = this.filterData.scaleIds;
     }
 
-    this.http.get<ScaleData[]>('api/reports/scale', params).subscribe({
-      next: (data: any) => {
-        const rawData = Array.isArray(data) ? data : data?.data || [];
-        // Process data: add hour and highlight important milestones
-        this.reportData = this.processReportData(rawData);
-        this.prepareChartData();
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      },
-    });
+    try {
+      const data = await this.reportService.generateReport({
+        scaleIds: params.scaleIds || [],
+        dataField: 'weight',
+        method: 'AVG',
+        fromDate: params.startDate || '',
+        toDate: params.endDate || '',
+        interval: 'HOUR',
+      });
+      const rawData = Array.isArray(data) ? data : data?.data || [];
+      this.reportData = this.processReportData(rawData);
+      this.prepareChartData();
+    } catch (error) {
+      this.reportData = [];
+    } finally {
+      this.loading = false;
+    }
   }
 
   processReportData(data: ScaleData[]): ScaleReportData[] {

@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col relative overflow-hidden">
+<div class="relative flex flex-col min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
   <!-- Background Pattern -->
   <div class="absolute inset-0 opacity-20 dark:opacity-10">
     <div class="absolute inset-0" style="background-image: radial-gradient(circle, #3b82f6 1px, transparent 1px); background-size: 30px 30px;"></div>
@@ -7,14 +7,14 @@
   <!-- Header -->
   <header class="relative z-10 flex items-center justify-between px-6 py-4">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 bg-blue-600 dark:bg-blue-500 transform rotate-45 rounded-sm flex items-center justify-center">
+      <div class="flex items-center justify-center w-8 h-8 transform rotate-45 bg-blue-600 rounded-sm dark:bg-blue-500">
         <div class="w-4 h-4 bg-white rounded-sm"></div>
       </div>
       <h1 class="text-xl font-bold text-gray-900 dark:text-white">Factory Data Manager</h1>
     </div>
     <button
       (click)="toggleTheme()"
-      class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+      class="p-2 transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
       [attr.aria-label]="isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
     >
       <span
@@ -27,23 +27,23 @@
   </header>
 
   <!-- Login Card -->
-  <div class="flex-1 flex items-center justify-center px-4 py-8 relative z-10">
+  <div class="relative z-10 flex items-center justify-center flex-1 px-4 py-8">
     <div class="w-full max-w-md">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
+      <div class="p-8 bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 rounded-2xl dark:border-gray-700">
         <!-- Logo -->
         <div class="flex justify-center mb-6">
-          <div class="w-16 h-16 bg-blue-600 dark:bg-blue-500 transform rotate-45 rounded-lg flex items-center justify-center">
+          <div class="flex items-center justify-center w-16 h-16 transform rotate-45 bg-blue-600 rounded-lg dark:bg-blue-500">
             <div class="w-10 h-10 bg-white rounded-lg"></div>
           </div>
         </div>
 
         <!-- Title -->
-        <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2">
+        <h2 class="mb-2 text-3xl font-bold text-center text-gray-900 dark:text-white">
           {{ 'login.title' | translate }}
         </h2>
 
         <!-- Welcome Message -->
-        <p class="text-center text-gray-600 dark:text-gray-400 mb-8">
+        <p class="mb-8 text-center text-gray-600 dark:text-gray-400">
           {{ 'login.welcomeMessage' | translate }}
         </p>
 
@@ -51,7 +51,7 @@
         <div class="space-y-6">
           <!-- Username -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ 'login.username' | translate }}
             </label>
             <nz-input-group [nzPrefix]="prefixUser" class="w-full">
@@ -77,7 +77,7 @@
 
           <!-- Password -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ 'login.password' | translate }}
             </label>
             <nz-input-group [nzPrefix]="prefixLock" [nzSuffix]="suffixEye" class="w-full">
@@ -110,32 +110,6 @@
             </div>
           </div>
 
-          <!-- License Key -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {{ 'login.licenseKey' | translate }}
-            </label>
-            <nz-input-group [nzPrefix]="prefixKey" class="w-full">
-              <input
-                type="text"
-                nz-input
-                [(ngModel)]="licenseKey"
-                [placeholder]="'login.licenseKeyPlaceholder' | translate"
-                class="w-full"
-                [class.border-red-500]="licenseKeyError"
-              />
-            </nz-input-group>
-            <ng-template #prefixKey>
-              <span nz-icon nzType="key" nzTheme="outline" class="text-gray-400"></span>
-            </ng-template>
-            <div
-              *ngIf="licenseKeyError"
-              class="mt-1 text-sm text-red-600 dark:text-red-400"
-            >
-              {{ licenseKeyError }}
-            </div>
-          </div>
-
           <!-- Remember Me & Forgot Password -->
           <div class="flex items-center justify-between">
             <label nz-checkbox [(ngModel)]="rememberMe" class="text-sm text-gray-700 dark:text-gray-300">
@@ -154,17 +128,12 @@
             type="button"
             (click)="onSubmit()"
             [disabled]="loading"
-            class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span *ngIf="loading" nz-icon nzType="loading" nzTheme="outline" class="animate-spin"></span>
             <span *ngIf="!loading">{{ 'login.loginButton' | translate }}</span>
             <span *ngIf="!loading" nz-icon nzType="right" nzTheme="outline"></span>
           </button>
-        </div>
-
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-          © 2024 Factory Data Systems. {{ 'login.version' | translate }} 2.1.0
         </div>
       </div>
     </div>

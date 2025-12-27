@@ -2,7 +2,9 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ConnectionStatus, Scale, ScaleData, ScaleType } from '../../models';
-import { HttpService } from '../../services/http.service';
+import { ConnectionStatusService } from '../../services/connection-status.service';
+import { ScaleDataService } from '../../services/scale-data.service';
+import { ScaleService } from '../../services/scale.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -57,7 +59,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ScaleType = ScaleType;
 
-  constructor(private http: HttpService) {}
+  constructor(
+    private scaleService: ScaleService,
+    private scaleDataService: ScaleDataService,
+    private connectionStatusService: ConnectionStatusService
+  ) {}
 
   ngOnInit(): void {
     this.loadScales();
@@ -79,53 +85,49 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadScales(): void {
+  async loadScales(): Promise<void> {
     this.scalesLoading = true;
-    this.http.get<Scale[]>('api/scales', {}).subscribe({
-      next: (data: any) => {
-        const allScales = Array.isArray(data) ? data : data?.data || [];
-        this.scales = allScales;
-        this.updateMetrics();
-        this.updateCharts();
-        this.scalesLoading = false;
-      },
-      error: () => {
-        this.scalesLoading = false;
-      },
-    });
+    try {
+      const data = await this.scaleService.getScales({});
+      const allScales = Array.isArray(data) ? data : data?.data || [];
+      this.scales = allScales;
+      this.updateMetrics();
+      this.updateCharts();
+    } catch (error) {
+      console.error('Error loading scales:', error);
+    } finally {
+      this.scalesLoading = false;
+    }
   }
 
-  loadCurrentData(): void {
+  async loadCurrentData(): Promise<void> {
     this.currentDataLoading = true;
-    this.http.get<ScaleData[]>('api/scale-data/current', {}).subscribe({
-      next: (data: any) => {
-        this.currentData = Array.isArray(data) ? data : data?.data || [];
-        this.updateMetrics();
-        this.updateCharts();
-        this.currentDataLoading = false;
-      },
-      error: () => {
-        this.currentDataLoading = false;
-      },
-    });
+    try {
+      const data = await this.scaleDataService.getCurrentScaleData({});
+      this.currentData = Array.isArray(data) ? data : data?.data || [];
+      this.updateMetrics();
+      this.updateCharts();
+    } catch (error) {
+      console.error('Error loading current data:', error);
+    } finally {
+      this.currentDataLoading = false;
+    }
   }
 
-  loadConnectionStatuses(): void {
+  async loadConnectionStatuses(): Promise<void> {
     this.connectionStatusLoading = true;
-    this.http
-      .get<ConnectionStatus[]>('api/connection-status', { page: 1, size: 1000 })
-      .subscribe({
-        next: (data: any) => {
-          this.connectionStatuses = Array.isArray(data)
-            ? data
-            : data?.data || [];
-          this.updateMetrics();
-          this.connectionStatusLoading = false;
-        },
-        error: () => {
-          this.connectionStatusLoading = false;
-        },
+    try {
+      const data = await this.connectionStatusService.getConnectionStatuses({
+        page: 1,
+        size: 1000,
       });
+      this.connectionStatuses = Array.isArray(data) ? data : data?.data || [];
+      this.updateMetrics();
+    } catch (error) {
+      console.error('Error loading connection statuses:', error);
+    } finally {
+      this.connectionStatusLoading = false;
+    }
   }
 
   getStatusClass(status: string): string {

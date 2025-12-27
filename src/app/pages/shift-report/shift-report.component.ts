@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { ShiftReport, Shift, Scale } from '../../models';
-import { HttpService } from '../../services/http.service';
+import { ShiftService } from '../../services/shift.service';
+import { ScaleService } from '../../services/scale.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
@@ -54,7 +55,10 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     },
   ];
 
-  constructor(private http: HttpService) {}
+  constructor(
+    private shiftService: ShiftService,
+    private scaleService: ScaleService
+  ) {}
 
   ngOnInit(): void {
     this.loadShifts();
@@ -67,24 +71,24 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadShifts(): void {
-    this.http.get<Shift[]>('api/shifts', { page: 1, size: 1000 }).subscribe({
-      next: (data: any) => {
-        this.shifts = Array.isArray(data) ? data : data?.data || [];
-        this.updateShiftOptions();
-      },
-      error: () => {},
-    });
+  async loadShifts(): Promise<void> {
+    try {
+      const data = await this.shiftService.getShifts({ page: 1, size: 1000 });
+      this.shifts = data.data || [];
+      this.updateShiftOptions();
+    } catch (error) {
+      this.shifts = [];
+    }
   }
 
-  loadScales(): void {
-    this.http.get<Scale[]>('api/scales', { page: 1, size: 1000 }).subscribe({
-      next: (data: any) => {
-        this.scales = Array.isArray(data) ? data : data?.data || [];
-        this.updateScaleOptions();
-      },
-      error: () => {},
-    });
+  async loadScales(): Promise<void> {
+    try {
+      const data = await this.scaleService.getScales({ page: 1, size: 1000 });
+      this.scales = data.data || [];
+      this.updateScaleOptions();
+    } catch (error) {
+      this.scales = [];
+    }
   }
 
   updateShiftOptions(): void {
@@ -107,7 +111,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadReportData(): void {
+  async loadReportData(): Promise<void> {
     this.loading = true;
 
     // Prepare params
@@ -123,16 +127,18 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       params.scaleIds = this.filterData.scaleIds;
     }
 
-    this.http.get<ShiftReport[]>('api/reports/shift', params).subscribe({
-      next: (data: any) => {
-        this.reportData = Array.isArray(data) ? data : (data?.data || []);
-        this.processChartData();
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      }
-    });
+    // TODO: API 'reports/shift' chưa có trong api-docs.json - tạm thời comment lại
+    // Có thể sử dụng '/reports/generate' thay thế
+    try {
+      // const data = await this.reportService.generateReport(params);
+      // this.reportData = data.data || [];
+      this.reportData = [];
+      this.processChartData();
+    } catch (error) {
+      this.reportData = [];
+    } finally {
+      this.loading = false;
+    }
   }
 
   processChartData(): void {

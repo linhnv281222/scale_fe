@@ -1,0 +1,901 @@
+API DOCUMENTATION
+==================================================
+Tổng hợp API từ Swagger
+Bao gồm: Authentication, Location, Permission, Role, User, Scale
+Định dạng: TEXT (copy dùng trực tiếp)
+==================================================
+
+
+==================================================
+1. AUTHENTICATION
+APIs xác thực và quản lý JWT tokens
+==================================================
+
+--------------------------------------------------
+POST /auth/login
+--------------------------------------------------
+Tác dụng:
+Đăng nhập hệ thống bằng username và password.
+Trả về access token và refresh token để sử dụng cho các API bảo mật.
+
+Request:
+{
+  "username": "string",
+  "password": "string"
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "accessToken": "string",
+    "refreshToken": "string"
+  },
+  "message": "Login success",
+  "error": null
+}
+
+
+--------------------------------------------------
+GET /auth/me
+--------------------------------------------------
+Tác dụng:
+Lấy thông tin người dùng hiện tại đang đăng nhập.
+Dùng để xác định role và permission nhằm phân quyền giao diện.
+
+Request:
+Header:
+Authorization: Bearer {access_token}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "username": "string",
+    "fullName": "string",
+    "status": 0,
+    "roles": [
+      {
+        "id": 0,
+        "name": "string",
+        "code": "string",
+        "permissions": [
+          {
+            "id": 1,
+            "name": "READ_USER",
+            "resource": "USER",
+            "action": "READ",
+            "description": "Quyền đọc thông tin người dùng",
+            "createdAt": "2023-12-01T10:00:00Z",
+            "createdBy": "admin"
+          }
+        ]
+      }
+    ],
+    "createdAt": "2025-12-26T17:10:32.067Z",
+    "createdBy": "string",
+    "updatedAt": "2025-12-26T17:10:32.067Z",
+    "updatedBy": "string"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+POST /auth/refresh
+--------------------------------------------------
+Tác dụng:
+Làm mới access token khi token cũ hết hạn.
+
+Request:
+{
+  "refreshToken": "string"
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "accessToken": "string"
+  },
+  "message": "Refresh token success",
+  "error": null
+}
+
+
+--------------------------------------------------
+POST /auth/logout
+--------------------------------------------------
+Tác dụng:
+Đăng xuất hệ thống, vô hiệu hóa token.
+
+Response 200:
+{
+  "success": true,
+  "message": "Logout success",
+  "error": null
+}
+
+
+==================================================
+2. LOCATION MANAGEMENT
+APIs quản lý vị trí
+==================================================
+
+--------------------------------------------------
+GET /locations
+--------------------------------------------------
+Tác dụng:
+Lấy danh sách tất cả location theo dạng phẳng.
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Xưởng A",
+      "parent_id": null
+    }
+  ],
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+GET /locations/tree
+--------------------------------------------------
+Tác dụng:
+Lấy danh sách location theo cấu trúc cây.
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Nhà máy",
+      "children": [
+        {
+          "id": 2,
+          "name": "Xưởng A"
+        }
+      ]
+    }
+  ],
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+GET /locations/{id}
+--------------------------------------------------
+Tác dụng:
+Lấy thông tin chi tiết của một location.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Xưởng A"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+POST /locations
+--------------------------------------------------
+Tác dụng:
+Tạo mới location.
+
+Request:
+{
+  "name": "Xưởng A",
+  "parent_id": null
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Xưởng A"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+PUT /locations/{id}
+--------------------------------------------------
+Tác dụng:
+Cập nhật thông tin location.
+
+Request:
+{
+  "name": "Xưởng A - Updated"
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Xưởng A - Updated"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+DELETE /locations/{id}
+--------------------------------------------------
+Tác dụng:
+Xóa location.
+
+Response 200:
+{
+  "success": true,
+  "message": "Delete success",
+  "error": null
+}
+
+
+==================================================
+3. PERMISSION MANAGEMENT
+APIs quản lý quyền hạn
+==================================================
+
+--------------------------------------------------
+GET /permissions
+--------------------------------------------------
+Tác dụng:
+Lấy danh sách tất cả permission.
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "READ_USER",
+      "resource": "USER",
+      "action": "READ",
+      "description": "Quyền đọc thông tin người dùng",
+      "createdAt": "2023-12-01T10:00:00Z",
+      "createdBy": "admin"
+    }
+  ],
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+GET /permissions/{id}
+--------------------------------------------------
+Tác dụng:
+Lấy chi tiết permission.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "READ_USER",
+    "resource": "USER",
+    "action": "READ",
+    "description": "Quyền đọc thông tin người dùng",
+    "createdAt": "2023-12-01T10:00:00Z",
+    "createdBy": "admin"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+POST /permissions
+--------------------------------------------------
+Tác dụng:
+Tạo mới permission.
+
+Request:
+{
+  "code": "READ_USER",
+  "description": "Quyền đọc thông tin người dùng"
+}
+
+Response 201:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "READ_USER",
+    "resource": "USER",
+    "action": "READ",
+    "description": "Quyền đọc thông tin người dùng",
+    "createdAt": "2023-12-01T10:00:00Z",
+    "createdBy": "admin"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+PUT /permissions/{id}
+--------------------------------------------------
+Tác dụng:
+Cập nhật permission.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "READ_USER",
+    "description": "Quyền đọc thông tin người dùng"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+DELETE /permissions/{id}
+--------------------------------------------------
+Tác dụng:
+Xóa permission.
+
+Response 200:
+{
+  "success": true,
+  "message": "Delete success",
+  "error": null
+}
+
+
+==================================================
+4. ROLE MANAGEMENT
+APIs quản lý vai trò
+==================================================
+
+--------------------------------------------------
+GET /roles
+--------------------------------------------------
+Tác dụng:
+Lấy danh sách tất cả role.
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 0,
+      "name": "Admin",
+      "code": "ADMIN"
+    }
+  ],
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+GET /roles/{id}
+--------------------------------------------------
+Tác dụng:
+Lấy chi tiết role kèm permissions.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "name": "Admin",
+    "code": "ADMIN",
+    "permissions": [
+      {
+        "id": 1,
+        "name": "READ_USER"
+      }
+    ]
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+POST /roles
+--------------------------------------------------
+Tác dụng:
+Tạo role mới và gán permissions.
+
+Request:
+{
+  "name": "Admin",
+  "code": "ADMIN",
+  "permissionIds": [1, 2]
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "name": "Admin",
+    "code": "ADMIN"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+PUT /roles/{id}
+--------------------------------------------------
+Tác dụng:
+Cập nhật role.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "name": "Admin"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+DELETE /roles/{id}
+--------------------------------------------------
+Tác dụng:
+Xóa role.
+
+Response 200:
+{
+  "success": true,
+  "message": "Delete success",
+  "error": null
+}
+
+
+==================================================
+5. USER MANAGEMENT
+APIs quản lý người dùng
+==================================================
+
+--------------------------------------------------
+GET /users
+--------------------------------------------------
+Tác dụng:
+Lấy danh sách user kèm roles và permissions.
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 0,
+      "username": "string",
+      "fullName": "string",
+      "status": 0,
+      "roles": []
+    }
+  ],
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+GET /users/{id}
+--------------------------------------------------
+Tác dụng:
+Lấy thông tin chi tiết user.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "username": "string",
+    "fullName": "string",
+    "status": 0,
+    "roles": []
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+POST /users
+--------------------------------------------------
+Tác dụng:
+Tạo user mới và gán role.
+
+Request:
+{
+  "username": "string",
+  "password": "string",
+  "fullName": "string",
+  "status": 0,
+  "roleIds": [1]
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "username": "string"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+PUT /users/{id}
+--------------------------------------------------
+Tác dụng:
+Cập nhật thông tin user.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "username": "string"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+PUT /users/{id}/roles
+--------------------------------------------------
+Tác dụng:
+Cập nhật role cho user.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 0,
+    "roles": []
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+==================================================
+6. SCALE MANAGEMENT (TIẾP)
+APIs quản lý thiết bị cân
+==================================================
+
+--------------------------------------------------
+GET /scales
+--------------------------------------------------
+Tác dụng:
+Lấy danh sách tất cả thiết bị cân.
+Dùng cho màn hình danh sách scale, có thể filter theo location.
+
+Request (query - optional):
+location_id: integer
+location_ids: array integer
+
+Response 200:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 100,
+      "name": "Cân 01",
+      "model": "IND570",
+      "location_id": 1,
+      "location_name": "Xưởng A",
+      "is_active": true,
+      "created_at": "2025-12-23T11:05:00+07:00",
+      "created_by": "system",
+      "updated_at": "2025-12-23T11:05:00+07:00",
+      "updated_by": "system",
+      "scale_config": {
+        "protocol": "MODBUS_TCP",
+        "scale_id": 100,
+        "poll_interval": 1000,
+        "conn_params": {
+          "ip": "192.168.1.10",
+          "port": 502
+        },
+        "data_1": {
+          "name": "Weight",
+          "start_registers": 40001,
+          "num_registers": 2,
+          "is_used": true
+        },
+        "data_2": {
+          "name": "Status",
+          "start_registers": 40003,
+          "num_registers": 1,
+          "is_used": true
+        },
+        "data_3": {
+          "is_used": false
+        },
+        "data_4": {
+          "is_used": false
+        },
+        "data_5": {
+          "is_used": false
+        },
+        "updated_at": "2025-12-23T11:10:00+07:00",
+        "updated_by": "tech_lead"
+      }
+    }
+  ],
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+GET /scales/{id}/config
+--------------------------------------------------
+Tác dụng:
+Lấy cấu hình chi tiết của thiết bị cân.
+Dùng để hiển thị và chỉnh sửa cấu hình giao tiếp thiết bị.
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "protocol": "MODBUS_TCP",
+    "scale_id": 100,
+    "poll_interval": 1000,
+    "conn_params": {
+      "ip": "192.168.1.10",
+      "port": 502
+    },
+    "data_1": {
+      "name": "Weight",
+      "start_registers": 40001,
+      "num_registers": 2,
+      "is_used": true
+    },
+    "data_2": {
+      "name": "Status",
+      "start_registers": 40003,
+      "num_registers": 1,
+      "is_used": true
+    },
+    "data_3": {
+      "is_used": false
+    },
+    "data_4": {
+      "is_used": false
+    },
+    "data_5": {
+      "is_used": false
+    },
+    "updated_at": "2025-12-23T11:10:00+07:00",
+    "updated_by": "tech_lead"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+POST /scales
+--------------------------------------------------
+Tác dụng:
+Tạo mới thiết bị cân.
+Dùng khi khai báo thiết bị cân mới trong hệ thống.
+
+Request:
+{
+  "name": "Cân 01",
+  "model": "IND570",
+  "location_id": 1,
+  "is_active": true
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 100,
+    "name": "Cân 01",
+    "model": "IND570",
+    "location_id": 1,
+    "location_name": "Xưởng A",
+    "is_active": true,
+    "created_at": "2025-12-23T11:05:00+07:00",
+    "created_by": "system",
+    "updated_at": "2025-12-23T11:05:00+07:00",
+    "updated_by": "system",
+    "scale_config": {
+      "protocol": "MODBUS_TCP",
+      "scale_id": 100,
+      "poll_interval": 1000,
+      "conn_params": {
+        "ip": "192.168.1.10",
+        "port": 502
+      },
+      "data_1": {
+        "name": "Weight",
+        "start_registers": 40001,
+        "num_registers": 2,
+        "is_used": true
+      },
+      "data_2": {
+        "name": "Status",
+        "start_registers": 40003,
+        "num_registers": 1,
+        "is_used": true
+      },
+      "data_3": {
+        "is_used": false
+      },
+      "data_4": {
+        "is_used": false
+      },
+      "data_5": {
+        "is_used": false
+      }
+    }
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+PUT /scales/{id}
+--------------------------------------------------
+Tác dụng:
+Cập nhật thông tin thiết bị cân (tên, model, location, trạng thái).
+
+Request:
+{
+  "name": "Cân 01",
+  "model": "IND570",
+  "location_id": 1,
+  "is_active": true
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "id": 100,
+    "name": "Cân 01",
+    "model": "IND570",
+    "location_id": 1,
+    "location_name": "Xưởng A",
+    "is_active": true,
+    "updated_at": "2025-12-23T11:05:00+07:00",
+    "updated_by": "system",
+    "scale_config": {
+      "protocol": "MODBUS_TCP",
+      "scale_id": 100,
+      "poll_interval": 1000,
+      "conn_params": {
+        "ip": "192.168.1.10",
+        "port": 502
+      }
+    }
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+PUT /scales/{id}/config
+--------------------------------------------------
+Tác dụng:
+Cập nhật cấu hình giao tiếp của thiết bị cân.
+Dùng để chỉnh MODBUS TCP, thanh ghi đọc dữ liệu cân.
+
+Request:
+{
+  "protocol": "MODBUS_TCP",
+  "poll_interval": 1000,
+  "conn_params": {
+    "ip": "192.168.1.10",
+    "port": 502
+  },
+  "data_1": {
+    "name": "Weight",
+    "start_registers": 40001,
+    "num_registers": 2,
+    "is_used": true
+  },
+  "data_2": {
+    "name": "Status",
+    "start_registers": 40003,
+    "num_registers": 1,
+    "is_used": true
+  },
+  "data_3": {
+    "is_used": false
+  },
+  "data_4": {
+    "is_used": false
+  },
+  "data_5": {
+    "is_used": false
+  }
+}
+
+Response 200:
+{
+  "success": true,
+  "data": {
+    "protocol": "MODBUS_TCP",
+    "scale_id": 100,
+    "poll_interval": 1000,
+    "conn_params": {
+      "ip": "192.168.1.10",
+      "port": 502
+    },
+    "data_1": {
+      "name": "Weight",
+      "start_registers": 40001,
+      "num_registers": 2,
+      "is_used": true
+    },
+    "data_2": {
+      "name": "Status",
+      "start_registers": 40003,
+      "num_registers": 1,
+      "is_used": true
+    },
+    "data_3": {
+      "is_used": false
+    },
+    "data_4": {
+      "is_used": false
+    },
+    "data_5": {
+      "is_used": false
+    },
+    "updated_at": "2025-12-23T11:10:00+07:00",
+    "updated_by": "tech_lead"
+  },
+  "message": "string",
+  "error": "string"
+}
+
+
+--------------------------------------------------
+DELETE /scales/{id}
+--------------------------------------------------
+Tác dụng:
+Xóa thiết bị cân khỏi hệ thống.
+
+Response 200:
+{
+  "success": true,
+  "message": "Delete success",
+  "error": null
+}

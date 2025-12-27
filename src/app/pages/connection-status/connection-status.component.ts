@@ -1,15 +1,15 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ConnectionStatus } from '../../models';
-import { HttpService } from '../../services/http.service';
-import { PageActionService } from '../../services/page-action.service';
-import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { ConnectionStatus } from '../../models';
+import { ConnectionStatusService } from '../../services/connection-status.service';
+import { PageActionService } from '../../services/page-action.service';
+import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
   selector: 'app-connection-status',
   templateUrl: './connection-status.component.html',
-  styleUrls: ['./connection-status.component.css']
+  styleUrls: ['./connection-status.component.css'],
 })
 export class ConnectionStatusComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
@@ -45,7 +45,7 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private http: HttpService,
+    private connectionStatusService: ConnectionStatusService,
     private pageActionService: PageActionService
   ) {}
 
@@ -64,22 +64,22 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadConnectionStatuses(): void {
+  async loadConnectionStatuses(): Promise<void> {
     this.loading = true;
-    this.http.get<ConnectionStatus[]>('api/connection-status', {
-      page: this.pageIndex,
-      size: this.pageSize,
-      ...this.filterData,
-    }).subscribe({
-      next: (data: any) => {
-        this.connectionStatuses = Array.isArray(data) ? data : (data?.data || []);
-        this.total = data?.total || this.connectionStatuses.length;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      }
-    });
+    try {
+      const data = await this.connectionStatusService.getConnectionStatuses({
+        page: this.pageIndex,
+        size: this.pageSize,
+        ...this.filterData,
+      });
+      this.connectionStatuses = data.data || [];
+      this.total = data.total || this.connectionStatuses.length;
+    } catch (error) {
+      this.connectionStatuses = [];
+      this.total = 0;
+    } finally {
+      this.loading = false;
+    }
   }
 
   onPaginationChange(event: { page: number; size: number }): void {
@@ -123,32 +123,32 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
     if (!lastDataTime) return '-';
     const minutes = this.getMinutesWithoutData(lastDataTime);
     if (minutes === null) return '-';
-    
+
     if (minutes < 1) return 'Vừa xong';
     if (minutes < 60) return `${minutes} phút trước`;
-    
+
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours} giờ trước`;
-    
+
     const days = Math.floor(hours / 24);
     return `${days} ngày trước`;
   }
 
   getRowClass(status: ConnectionStatus): string {
     const minutes = this.getMinutesWithoutData(status.lastDataTime);
-    
+
     if (!status.lastDataTime || minutes === null) {
       return 'bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500';
     }
-    
+
     if (minutes >= this.ERROR_THRESHOLD_MINUTES) {
       return 'bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500';
     }
-    
+
     if (minutes >= this.WARNING_THRESHOLD_MINUTES) {
       return 'bg-orange-50 dark:bg-orange-900/10 border-l-4 border-orange-500';
     }
-    
+
     return '';
   }
 
@@ -159,19 +159,19 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
 
   getLastDataTimeClass(status: ConnectionStatus): string {
     const minutes = this.getMinutesWithoutData(status.lastDataTime);
-    
+
     if (!status.lastDataTime || minutes === null) {
       return 'text-red-600 dark:text-red-400 font-semibold';
     }
-    
+
     if (minutes >= this.ERROR_THRESHOLD_MINUTES) {
       return 'text-red-600 dark:text-red-400 font-semibold';
     }
-    
+
     if (minutes >= this.WARNING_THRESHOLD_MINUTES) {
       return 'text-orange-600 dark:text-orange-400 font-medium';
     }
-    
+
     return 'text-gray-900 dark:text-white';
   }
 
