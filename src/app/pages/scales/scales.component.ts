@@ -4,19 +4,17 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
-    Protocol,
-    ProtocolType,
-    Scale,
-    ScaleConnectionConfig,
-    ScaleType,
+  Location,
+  Protocol,
+  ProtocolType,
+  Scale,
+  ScaleConnectionConfig,
+  ScaleType,
 } from '../../models';
-import { ConfigApiService } from '../../services/config-api.service';
-import { ConfigService } from '../../services/config.service';
+import { LocationService } from '../../services/location.service';
 import { PageActionService } from '../../services/page-action.service';
 import { ProtocolService } from '../../services/protocol.service';
 import { ScaleService } from '../../services/scale.service';
-import { DynamicFormField } from '../../shared/components/dynamic-form/dynamic-form.component';
-import { DynamicTableColumn } from '../../shared/components/dynamic-table/dynamic-table.component';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
@@ -87,17 +85,17 @@ export class ScalesComponent implements OnInit, OnDestroy {
     5: false,
   };
 
-  // Dynamic form and table
-  formFields: DynamicFormField[] = [];
-  tableColumns: DynamicTableColumn[] = [];
-  loadingConfigs = false;
-
   // Data for dropdowns
   protocols: Protocol[] = [];
-  defaultReadCycle: number = 60;
+  locations: Location[] = [];
 
   // Form data object
-  dataScale: any = {};
+  dataScale: any = {
+    name: '',
+    model: '',
+    location_id: null,
+    is_active: true,
+  };
 
   ProtocolType = ProtocolType;
   ScaleType = ScaleType;
@@ -110,29 +108,20 @@ export class ScalesComponent implements OnInit, OnDestroy {
       placeholder: 'scales.name',
     },
     {
-      key: 'code',
-      label: 'scales.code',
-      type: 'text',
-      placeholder: 'scales.code',
-    },
-    {
-      key: 'type',
-      label: 'scales.type',
+      key: 'location_id',
+      label: 'scales.location',
       type: 'select',
-      placeholder: 'scales.type',
-      options: [
-        { label: 'scales.input', value: ScaleType.INPUT },
-        { label: 'scales.output', value: ScaleType.OUTPUT },
-      ],
+      placeholder: 'scales.selectLocation',
+      options: [],
     },
     {
-      key: 'status',
+      key: 'is_active',
       label: 'common.status',
       type: 'select',
       placeholder: 'common.status',
       options: [
-        { label: 'common.active', value: 'active' },
-        { label: 'common.inactive', value: 'inactive' },
+        { label: 'common.active', value: true },
+        { label: 'common.inactive', value: false },
       ],
     },
   ];
@@ -148,18 +137,16 @@ export class ScalesComponent implements OnInit, OnDestroy {
 
   constructor(
     private scaleService: ScaleService,
+    private locationService: LocationService,
     private protocolService: ProtocolService,
-    private configApiService: ConfigApiService,
-    private configService: ConfigService,
     private pageActionService: PageActionService,
     private translate: TranslateService,
     private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
-    // this.loadConfigs();
+    this.loadLocations();
     this.loadProtocols();
-    this.loadDefaultReadCycle();
     this.loadScales();
 
     // Subscribe to add new action
@@ -170,42 +157,28 @@ export class ScalesComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadConfigs(): void {
-    this.loadingConfigs = true;
-    this.configService.getModuleFields('scales').subscribe({
-      next: (fields: DynamicFormField[]) => {
-        this.formFields = fields;
-        this.loadingConfigs = false;
-      },
-      error: () => {
-        this.formFields = [];
-        this.loadingConfigs = false;
-      },
-    });
-
-    this.configService.getModuleColumns('scales').subscribe({
-      next: (columns: DynamicTableColumn[]) => {
-        this.tableColumns = columns;
-      },
-      error: () => {
-        this.tableColumns = [];
-      },
-    });
-  }
-
-  // Getter for basic form fields (exclude connection config fields)
-  get basicFormFields(): DynamicFormField[] {
-    return this.formFields.filter(
-      (f) =>
-        !f.fieldKey.includes('modbus') &&
-        !f.fieldKey.includes('sabus') &&
-        f.fieldKey !== 'connectionConfig'
-    );
-  }
-
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  async loadLocations(): Promise<void> {
+    try {
+      const response = await this.locationService.getLocations();
+      this.locations = response.data || [];
+      // Update filter options
+      const locationField = this.filterFields.find(
+        (f) => f.key === 'location_id'
+      );
+      if (locationField) {
+        locationField.options = this.locations.map((loc) => ({
+          label: loc.name || '',
+          value: loc.id,
+        }));
+      }
+    } catch (error) {
+      this.locations = [];
+    }
   }
 
   async loadProtocols(): Promise<void> {
@@ -216,23 +189,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       this.protocols = Array.isArray(data) ? data : data?.data || [];
     } catch (error) {
       this.protocols = [];
-    }
-  }
-
-  async loadDefaultReadCycle(): Promise<void> {
-    try {
-      const data = await this.configApiService.getDefaultReadCycle();
-      if (data?.value) {
-        this.defaultReadCycle = parseInt(data.value, 10) || 60;
-        if (!this.isEditMode) {
-          this.dataScale.readCycle = this.defaultReadCycle;
-        }
-      }
-    } catch (error) {
-      this.defaultReadCycle = 60;
-      if (!this.isEditMode) {
-        this.dataScale.readCycle = 60;
-      }
     }
   }
 
@@ -268,74 +224,24 @@ export class ScalesComponent implements OnInit, OnDestroy {
   openAddModal(): void {
     this.isEditMode = false;
     this.selectedScale = null;
-    // Initialize dataScale with default values from form fields
-    this.dataScale = {};
-    if (this.formFields.length > 0) {
-      this.formFields.forEach((field: DynamicFormField) => {
-        this.dataScale[field.fieldKey] = '';
-      });
-    } else {
-      // Fallback defaults
-      this.dataScale = {
-        name: '',
-        code: '',
-        scaleType: ScaleType.INPUT,
-        protocolId: null,
-        readCycle: this.defaultReadCycle,
-        modbusTcpIp: '',
-        modbusTcpPort: null,
-        modbusRtuPort: '',
-        modbusRtuBaudRate: null,
-        modbusRtuDataBits: 8,
-        modbusRtuStopBits: 1,
-        modbusRtuParity: 'NONE',
-        sabusConfig: '',
-      };
-    }
-    // Set defaults for scales
-    this.dataScale.scaleType = ScaleType.INPUT;
-    this.dataScale.readCycle = this.defaultReadCycle;
+    this.dataScale = {
+      name: '',
+      model: '',
+      location_id: null,
+      is_active: true,
+    };
     this.isModalVisible = true;
   }
 
   openEditModal(scale: Scale): void {
     this.isEditMode = true;
     this.selectedScale = scale;
-    // Map scale data to form fields
-    this.dataScale = {};
-    if (this.formFields.length > 0) {
-      this.formFields.forEach((field: DynamicFormField) => {
-        this.dataScale[field.fieldKey] = (scale as any)[field.fieldKey] || '';
-      });
-    } else {
-      // Fallback to manual mapping
-      this.dataScale = {
-        name: scale.name,
-        code: scale.code,
-        scaleType: scale.scaleType,
-        protocolId: scale.protocolId || null,
-        readCycle: scale.readCycle || this.defaultReadCycle,
-        modbusTcpIp: '',
-        modbusTcpPort: null,
-        modbusRtuPort: '',
-        modbusRtuBaudRate: null,
-        modbusRtuDataBits: 8,
-        modbusRtuStopBits: 1,
-        modbusRtuParity: 'NONE',
-        sabusConfig: '',
-      };
-    }
-    // Ensure defaults
-    this.dataScale.readCycle = scale.readCycle || this.defaultReadCycle;
-
-    // Load connection config based on protocol
-    if (scale.protocolId && scale.connectionConfig) {
-      const protocol = this.protocols.find((p) => p.id === scale.protocolId);
-      if (protocol) {
-        this.loadConnectionConfig(protocol.type, scale.connectionConfig);
-      }
-    }
-
+    this.dataScale = {
+      name: scale.name || '',
+      model: scale.model || '',
+      location_id: scale.location_id || null,
+      is_active: scale.is_active !== undefined ? scale.is_active : true,
+    };
     this.isModalVisible = true;
   }
 
@@ -418,83 +324,54 @@ export class ScalesComponent implements OnInit, OnDestroy {
     return ipRegex.test(ip);
   }
 
-  saveScale(): void {
+  async saveScale(): Promise<void> {
     // Validation
-    if (
-      !this.dataScale.name ||
-      !this.dataScale.code ||
-      !this.dataScale.protocolId
-    ) {
+    if (!this.dataScale.name) {
+      this.toastr.warning('Vui lòng nhập tên cân');
       return;
     }
 
-    const protocolType = this.selectedProtocolType;
-    if (!protocolType) {
+    if (!this.dataScale.location_id) {
+      this.toastr.warning('Vui lòng chọn vị trí');
       return;
     }
 
-    // Validate connection config based on protocol type
-    if (protocolType === ProtocolType.MODBUS_TCP) {
-      if (!this.dataScale.modbusTcpIp || !this.dataScale.modbusTcpPort) {
-        return;
-      }
-      if (!this.isValidIp(this.dataScale.modbusTcpIp)) {
-        return;
-      }
-    } else if (protocolType === ProtocolType.MODBUS_RTU) {
-      if (!this.dataScale.modbusRtuPort || !this.dataScale.modbusRtuBaudRate) {
-        return;
-      }
-    }
-
-    this.performSave();
-  }
-
-  async performSave(): Promise<void> {
     this.saving = true;
-    const protocolType = this.selectedProtocolType as ProtocolType;
-
-    const connectionConfig: ScaleConnectionConfig = {
-      protocolType: protocolType,
-    };
-
-    if (protocolType === ProtocolType.MODBUS_TCP) {
-      connectionConfig.modbusTcp = {
-        ip: this.dataScale.modbusTcpIp,
-        port: this.dataScale.modbusTcpPort!,
-      };
-    } else if (protocolType === ProtocolType.MODBUS_RTU) {
-      connectionConfig.modbusRtu = {
-        port: this.dataScale.modbusRtuPort,
-        baudRate: this.dataScale.modbusRtuBaudRate!,
-        dataBits: this.dataScale.modbusRtuDataBits,
-        stopBits: this.dataScale.modbusRtuStopBits,
-        parity: this.dataScale.modbusRtuParity as 'NONE' | 'EVEN' | 'ODD',
-      };
-    } else if (protocolType === ProtocolType.SABUS) {
-      connectionConfig.sabus = {
-        config: this.dataScale.sabusConfig,
-      };
-    }
-
-    const data = {
-      name: this.dataScale.name,
-      code: this.dataScale.code,
-      scaleType: this.dataScale.scaleType,
-      protocolId: this.dataScale.protocolId,
-      readCycle: this.dataScale.readCycle || this.defaultReadCycle,
-      connectionConfig: connectionConfig,
-    };
-
     try {
+      const data = {
+        name: this.dataScale.name,
+        model: this.dataScale.model || undefined,
+        location_id: this.dataScale.location_id,
+        is_active:
+          this.dataScale.is_active !== undefined
+            ? this.dataScale.is_active
+            : true,
+      };
+
       if (this.isEditMode) {
-        await this.scaleService.updateScale(this.selectedScale?.id!, data);
+        const updated = await this.scaleService.updateScale(
+          this.selectedScale?.id!,
+          data
+        );
+        if (updated) {
+          this.toastr.success('Cập nhật cân thành công');
+          this.isModalVisible = false;
+          await this.loadScales();
+        } else {
+          this.toastr.error('Cập nhật cân thất bại');
+        }
       } else {
-        await this.scaleService.createScale(data);
+        const created = await this.scaleService.createScale(data);
+        if (created) {
+          this.toastr.success('Tạo cân thành công');
+          this.isModalVisible = false;
+          await this.loadScales();
+        } else {
+          this.toastr.error('Tạo cân thất bại');
+        }
       }
-      this.isModalVisible = false;
-      await this.loadScales();
     } catch (error) {
+      this.toastr.error('Có lỗi xảy ra');
       console.error('Error saving scale:', error);
     } finally {
       this.saving = false;
@@ -761,6 +638,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
     if (channel?.is_used && channel?.name) {
       return `${channelLabel}: ${channel.name}`;
     }
-    return `${channelLabel}: (Not configured)`;
+    return `${channelLabel}: ${this.translate.instant('scales.notConfigured')}`;
   }
 }

@@ -53,18 +53,40 @@ export class ScaleService {
 
   async getScaleConfig(id: number): Promise<any | null> {
     const res = await this.baseService.getData(`scales/${id}/config`);
-    return res || null;
+    if (res && res.success === true && res.data) {
+      return res.data || null;
+    }
+    return null;
   }
 
   async updateScaleConfig(id: number, data: {
     protocol: string;
-    conn_params: any;
-    poll_interval?: number;
-    data_1?: any;
-    data_2?: any;
-    data_3?: any;
-    data_4?: any;
-    data_5?: any;
+    poll_interval: number;
+    conn_params: {
+      ip: string;
+      port: number;
+    };
+    data_1?: {
+      name?: string;
+      start_registers?: number;
+      num_registers?: number;
+      is_used: boolean;
+    };
+    data_2?: {
+      name?: string;
+      start_registers?: number;
+      num_registers?: number;
+      is_used: boolean;
+    };
+    data_3?: {
+      is_used: boolean;
+    };
+    data_4?: {
+      is_used: boolean;
+    };
+    data_5?: {
+      is_used: boolean;
+    };
   }): Promise<any | null> {
     const res = await this.baseService.putData(`scales/${id}/config`, data);
     if (res && res.success === true && res.data) {

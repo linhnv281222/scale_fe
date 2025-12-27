@@ -147,11 +147,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Calculate metrics
     this.totalScales = this.scales.length;
     this.activeScales = this.scales.filter(
-      (s) => s.status === 'active' || s.isActive
+      (s) => s.is_active === true
     ).length;
     this.pausedScales = this.scales.filter((s) => s.status === 'paused').length;
     this.offlineScales = this.scales.filter(
-      (s) => s.status === 'inactive' || (!s.isActive && s.status !== 'paused')
+      (s) => s.is_active === false || (s.is_active === undefined && s.status !== 'paused')
     ).length;
     this.inputScales = this.scales.filter(
       (s) => s.scaleType === ScaleType.INPUT
@@ -258,11 +258,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   updateStatusChart(): void {
     const statusCounts = {
-      active: this.scales.filter((s) => s.status === 'active' || s.isActive)
+      active: this.scales.filter((s) => s.is_active === true)
         .length,
       paused: this.scales.filter((s) => s.status === 'paused').length,
       inactive: this.scales.filter(
-        (s) => s.status === 'inactive' || (!s.isActive && s.status !== 'paused')
+        (s) => s.is_active === false || (s.is_active === undefined && s.status !== 'paused')
       ).length,
     };
 

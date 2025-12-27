@@ -13,6 +13,7 @@
     <div class="flex-1 min-h-0 p-3">
       <app-filter-sidebar
         [fields]="filterFields"
+        [filterData]="filterData"
         (search)="onSearch($event)"
         (reset)="onReset()"
       ></app-filter-sidebar>
@@ -56,7 +57,7 @@
             <tr class="bg-blue-600 dark:bg-blue-700">
               <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-                style="width: 50px;"
+                style="width: 50px"
               >
                 STT
               </th>
@@ -73,16 +74,16 @@
               <th
                 class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
               >
-                {{ "users.email" | translate }}
+                {{ "common.status" | translate }}
               </th>
               <th
                 class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
               >
-                {{ "common.status" | translate }}
+                {{ "users.roles" | translate }}
               </th>
               <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-                style="max-width: 150px; width: 150px;"
+                style="max-width: 150px; width: 150px"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -94,7 +95,9 @@
               class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
               <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  (pageIndex - 1) * pageSize + i + 1
+                }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
                 <span
@@ -108,31 +111,17 @@
                 }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
+                <span [ngClass]="getStatusClass(user.status)">
+                  {{ getStatusLabel(user.status) | translate }}
+                </span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{
-                  user.email || "-"
+                  getRoleNames(user)
                 }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
-                <span
-                  *ngIf="user.status === 'active'"
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                >
-                  {{ "common.active" | translate }}
-                </span>
-                <span
-                  *ngIf="user.status === 'inactive'"
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
-                >
-                  {{ "common.inactive" | translate }}
-                </span>
-                <span
-                  *ngIf="!user.status"
-                  class="text-sm text-gray-500 dark:text-gray-400"
-                  >-</span
-                >
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <div class="flex items-center gap-2 justify-center">
+                <div class="flex items-center justify-center gap-2">
                   <button
                     nz-button
                     nzType="text"
@@ -153,7 +142,7 @@
                     nz-button
                     nzType="text"
                     nzSize="small"
-                    class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    class="flex items-center justify-center w-8 h-8 text-blue-600 transition-colors rounded dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                     (click)="openEditModal(user)"
                     [nzTooltipTitle]="'common.edit' | translate"
                     nz-tooltip
@@ -161,6 +150,22 @@
                     <span
                       nz-icon
                       nzType="edit"
+                      nzTheme="outline"
+                      class="text-base"
+                    ></span>
+                  </button>
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzSize="small"
+                    class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                    (click)="confirmDelete(user)"
+                    [nzTooltipTitle]="'common.delete' | translate"
+                    nz-tooltip
+                  >
+                    <span
+                      nz-icon
+                      nzType="delete"
                       nzTheme="outline"
                       class="text-base"
                     ></span>
@@ -193,61 +198,71 @@
   </main>
 </div>
 
+<!-- Add/Edit Modal -->
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isEditMode ? 'common.edit' : 'common.addNew') | translate"
-  (nzOnCancel)="isModalVisible = false"
-  (nzOnOk)="saveUser()"
+  [nzTitle]="
+    (isEditMode ? 'common.edit' : isViewMode ? 'common.view' : 'common.addNew')
+      | translate
+  "
+  (nzOnCancel)="isModalVisible = false; closeViewModal()"
+  [nzOkText]="
+    isViewMode ? ('common.close' | translate) : ('common.save' | translate)
+  "
+  [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
+  (nzOnOk)="isViewMode ? closeViewModal() : saveUser()"
   [nzOkLoading]="saving"
   [nzWidth]="'60%'"
 >
   <div *nzModalContent>
-    <!-- Dynamic Form -->
-    <app-dynamic-form
-      *ngIf="formFields.length > 0"
-      [fields]="formFields"
-      [(model)]="dataUser"
-      (modelChange)="dataUser = $event"
-    ></app-dynamic-form>
-
-    <!-- Fallback to static form if configs not loaded -->
-    <div *ngIf="formFields.length === 0">
+    <form nz-form>
+      <!-- Username -->
       <div class="mb-4">
         <label
           class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {{ "users.username" | translate
-          }}<span class="text-red-500 ml-1">*</span>
+          }}<span class="ml-1 text-red-500">*</span>
         </label>
         <nz-input-group>
           <input
             type="text"
             nz-input
             [(ngModel)]="dataUser.username"
-            [placeholder]="'users.username' | translate"
+            [placeholder]="'users.enterUsername' | translate"
+            [readonly]="isViewMode || isEditMode"
+            [disabled]="isEditMode"
             class="w-full"
+            [class.bg-gray-100]="isEditMode"
+            [class.dark:bg-gray-700]="isEditMode"
             required
+            name="username"
           />
         </nz-input-group>
       </div>
-      <div class="mb-4">
+
+      <!-- Password (only for create) -->
+      <div class="mb-4" *ngIf="!isEditMode && !isViewMode">
         <label
           class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {{ "users.password" | translate
-          }}<span *ngIf="!isEditMode" class="text-red-500 ml-1">*</span>
+          }}<span class="ml-1 text-red-500">*</span>
         </label>
         <nz-input-group>
           <input
             type="password"
             nz-input
             [(ngModel)]="dataUser.password"
-            [placeholder]="'users.password' | translate"
+            [placeholder]="'users.enterPassword' | translate"
             class="w-full"
-            [required]="!isEditMode"
+            required
+            name="password"
           />
         </nz-input-group>
       </div>
+
+      <!-- Full Name -->
       <div class="mb-4">
         <label
           class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -259,28 +274,70 @@
             type="text"
             nz-input
             [(ngModel)]="dataUser.fullName"
-            [placeholder]="'users.fullName' | translate"
+            [placeholder]="'users.enterFullName' | translate"
+            [readonly]="isViewMode"
             class="w-full"
+            name="fullName"
           />
         </nz-input-group>
       </div>
+
+      <!-- Status -->
       <div class="mb-4">
         <label
           class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          {{ "users.email" | translate }}
+          {{ "common.status" | translate }}
         </label>
-        <nz-input-group>
-          <input
-            type="email"
-            nz-input
-            [(ngModel)]="dataUser.email"
-            [placeholder]="'users.email' | translate"
-            class="w-full"
-          />
-        </nz-input-group>
+        <nz-select
+          [(ngModel)]="dataUser.status"
+          [nzDisabled]="isViewMode"
+          class="w-full"
+          name="status"
+        >
+          <nz-option
+            [nzValue]="1"
+            [nzLabel]="'common.active' | translate"
+          ></nz-option>
+          <nz-option
+            [nzValue]="0"
+            [nzLabel]="'common.inactive' | translate"
+          ></nz-option>
+        </nz-select>
       </div>
-    </div>
+
+      <!-- Roles -->
+      <div class="mb-4">
+        <label
+          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "roles.title" | translate }}
+        </label>
+        <nz-select
+          [(ngModel)]="dataUser.roleIds"
+          [nzDisabled]="isViewMode"
+          [nzMode]="'multiple'"
+          [nzPlaceHolder]="'users.selectRoles' | translate"
+          class="w-full"
+          name="roleIds"
+        >
+          <nz-option
+            *ngFor="let role of roles"
+            [nzValue]="role.id"
+            [nzLabel]="role.name || role.code"
+          ></nz-option>
+        </nz-select>
+        <div
+          *ngIf="roles.length === 0"
+          class="mt-1 text-sm text-gray-500 dark:text-gray-400"
+        >
+          {{ "users.noRolesAvailable" | translate }}
+        </div>
+        <div *ngIf="roles.length === 0" class="mt-1 text-sm text-gray-500">
+          {{ "users.noRolesAvailable" | translate }}
+        </div>
+      </div>
+    </form>
   </div>
 </nz-modal>
 
@@ -292,5 +349,6 @@
   [warningMessage]="'common.deleteWarning'"
   [okText]="'common.delete'"
   [cancelText]="'common.cancel'"
+  [loading]="deleting"
   (confirmed)="onDeleteConfirmed()"
 ></app-confirm-dialog>

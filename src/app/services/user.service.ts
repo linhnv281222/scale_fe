@@ -25,7 +25,13 @@ export class UserService {
     return null;
   }
 
-  async createUser(data: { username: string; password: string; fullName?: string; status?: number; roleIds: number[] }): Promise<User | null> {
+  async createUser(data: {
+    username: string;
+    password: string;
+    fullName?: string;
+    status?: number;
+    roleIds?: number[];
+  }): Promise<User | null> {
     const res = await this.baseService.postData('users', data);
     if (res && res.success === true && res.data) {
       return res.data || null;
@@ -33,7 +39,10 @@ export class UserService {
     return null;
   }
 
-  async updateUser(id: number, data: { fullName?: string; status?: number; roleIds?: number[] }): Promise<User | null> {
+  async updateUser(
+    id: number,
+    data: { fullName?: string; status?: number }
+  ): Promise<User | null> {
     const res = await this.baseService.putData(`users/${id}`, data);
     if (res && res.success === true && res.data) {
       return res.data || null;
@@ -42,7 +51,9 @@ export class UserService {
   }
 
   async updateUserRoles(id: number, roleIds: number[]): Promise<User | null> {
-    const res = await this.baseService.putData(`users/${id}/roles`, { roleIds });
+    const res = await this.baseService.putData(`users/${id}/roles`, {
+      roleIds,
+    });
     if (res && res.success === true && res.data) {
       return res.data || null;
     }
@@ -58,4 +69,3 @@ export class UserService {
     }
   }
 }
-

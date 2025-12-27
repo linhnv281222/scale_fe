@@ -31,6 +31,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   currentUser: any = null;
   isDarkMode = false;
   currentLang = 'vi_VN';
+  
+  languages = [
+    { code: 'vi_VN', label: 'Tiếng Việt', flag: 'assets/img/vie.png' },
+    { code: 'en_US', label: 'Tiếng Anh', flag: 'assets/img/eng.png' }
+  ];
 
   constructor(
     private authService: AuthService,
@@ -130,6 +135,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   onLanguageChange(lang: string): void {
     this.languageService.setLanguage(lang);
     this.currentLang = lang;
+  }
+
+  getCurrentLanguageFlag(): string {
+    const lang = this.languages.find(l => l.code === this.currentLang);
+    return lang ? lang.flag : this.languages[0].flag;
   }
 
   onToggleSidebar(): void {
