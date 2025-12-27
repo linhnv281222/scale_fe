@@ -22,10 +22,21 @@
   <!-- Main Content -->
   <main class="flex-1 overflow-y-auto">
     <div class="p-1">
-      <!-- Page Title -->
-      <h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-gray-200">
-        {{ "scales.title" | translate }}
-      </h2>
+      <!-- Page Title and Add Button -->
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
+          {{ "scales.title" | translate }}
+        </h2>
+        <button
+          nz-button
+          nzType="primary"
+          (click)="openAddModal()"
+          class="flex items-center gap-2"
+        >
+          <span nz-icon nzType="plus" nzTheme="outline"></span>
+          <span>{{ "common.addNew" | translate }}</span>
+        </button>
+      </div>
 
       <!-- Table Container -->
       <div
