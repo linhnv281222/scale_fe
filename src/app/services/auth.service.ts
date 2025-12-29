@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { User } from '../models';
-import { PermissionService } from './permission.service';
+import { UserPermissionService } from './user-permission.service';
 import { BaseService } from './base.service';
 
 export interface LoginResponse {
@@ -22,7 +22,7 @@ export class AuthService {
   constructor(
     private baseService: BaseService,
     private router: Router,
-    private permissionService: PermissionService
+    private userPermissionService: UserPermissionService
   ) {
     this.loadUserFromStorage();
   }
@@ -102,7 +102,7 @@ export class AuthService {
     localStorage.removeItem('userRoles');
     localStorage.removeItem('userPermissions');
     this.currentUser = null;
-    this.permissionService.clearPermissions();
+    this.userPermissionService.clearPermissions();
   }
 
   isAuthenticated(): boolean {
@@ -156,7 +156,7 @@ export class AuthService {
           });
           localStorage.setItem('userPermissions', JSON.stringify(allPermissions));
           // Update permission service
-          this.permissionService.setPermissions(allPermissions);
+          this.userPermissionService.setPermissions(allPermissions);
         }
         this.currentUser = user;
         return user;

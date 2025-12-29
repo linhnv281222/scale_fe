@@ -1,91 +1,65 @@
 import { Injectable } from '@angular/core';
 import { Permission } from '../models';
+import { BaseService } from './base.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PermissionService {
-  private permissions: Permission[] = [];
+  constructor(private baseService: BaseService) {}
 
-  constructor() {
-    this.loadPermissionsFromStorage();
+  async getPermissions(): Promise<Permission[]> {
+    const res = await this.baseService.getData('permissions');
+    if (res && res.success === true && res.data) {
+      return res.data ?? [];
+    }
+    return [];
   }
 
-  /**
-   * Load permissions from localStorage
-   */
-  loadPermissionsFromStorage(): void {
-    const permissionsStr = localStorage.getItem('userPermissions');
-    if (permissionsStr) {
-      try {
-        this.permissions = JSON.parse(permissionsStr);
-      } catch (error) {
-        this.permissions = [];
+  async getPermissionById(id: number): Promise<Permission | null> {
+    const res = await this.baseService.getData(`permissions/${id}`);
+    if (res && res.success === true && res.data) {
+      return res.data ?? null;
+    }
+    return null;
+  }
+
+  async createPermission(data: {
+    code: string;
+    description?: string;
+  }): Promise<{ success: boolean; data?: Permission }> {
+    try {
+      const res = await this.baseService.postData('permissions', data);
+      if (res && res.success === true) {
+        return { success: true, data: res.data ?? null };
       }
+      return { success: false };
+    } catch (error) {
+      return { success: false };
     }
   }
 
-  /**
-   * Set permissions (called after getting user info from /auth/me)
-   */
-  setPermissions(permissions: Permission[]): void {
-    this.permissions = permissions;
-    localStorage.setItem('userPermissions', JSON.stringify(permissions));
+  async updatePermission(
+    id: number,
+    data: { code?: string; description?: string }
+  ): Promise<{ success: boolean; data?: Permission }> {
+    try {
+      const res = await this.baseService.putData(`permissions/${id}`, data);
+      if (res && res.success === true) {
+        return { success: true, data: res.data ?? null };
+      }
+      return { success: false };
+    } catch (error) {
+      return { success: false };
+    }
   }
 
-  /**
-   * Get all permissions
-   */
-  getPermissions(): Permission[] {
-    return this.permissions;
-  }
-
-  /**
-   * Check if user has a specific permission by name/code
-   * @param permissionName - Permission name/code (e.g., 'USER_MANAGE', 'SCALE_VIEW')
-   */
-  hasPermission(permissionName: string): boolean {
-    if (!permissionName) return true; // If no permission required, allow access
-    return this.permissions.some(
-      p => p.name === permissionName || p.code === permissionName
-    );
-  }
-
-  /**
-   * Check if user has permission by resource and action
-   * @param resource - Resource name (e.g., 'USER', 'SCALE', 'ROLE')
-   * @param action - Action name (e.g., 'MANAGE', 'VIEW', 'OPERATE')
-   */
-  hasPermissionByResourceAction(resource: string, action: string): boolean {
-    if (!resource || !action) return true;
-    return this.permissions.some(
-      p => p.resource === resource && p.action === action
-    );
-  }
-
-  /**
-   * Check if user has any of the provided permissions
-   * @param permissionNames - Array of permission names/codes
-   */
-  hasAnyPermission(permissionNames: string[]): boolean {
-    if (!permissionNames || permissionNames.length === 0) return true;
-    return permissionNames.some(name => this.hasPermission(name));
-  }
-
-  /**
-   * Check if user has all of the provided permissions
-   * @param permissionNames - Array of permission names/codes
-   */
-  hasAllPermissions(permissionNames: string[]): boolean {
-    if (!permissionNames || permissionNames.length === 0) return true;
-    return permissionNames.every(name => this.hasPermission(name));
-  }
-
-  /**
-   * Clear permissions (on logout)
-   */
-  clearPermissions(): void {
-    this.permissions = [];
-    localStorage.removeItem('userPermissions');
+  async deletePermission(id: number): Promise<boolean> {
+    try {
+      await this.baseService.deleteData(`permissions/${id}`);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './services/auth.service';
-import { PermissionService } from './services/permission.service';
+import { UserPermissionService } from './services/user-permission.service';
 // import { MenuItem } from './shared/components/layout/sidebar/sidebar.component';
 
 @Component({
@@ -134,7 +134,7 @@ export class AppComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private permissionService: PermissionService
+    private userPermissionService: UserPermissionService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -157,7 +157,7 @@ export class AppComponent implements OnInit {
     // Load user info from API if authenticated
     if (this.authService.isAuthenticated()) {
       await this.authService.getMe();
-      this.permissionService.loadPermissionsFromStorage();
+      this.userPermissionService.loadPermissionsFromStorage();
     }
   }
 
@@ -165,7 +165,7 @@ export class AppComponent implements OnInit {
     this.filteredMenuItems = this.menuItems
       .map(item => {
         // Check if parent menu item has permission
-        if (item.permission && !this.permissionService.hasPermission(item.permission)) {
+        if (item.permission && !this.userPermissionService.hasPermission(item.permission)) {
           return null;
         }
 
@@ -173,7 +173,7 @@ export class AppComponent implements OnInit {
         if (item.children && item.children.length > 0) {
           const filteredChildren = item.children.filter((child: any) => {
             if (!child.permission) return true; // No permission required
-            return this.permissionService.hasPermission(child.permission);
+            return this.userPermissionService.hasPermission(child.permission);
           });
 
           // If no children visible, hide parent menu

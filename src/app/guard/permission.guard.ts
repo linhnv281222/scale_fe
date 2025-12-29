@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../services/auth.service';
-import { PermissionService } from '../services/permission.service';
+import { UserPermissionService } from '../services/user-permission.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PermissionGuard implements CanActivate {
   constructor(
-    private permissionService: PermissionService,
+    private userPermissionService: UserPermissionService,
     private authService: AuthService,
     private router: Router,
     private toastr: ToastrService
@@ -27,18 +27,18 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    // Ensure permissions are loaded
-    if (this.authService.isAuthenticated()) {
-      const permissions = this.permissionService.getPermissions();
-      if (!permissions || permissions.length === 0) {
-        // Try to reload permissions
-        await this.authService.getMe();
-        this.permissionService.loadPermissionsFromStorage();
+      // Ensure permissions are loaded
+      if (this.authService.isAuthenticated()) {
+        const permissions = this.userPermissionService.getPermissions();
+        if (!permissions || permissions.length === 0) {
+          // Try to reload permissions
+          await this.authService.getMe();
+          this.userPermissionService.loadPermissionsFromStorage();
+        }
       }
-    }
 
-    // Check if user has the required permission
-    const hasPermission = this.permissionService.hasPermission(requiredPermission);
+      // Check if user has the required permission
+      const hasPermission = this.userPermissionService.hasPermission(requiredPermission);
 
     if (!hasPermission) {
       // Show error message

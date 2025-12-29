@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from '../../services/auth.service';
-import { PermissionService } from '../../services/permission.service';
+import { UserPermissionService } from '../../services/user-permission.service';
 import { ThemeService } from '../../services/theme.service';
 import { WebsiteSettingsService } from '../../services/website-settings.service';
 
@@ -29,7 +29,7 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private permissionService: PermissionService,
+    private userPermissionService: UserPermissionService,
     private router: Router,
     private route: ActivatedRoute,
     public themeService: ThemeService,
@@ -118,7 +118,7 @@ export class LoginComponent implements OnInit {
       if (success) {
         // Load user info and permissions after successful login
         await this.authService.getMe();
-        this.permissionService.loadPermissionsFromStorage();
+        this.userPermissionService.loadPermissionsFromStorage();
         
         this.loading = false;
         // Get returnUrl from query params, default to dashboard
