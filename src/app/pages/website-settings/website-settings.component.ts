@@ -13,7 +13,8 @@ import { WebsiteSettingsService } from '../../services/website-settings.service'
 })
 export class WebsiteSettingsComponent implements OnInit {
   settings: WebsiteSettings = {
-    siteName: '',
+    siteName: 'Factory Data Manager',
+    loginSystemName: 'Factory Data Manager',
     logo: '',
     favicon: '',
     loginLogo: '',
@@ -70,7 +71,15 @@ export class WebsiteSettingsComponent implements OnInit {
       !actualFile.type.startsWith('image/')
     ) {
       this.toastr.error(
-        this.translate.instant('websiteSettings.imageFileRequired')
+        this.translate.instant('systemConfig.imageFileRequired')
+      );
+      return false;
+    }
+    // Kiểm tra kích thước file (10MB = 10 * 1024 * 1024 bytes)
+    const maxSize = 10 * 1024 * 1024;
+    if (actualFile.size > maxSize) {
+      this.toastr.error(
+        this.translate.instant('systemConfig.fileSizeExceeded')
       );
       return false;
     }
@@ -80,6 +89,16 @@ export class WebsiteSettingsComponent implements OnInit {
       this.logoPreview = e.target.result;
     };
     reader.readAsDataURL(actualFile);
+
+    // Tự động download file khi upload
+    const fileName = `logo.${actualFile.name.split('.').pop()}`;
+    this.websiteSettingsService.downloadFile(actualFile, fileName);
+    this.settings.logoFileName = fileName;
+    this.settings.logo = `assets/img/${fileName}`;
+    this.toastr.success(
+      `File ${fileName} đã được tải về. Vui lòng copy vào thư mục src/assets/img/`
+    );
+
     return false;
   };
 
@@ -91,7 +110,15 @@ export class WebsiteSettingsComponent implements OnInit {
       !actualFile.type.startsWith('image/')
     ) {
       this.toastr.error(
-        this.translate.instant('websiteSettings.imageFileRequired')
+        this.translate.instant('systemConfig.imageFileRequired')
+      );
+      return false;
+    }
+    // Kiểm tra kích thước file (10MB = 10 * 1024 * 1024 bytes)
+    const maxSize = 10 * 1024 * 1024;
+    if (actualFile.size > maxSize) {
+      this.toastr.error(
+        this.translate.instant('systemConfig.fileSizeExceeded')
       );
       return false;
     }
@@ -101,6 +128,16 @@ export class WebsiteSettingsComponent implements OnInit {
       this.faviconPreview = e.target.result;
     };
     reader.readAsDataURL(actualFile);
+
+    // Tự động download file khi upload
+    const fileName = `favicon.${actualFile.name.split('.').pop()}`;
+    this.websiteSettingsService.downloadFile(actualFile, fileName);
+    this.settings.faviconFileName = fileName;
+    this.settings.favicon = `assets/img/${fileName}`;
+    this.toastr.success(
+      `File ${fileName} đã được tải về. Vui lòng copy vào thư mục src/assets/img/`
+    );
+
     return false;
   };
 
@@ -112,7 +149,15 @@ export class WebsiteSettingsComponent implements OnInit {
       !actualFile.type.startsWith('image/')
     ) {
       this.toastr.error(
-        this.translate.instant('websiteSettings.imageFileRequired')
+        this.translate.instant('systemConfig.imageFileRequired')
+      );
+      return false;
+    }
+    // Kiểm tra kích thước file (10MB = 10 * 1024 * 1024 bytes)
+    const maxSize = 10 * 1024 * 1024;
+    if (actualFile.size > maxSize) {
+      this.toastr.error(
+        this.translate.instant('systemConfig.fileSizeExceeded')
       );
       return false;
     }
@@ -122,6 +167,16 @@ export class WebsiteSettingsComponent implements OnInit {
       this.loginLogoPreview = e.target.result;
     };
     reader.readAsDataURL(actualFile);
+
+    // Tự động download file khi upload
+    const fileName = `login-logo.${actualFile.name.split('.').pop()}`;
+    this.websiteSettingsService.downloadFile(actualFile, fileName);
+    this.settings.loginLogoFileName = fileName;
+    this.settings.loginLogo = `assets/img/${fileName}`;
+    this.toastr.success(
+      `File ${fileName} đã được tải về. Vui lòng copy vào thư mục src/assets/img/`
+    );
+
     return false;
   };
 
@@ -146,52 +201,14 @@ export class WebsiteSettingsComponent implements OnInit {
   async saveSettings(): Promise<void> {
     if (!this.settings.siteName) {
       this.toastr.error(
-        this.translate.instant('websiteSettings.siteNameRequired')
+        this.translate.instant('systemConfig.systemNameRequired')
       );
       return;
     }
 
     this.saving = true;
     try {
-      if (this.logoFile) {
-        const logoUrl = await this.websiteSettingsService.uploadLogo(
-          this.logoFile
-        );
-        if (logoUrl) {
-          this.settings.logo = logoUrl;
-        }
-      } else if (this.logoPreview && this.logoPreview.startsWith('data:')) {
-        this.settings.logo = this.logoPreview;
-      }
-
-      if (this.faviconFile) {
-        const faviconUrl = await this.websiteSettingsService.uploadFavicon(
-          this.faviconFile
-        );
-        if (faviconUrl) {
-          this.settings.favicon = faviconUrl;
-        }
-      } else if (
-        this.faviconPreview &&
-        this.faviconPreview.startsWith('data:')
-      ) {
-        this.settings.favicon = this.faviconPreview;
-      }
-
-      if (this.loginLogoFile) {
-        const loginLogoUrl = await this.websiteSettingsService.uploadLogo(
-          this.loginLogoFile
-        );
-        if (loginLogoUrl) {
-          this.settings.loginLogo = loginLogoUrl;
-        }
-      } else if (
-        this.loginLogoPreview &&
-        this.loginLogoPreview.startsWith('data:')
-      ) {
-        this.settings.loginLogo = this.loginLogoPreview;
-      }
-
+      // Files đã được download khi upload, chỉ cần lưu settings
       const success = await this.websiteSettingsService.saveSettings(
         this.settings
       );
@@ -199,17 +216,17 @@ export class WebsiteSettingsComponent implements OnInit {
         this.titleService.setTitle(this.settings.siteName);
         this.updateFavicon();
         this.toastr.success(
-          this.translate.instant('websiteSettings.saveSuccess')
+          this.translate.instant('systemConfig.saveSuccess')
         );
         this.logoFile = null;
         this.faviconFile = null;
         this.loginLogoFile = null;
       } else {
-        this.toastr.error(this.translate.instant('websiteSettings.saveError'));
+        this.toastr.error(this.translate.instant('systemConfig.saveError'));
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      this.toastr.error(this.translate.instant('websiteSettings.saveError'));
+      this.toastr.error(this.translate.instant('systemConfig.saveError'));
     } finally {
       this.saving = false;
     }

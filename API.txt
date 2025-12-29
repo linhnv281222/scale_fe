@@ -899,3 +899,91 @@ Response 200:
   "message": "Delete success",
   "error": null
 }
+
+===============================================
+7. persistence-monitoring-controller
+===============================================
+
+--------------------------------------
+GET - /monitoring/persistence/metrics
+-------------------------------------
+
+response:
+{
+  "success": true,
+  "data": {
+    "additionalProp1": {},
+    "additionalProp2": {},
+    "additionalProp3": {}
+  },
+  "message": "string",
+  "error": "string"
+}
+
+----------------------------------------
+GET - /monitoring/persistence/health
+---------------------------------------
+
+response:
+{
+  "success": true,
+  "data": {
+    "additionalProp1": {},
+    "additionalProp2": {},
+    "additionalProp3": {}
+  },
+  "message": "string",
+  "error": "string"
+}
+
+=============================================
+8.Reports - Report and statistics APIs
+=============================================
+
+------------------------------------------------------
+POST - /reports/generate - Report and statistics APIs
+------------------------------------------------------
+
+payload:
+{
+  "scaleIds": [
+    0
+  ],
+  "dataField": "string",
+  "method": "SUM",
+  "fromDate": "2025-12-28",
+  "toDate": "2025-12-28",
+  "interval": "HOUR"
+}
+
+response:
+{
+  "success": true,
+  "data": {
+    "reportName": "string",
+    "method": "string",
+    "dataField": "string",
+    "interval": "string",
+    "dataPoints": [
+      {
+        "time": "string",
+        "value": 0
+      }
+    ]
+  },
+  "message": "string",
+  "error": "string"
+}
+
+-------------------------------------------------
+POST - /reports/aggregate-daily - Trigger daily aggregation
+
+response:
+{
+  "success": true,
+  "data": "string",
+  "message": "string",
+  "error": "string"
+}
+
+

@@ -1,30 +1,22 @@
 <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
   <main class="flex flex-col flex-1 overflow-hidden">
-    <div
-      class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-    >
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-        {{ "websiteSettings.title" | translate }}
-      </h1>
-    </div>
-
     <div class="flex-1 overflow-auto">
-      <div class="p-6 max-w-4xl mx-auto">
-        <div class="p-6 bg-white rounded-lg shadow-sm dark:bg-gray-800">
-          <div class="space-y-6">
+      <div class="max-w-4xl p-4 mx-auto">
+        <div class="p-4 bg-white rounded-lg shadow-sm dark:bg-gray-800">
+          <div class="space-y-4">
             <div>
               <h3
-                class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100"
+                class="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100"
               >
-                {{ "websiteSettings.basicInfo" | translate }}
+                {{ "systemConfig.title" | translate }}
               </h3>
-              <div class="space-y-4">
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div>
                   <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    {{ "websiteSettings.siteName" | translate
-                    }}<span class="text-red-500 ml-1">*</span>
+                    {{ "systemConfig.systemName" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
                   </label>
                   <nz-input-group>
                     <input
@@ -32,76 +24,66 @@
                       nz-input
                       [(ngModel)]="settings.siteName"
                       [placeholder]="
-                        'websiteSettings.siteNamePlaceholder' | translate
+                        'systemConfig.systemNamePlaceholder' | translate
                       "
                       class="w-full"
                       required
                     />
                   </nz-input-group>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ "systemConfig.updateFilesNote" | translate }}
+                  </p>
                 </div>
 
                 <div>
                   <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    {{ "websiteSettings.description" | translate }}
-                  </label>
-                  <nz-input-group>
-                    <textarea
-                      nz-input
-                      [(ngModel)]="settings.description"
-                      [placeholder]="
-                        'websiteSettings.descriptionPlaceholder' | translate
-                      "
-                      rows="3"
-                      class="w-full"
-                    ></textarea>
-                  </nz-input-group>
-                </div>
-
-                <div>
-                  <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    {{ "websiteSettings.copyright" | translate }}
+                    {{ "systemConfig.loginSystemName" | translate }}
                   </label>
                   <nz-input-group>
                     <input
                       type="text"
                       nz-input
-                      [(ngModel)]="settings.copyright"
+                      [(ngModel)]="settings.loginSystemName"
                       [placeholder]="
-                        'websiteSettings.copyrightPlaceholder' | translate
+                        'systemConfig.loginSystemNamePlaceholder' | translate
                       "
                       class="w-full"
                     />
                   </nz-input-group>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ "systemConfig.loginSystemNameNote" | translate }}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h3
-                class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100"
+                class="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100"
               >
-                {{ "websiteSettings.logoAndImages" | translate }}
+                {{ "systemConfig.logoAndImages" | translate }}
               </h3>
-              <div class="space-y-6">
+              <div class="space-y-4">
                 <div>
                   <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    {{ "websiteSettings.mainLogo" | translate }}
+                    {{ "systemConfig.mainLogo" | translate }}
                   </label>
+                  <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                    {{ "systemConfig.mainLogoDescription" | translate }}
+                  </p>
                   <div class="flex items-start gap-4">
                     <div
                       *ngIf="logoPreview"
-                      class="relative flex-shrink-0 w-32 h-32 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                      class="relative flex-shrink-0 w-24 h-24 overflow-hidden border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
                     >
                       <img
                         [src]="logoPreview"
                         alt="Logo preview"
-                        class="w-full h-full object-contain"
+                        class="object-contain w-full h-full"
                       />
                       <button
                         nz-button
@@ -109,7 +91,7 @@
                         nzSize="small"
                         nzDanger
                         (click)="removeLogo()"
-                        class="absolute top-1 right-1"
+                        class="absolute top-0.5 right-0.5"
                       >
                         <span nz-icon nzType="close" nzTheme="outline"></span>
                       </button>
@@ -119,17 +101,17 @@
                         [nzBeforeUpload]="beforeUploadLogo"
                         [nzShowUploadList]="false"
                       >
-                        <button nz-button nzType="default">
+                        <button nz-button nzType="default" nzSize="small">
                           <span
                             nz-icon
                             nzType="upload"
                             nzTheme="outline"
                           ></span>
-                          {{ "websiteSettings.selectLogo" | translate }}
+                          {{ "systemConfig.selectFile" | translate }}
                         </button>
                       </nz-upload>
-                      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        {{ "websiteSettings.logoRecommendation" | translate }}
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ "systemConfig.logoRecommendation" | translate }}
                       </p>
                     </div>
                   </div>
@@ -137,19 +119,22 @@
 
                 <div>
                   <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    {{ "websiteSettings.favicon" | translate }}
+                    {{ "systemConfig.favicon" | translate }}
                   </label>
+                  <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                    {{ "systemConfig.faviconDescription" | translate }}
+                  </p>
                   <div class="flex items-start gap-4">
                     <div
                       *ngIf="faviconPreview"
-                      class="relative flex-shrink-0 w-16 h-16 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                      class="relative flex-shrink-0 w-16 h-16 overflow-hidden border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
                     >
                       <img
                         [src]="faviconPreview"
                         alt="Favicon preview"
-                        class="w-full h-full object-contain"
+                        class="object-contain w-full h-full"
                       />
                       <button
                         nz-button
@@ -167,19 +152,17 @@
                         [nzBeforeUpload]="beforeUploadFavicon"
                         [nzShowUploadList]="false"
                       >
-                        <button nz-button nzType="default">
+                        <button nz-button nzType="default" nzSize="small">
                           <span
                             nz-icon
                             nzType="upload"
                             nzTheme="outline"
                           ></span>
-                          {{ "websiteSettings.selectFavicon" | translate }}
+                          {{ "systemConfig.selectFile" | translate }}
                         </button>
                       </nz-upload>
-                      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        {{
-                          "websiteSettings.faviconRecommendation" | translate
-                        }}
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ "systemConfig.faviconRecommendation" | translate }}
                       </p>
                     </div>
                   </div>
@@ -187,19 +170,22 @@
 
                 <div>
                   <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    {{ "websiteSettings.loginLogo" | translate }}
+                    {{ "systemConfig.loginLogo" | translate }}
                   </label>
+                  <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                    {{ "systemConfig.loginLogoDescription" | translate }}
+                  </p>
                   <div class="flex items-start gap-4">
                     <div
                       *ngIf="loginLogoPreview"
-                      class="relative flex-shrink-0 w-32 h-32 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                      class="relative flex-shrink-0 w-24 h-24 overflow-hidden border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
                     >
                       <img
                         [src]="loginLogoPreview"
                         alt="Login logo preview"
-                        class="w-full h-full object-contain"
+                        class="object-contain w-full h-full"
                       />
                       <button
                         nz-button
@@ -207,7 +193,7 @@
                         nzSize="small"
                         nzDanger
                         (click)="removeLoginLogo()"
-                        class="absolute top-1 right-1"
+                        class="absolute top-0.5 right-0.5"
                       >
                         <span nz-icon nzType="close" nzTheme="outline"></span>
                       </button>
@@ -217,19 +203,17 @@
                         [nzBeforeUpload]="beforeUploadLoginLogo"
                         [nzShowUploadList]="false"
                       >
-                        <button nz-button nzType="default">
+                        <button nz-button nzType="default" nzSize="small">
                           <span
                             nz-icon
                             nzType="upload"
                             nzTheme="outline"
                           ></span>
-                          {{ "websiteSettings.selectLoginLogo" | translate }}
+                          {{ "systemConfig.selectFile" | translate }}
                         </button>
                       </nz-upload>
-                      <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        {{
-                          "websiteSettings.loginLogoRecommendation" | translate
-                        }}
+                      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ "systemConfig.loginLogoRecommendation" | translate }}
                       </p>
                     </div>
                   </div>
@@ -237,65 +221,9 @@
               </div>
             </div>
 
-            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-              <h3
-                class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100"
-              >
-                {{ "websiteSettings.colors" | translate }}
-              </h3>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    {{ "websiteSettings.primaryColor" | translate }}
-                  </label>
-                  <div class="flex items-center gap-3">
-                    <input
-                      type="color"
-                      [(ngModel)]="settings.primaryColor"
-                      class="w-16 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                    />
-                    <nz-input-group>
-                      <input
-                        type="text"
-                        nz-input
-                        [(ngModel)]="settings.primaryColor"
-                        placeholder="#2563eb"
-                        class="flex-1"
-                      />
-                    </nz-input-group>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    {{ "websiteSettings.secondaryColor" | translate }}
-                  </label>
-                  <div class="flex items-center gap-3">
-                    <input
-                      type="color"
-                      [(ngModel)]="settings.secondaryColor"
-                      class="w-16 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                    />
-                    <nz-input-group>
-                      <input
-                        type="text"
-                        nz-input
-                        [(ngModel)]="settings.secondaryColor"
-                        placeholder="#64748b"
-                        class="flex-1"
-                      />
-                    </nz-input-group>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div
-              class="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700"
+              class="sticky bottom-0 flex justify-end gap-3 pt-4 mt-4 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700"
             >
               <button
                 nz-button
@@ -311,7 +239,7 @@
                 (click)="saveSettings()"
                 [nzLoading]="saving"
               >
-                {{ "websiteSettings.saveConfiguration" | translate }}
+                {{ "common.save" | translate }}
               </button>
             </div>
           </div>

@@ -99,6 +99,10 @@ export class AppComponent implements OnInit {
           label: 'templates.title',
           path: '/manage-templates',
         },
+        {
+          label: 'systemConfig.title',
+          path: '/website-settings',
+        },
       ],
     },
   ];
@@ -118,6 +122,8 @@ export class AppComponent implements OnInit {
   }
 
   checkLoginPage(): void {
-    this.isLoginPage = this.router.url === '/login';
+    // Check if current route path starts with '/login' (ignore query params)
+    const url = this.router.url.split('?')[0]; // Remove query params
+    this.isLoginPage = url === '/login';
   }
 }

@@ -1,12 +1,17 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 @Injectable({
   providedIn: 'root',
 })
-export class AuthGuard  {
-  constructor(private router: Router) {}
+export class AuthGuard {
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
+
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
@@ -15,23 +20,15 @@ export class AuthGuard  {
     | Promise<boolean | UrlTree>
     | boolean
     | UrlTree {
-    // Get roles from authentication service or localStorage
-    const userRoles: string[] = JSON.parse(localStorage.getItem('userRoles') || '[]');
-    if (userRoles && userRoles.length > 0) {
-      const requiredRole = route.data['requiredRole'];
-
-      if (this.checkRoles(requiredRole, userRoles)) {
-        return true;
-      } else {
-        this.router.navigate(['exception/403']);
-        return false;
-      }
+    // Check if user is authenticated (has token)
+    if (this.authService.isAuthenticated()) {
+      return true;
     } else {
-      this.router.navigate(['exception/403']);
+      // Redirect to login page if not authenticated
+      // If the requested URL is root path '/', don't set returnUrl to avoid redirect loop
+      const returnUrl = state.url === '/' ? '/dashboard' : state.url;
+      this.router.navigate(['/login'], { queryParams: { returnUrl } });
       return false;
     }
-  }
-  checkRoles(rolesToCheck: string[], roles: string[]): boolean {
-    return rolesToCheck.some((role) => roles.includes(role));
   }
 }

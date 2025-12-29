@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  scale-frontend:
+    container_name: scale-frontend
+    build:
+      dockerfile: Dockerfile
+      args:
+        - profile=${env}
+    image: scale-frontend
+    restart: always
+    ports:
+      - "4300:80"
+networks:
+  fcim_net:
+    external: true

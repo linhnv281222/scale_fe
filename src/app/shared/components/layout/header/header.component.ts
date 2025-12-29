@@ -14,6 +14,7 @@ import { AuthService } from '../../../../services/auth.service';
 import { LanguageService } from '../../../../services/language.service';
 import { PageActionService } from '../../../../services/page-action.service';
 import { ThemeService } from '../../../../services/theme.service';
+import { WebsiteSettingsService } from '../../../../services/website-settings.service';
 
 @Component({
   selector: 'app-header',
@@ -31,6 +32,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   currentUser: any = null;
   isDarkMode = false;
   currentLang = 'vi_VN';
+  systemLogo = '';
   
   languages = [
     { code: 'vi_VN', label: 'Tiếng Việt', flag: 'assets/img/vie.png' },
@@ -43,10 +45,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     public languageService: LanguageService,
     public translate: TranslateService,
     private router: Router,
-    private pageActionService: PageActionService
+    private pageActionService: PageActionService,
+    private websiteSettingsService: WebsiteSettingsService
   ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.currentUser = this.authService.getCurrentUser();
     this.currentLang = this.languageService.getCurrentLanguage();
     this.themeService.theme$
@@ -65,6 +68,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.updatePageTitle();
       });
     this.updatePageTitle();
+
+    // Load system logo
+    await this.loadSystemLogo();
+  }
+
+  async loadSystemLogo(): Promise<void> {
+    try {
+      const settings = await this.websiteSettingsService.getSettings();
+      this.systemLogo = settings.logo || 'assets/img/facenet-01-k-nen.png';
+    } catch (error) {
+      console.error('Error loading system logo:', error);
+    }
   }
 
   ngOnDestroy(): void {

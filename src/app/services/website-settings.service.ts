@@ -18,10 +18,11 @@ export class WebsiteSettingsService {
     }
 
     return {
-      siteName: '',
-      logo: '',
+      siteName: 'Factory Data Manager',
+      loginSystemName: 'Factory Data Manager',
+      logo: 'assets/img/facenet-01-k-nen.png',
       favicon: '',
-      loginLogo: '',
+      loginLogo: 'assets/img/facenet-01-k-nen.png',
       copyright: '',
       description: '',
       primaryColor: '#2563eb',
@@ -39,20 +40,33 @@ export class WebsiteSettingsService {
     }
   }
 
-  async uploadLogo(file: File): Promise<string | null> {
-    return this.fileToBase64(file);
+  /**
+   * Download file to user's computer
+   * User needs to manually copy the file to src/assets/img/
+   */
+  downloadFile(file: File, fileName: string): void {
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
-  async uploadFavicon(file: File): Promise<string | null> {
-    return this.fileToBase64(file);
+  async uploadLogo(file: File): Promise<{ fileName: string; file: File } | null> {
+    const fileName = `logo.${file.name.split('.').pop()}`;
+    return { fileName, file };
   }
 
-  private fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
+  async uploadFavicon(file: File): Promise<{ fileName: string; file: File } | null> {
+    const fileName = `favicon.${file.name.split('.').pop()}`;
+    return { fileName, file };
+  }
+
+  async uploadLoginLogo(file: File): Promise<{ fileName: string; file: File } | null> {
+    const fileName = `login-logo.${file.name.split('.').pop()}`;
+    return { fileName, file };
   }
 }

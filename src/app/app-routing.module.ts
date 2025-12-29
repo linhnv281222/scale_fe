@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from './guard/auth.guard';
 import { ActivityMonitoringComponent } from './pages/activity-monitoring/activity-monitoring.component';
 import { ConfigsComponent } from './pages/configs/configs.component';
 import { ConnectionStatusComponent } from './pages/connection-status/connection-status.component';
@@ -28,12 +29,12 @@ const routes: Routes = [
   {
     path: '',
     component: DashboardComponent,
-    // // canActivate: [AuthGuard] // Temporarily disabled // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
-    // // canActivate: [AuthGuard] // Temporarily disabled // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'manage-info',
@@ -41,7 +42,7 @@ const routes: Routes = [
       {
         path: 'locations',
         component: LocationsComponent,
-        // // canActivate: [AuthGuard] // Temporarily disabled // Temporarily disabled
+        canActivate: [AuthGuard],
       },
     ],
   },
@@ -51,59 +52,59 @@ const routes: Routes = [
       {
         path: 'list',
         component: ScalesComponent,
-        // canActivate: [AuthGuard] // Temporarily disabled
+        canActivate: [AuthGuard],
       },
       {
         path: 'manufacturers',
         component: ScaleManufacturersComponent,
-        // canActivate: [AuthGuard] // Temporarily disabled
+        canActivate: [AuthGuard],
       },
       {
         path: 'protocols',
         component: ProtocolsComponent,
-        // canActivate: [AuthGuard] // Temporarily disabled
+        canActivate: [AuthGuard],
       },
     ],
   },
   {
     path: 'manage-shifts',
     component: ShiftsComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'manage-accounts',
     component: UsersComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'manage-permissions',
     component: PermissionsComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'manage-roles',
     component: RolesComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'manage-configs',
     component: ConfigsComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'website-settings',
     component: WebsiteSettingsComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'activity-monitoring',
     component: ActivityMonitoringComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'data-collection',
     component: ScaleDataComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'reports',
@@ -111,29 +112,29 @@ const routes: Routes = [
       {
         path: 'scale-report',
         component: ScaleReportComponent,
-        // canActivate: [AuthGuard] // Temporarily disabled
+        canActivate: [AuthGuard],
       },
       {
         path: 'shift-report',
         component: ShiftReportComponent,
-        // canActivate: [AuthGuard] // Temporarily disabled
+        canActivate: [AuthGuard],
       },
     ],
   },
   {
     path: 'manage-templates',
     component: TemplatesComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'manage-licenses',
     component: LicensesComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: 'connection-status',
     component: ConnectionStatusComponent,
-    // canActivate: [AuthGuard] // Temporarily disabled
+    canActivate: [AuthGuard],
   },
   {
     path: '**',

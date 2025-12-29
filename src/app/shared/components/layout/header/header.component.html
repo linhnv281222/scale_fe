@@ -3,8 +3,14 @@
 >
   <!-- Top bar with menu and user actions -->
   <div class="px-3 !py-2 flex items-center justify-between">
-    <!-- Left side - Menu -->
-    <div class="flex-1 overflow-x-auto">
+    <!-- Left side - Logo and Menu -->
+    <div class="flex items-center flex-1 gap-3 overflow-x-auto">
+      <!-- System Logo -->
+      <img
+        [src]="systemLogo"
+        alt="System Logo"
+        class="flex-shrink-0 object-contain h-8"
+      />
       <nav class="flex items-center gap-1 whitespace-nowrap">
         <ng-container *ngIf="menuItems && menuItems.length > 0">
           <ng-container *ngFor="let item of menuItems; let i = index">
