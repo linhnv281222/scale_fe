@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './guard/auth.guard';
+import { PermissionGuard } from './guard/permission.guard';
 import { ActivityMonitoringComponent } from './pages/activity-monitoring/activity-monitoring.component';
 import { ConfigsComponent } from './pages/configs/configs.component';
 import { ConnectionStatusComponent } from './pages/connection-status/connection-status.component';
@@ -52,17 +53,20 @@ const routes: Routes = [
       {
         path: 'list',
         component: ScalesComponent,
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, PermissionGuard],
+        data: { permission: 'SCALE_MANAGE' },
       },
       {
         path: 'manufacturers',
         component: ScaleManufacturersComponent,
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, PermissionGuard],
+        data: { permission: 'SCALE_MANAGE' },
       },
       {
         path: 'protocols',
         component: ProtocolsComponent,
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, PermissionGuard],
+        data: { permission: 'SCALE_MANAGE' },
       },
     ],
   },
@@ -74,17 +78,20 @@ const routes: Routes = [
   {
     path: 'manage-accounts',
     component: UsersComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, PermissionGuard],
+    data: { permission: 'USER_MANAGE' },
   },
   {
     path: 'manage-permissions',
     component: PermissionsComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, PermissionGuard],
+    data: { permission: 'USER_MANAGE' },
   },
   {
     path: 'manage-roles',
     component: RolesComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, PermissionGuard],
+    data: { permission: 'ROLE_MANAGE' },
   },
   {
     path: 'manage-configs',
@@ -99,7 +106,8 @@ const routes: Routes = [
   {
     path: 'activity-monitoring',
     component: ActivityMonitoringComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, PermissionGuard],
+    data: { permission: 'SCALE_VIEW' },
   },
   {
     path: 'data-collection',
@@ -112,12 +120,14 @@ const routes: Routes = [
       {
         path: 'scale-report',
         component: ScaleReportComponent,
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, PermissionGuard],
+        data: { permission: 'SCALE_VIEW' },
       },
       {
         path: 'shift-report',
         component: ShiftReportComponent,
-        canActivate: [AuthGuard],
+        canActivate: [AuthGuard, PermissionGuard],
+        data: { permission: 'SCALE_VIEW' },
       },
     ],
   },

@@ -1,2 +1,2 @@
-<app-layout *ngIf="!isLoginPage" [menuItems]="menuItems"></app-layout>
+<app-layout *ngIf="!isLoginPage" [menuItems]="filteredMenuItems"></app-layout>
 <router-outlet *ngIf="isLoginPage"></router-outlet>

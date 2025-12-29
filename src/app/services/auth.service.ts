@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { User } from '../models';
+import { PermissionService } from './permission.service';
 import { BaseService } from './base.service';
 
 export interface LoginResponse {
@@ -20,7 +21,8 @@ export class AuthService {
 
   constructor(
     private baseService: BaseService,
-    private router: Router
+    private router: Router,
+    private permissionService: PermissionService
   ) {
     this.loadUserFromStorage();
   }
@@ -98,7 +100,9 @@ export class AuthService {
     localStorage.removeItem('tokenType');
     localStorage.removeItem('user');
     localStorage.removeItem('userRoles');
+    localStorage.removeItem('userPermissions');
     this.currentUser = null;
+    this.permissionService.clearPermissions();
   }
 
   isAuthenticated(): boolean {
@@ -131,11 +135,28 @@ export class AuthService {
           id: userData.id,
           username: userData.username,
           fullName: userData.fullName,
+          roles: userData.roles,
         };
         localStorage.setItem('user', JSON.stringify(user));
         if (userData.roles && Array.isArray(userData.roles)) {
           const roleCodes = userData.roles.map((r: any) => r.code || r.name).filter(Boolean);
           localStorage.setItem('userRoles', JSON.stringify(roleCodes));
+          
+          // Extract all permissions from roles
+          const allPermissions: any[] = [];
+          userData.roles.forEach((role: any) => {
+            if (role.permissions && Array.isArray(role.permissions)) {
+              role.permissions.forEach((permission: any) => {
+                // Avoid duplicates
+                if (!allPermissions.find(p => p.id === permission.id || p.name === permission.name)) {
+                  allPermissions.push(permission);
+                }
+              });
+            }
+          });
+          localStorage.setItem('userPermissions', JSON.stringify(allPermissions));
+          // Update permission service
+          this.permissionService.setPermissions(allPermissions);
         }
         this.currentUser = user;
         return user;

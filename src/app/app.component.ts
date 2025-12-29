@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { AuthService } from './services/auth.service';
+import { PermissionService } from './services/permission.service';
 // import { MenuItem } from './shared/components/layout/sidebar/sidebar.component';
 
 @Component({
@@ -15,24 +17,29 @@ export class AppComponent implements OnInit {
       label: 'menu.dashboard',
       icon: 'dashboard',
       path: '/dashboard',
+      permission: null, // No permission required
     },
     {
       label: 'menu.activityMonitoring',
       icon: 'monitor',
       path: '/activity-monitoring',
+      permission: 'SCALE_VIEW', // View scales permission
     },
     {
       label: 'menu.reports',
       icon: 'file-text',
       path: '/reports',
+      permission: 'SCALE_VIEW', // View scales permission
       children: [
         {
           label: 'reports.scaleReport',
           path: '/reports/scale-report',
+          permission: 'SCALE_VIEW',
         },
         {
           label: 'reports.shiftReport',
           path: '/reports/shift-report',
+          permission: 'SCALE_VIEW',
         },
       ],
     },
@@ -40,26 +47,32 @@ export class AppComponent implements OnInit {
       label: 'menu.manageInfo',
       icon: 'folder',
       path: '/manage-info',
+      permission: null, // Parent menu, check children
       children: [
         {
           label: 'locations.title',
           path: '/manage-info/locations',
+          permission: null, // No permission required
         },
         {
           label: 'scales.title',
           path: '/manage-scales/list',
+          permission: 'SCALE_MANAGE', // Manage scales permission
         },
         {
           label: 'scales.manufacturers',
           path: '/manage-scales/manufacturers',
+          permission: 'SCALE_MANAGE',
         },
         {
           label: 'scales.protocols',
           path: '/manage-scales/protocols',
+          permission: 'SCALE_MANAGE',
         },
         {
           label: 'shifts.title',
           path: '/manage-shifts',
+          permission: null, // No permission required
         },
       ],
     },
@@ -67,22 +80,27 @@ export class AppComponent implements OnInit {
       label: 'menu.manageUsers',
       icon: 'user',
       path: '/manage-users',
+      permission: null, // Parent menu, check children
       children: [
         {
           label: 'users.title',
           path: '/manage-accounts',
+          permission: 'USER_MANAGE', // Manage users permission
         },
         {
           label: 'permissions.title',
           path: '/manage-permissions',
+          permission: 'USER_MANAGE', // Manage users permission (permissions management)
         },
         {
           label: 'roles.title',
           path: '/manage-roles',
+          permission: 'ROLE_MANAGE', // Manage roles permission
         },
         {
           label: 'licenses.title',
           path: '/manage-licenses',
+          permission: null, // No permission required
         },
       ],
     },
@@ -90,26 +108,36 @@ export class AppComponent implements OnInit {
       label: 'menu.configs',
       icon: 'setting',
       path: '/configs',
+      permission: null, // No permission required
       children: [
         {
           label: 'configs.title',
           path: '/manage-configs',
+          permission: null,
         },
         {
           label: 'templates.title',
           path: '/manage-templates',
+          permission: null,
         },
         {
           label: 'systemConfig.title',
           path: '/website-settings',
+          permission: null,
         },
       ],
     },
   ];
 
-  constructor(private router: Router) {}
+  filteredMenuItems: any[] = [];
 
-  ngOnInit(): void {
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private permissionService: PermissionService
+  ) {}
+
+  async ngOnInit(): Promise<void> {
     // Check if current route is login page
     this.checkLoginPage();
 
@@ -119,6 +147,49 @@ export class AppComponent implements OnInit {
       .subscribe(() => {
         this.checkLoginPage();
       });
+
+    // Load user info and permissions
+    await this.loadUserPermissions();
+    this.filterMenuItems();
+  }
+
+  async loadUserPermissions(): Promise<void> {
+    // Load user info from API if authenticated
+    if (this.authService.isAuthenticated()) {
+      await this.authService.getMe();
+      this.permissionService.loadPermissionsFromStorage();
+    }
+  }
+
+  filterMenuItems(): void {
+    this.filteredMenuItems = this.menuItems
+      .map(item => {
+        // Check if parent menu item has permission
+        if (item.permission && !this.permissionService.hasPermission(item.permission)) {
+          return null;
+        }
+
+        // Filter children if exists
+        if (item.children && item.children.length > 0) {
+          const filteredChildren = item.children.filter((child: any) => {
+            if (!child.permission) return true; // No permission required
+            return this.permissionService.hasPermission(child.permission);
+          });
+
+          // If no children visible, hide parent menu
+          if (filteredChildren.length === 0) {
+            return null;
+          }
+
+          return {
+            ...item,
+            children: filteredChildren
+          };
+        }
+
+        return item;
+      })
+      .filter(item => item !== null);
   }
 
   checkLoginPage(): void {
