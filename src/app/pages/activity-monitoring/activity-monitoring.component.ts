@@ -1,12 +1,14 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { Client, StompSubscription } from '@stomp/stompjs';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { Scale, ScaleData } from '../../models';
+// @ts-ignore
+import { Scale } from '../../models';
 import {
   ActivityMonitoringItem,
   ActivityMonitoringService,
 } from '../../services/activity-monitoring.service';
-import { ScaleDataService } from '../../services/scale-data.service';
+import { ScaleService } from '../../services/scale.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
 @Component({
@@ -25,131 +27,133 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
   total = 0;
   filterData: any = {};
 
-  // Historical data (shown when row is clicked)
-  selectedScaleId: number | null = null;
-  selectedScale: Scale | null = null;
-  historicalData: ScaleData[] = [];
-  historicalDataLoading = false;
-  historicalPageIndex = 1;
-  historicalPageSize = 20;
-  historicalTotal = 0;
-  showHistoricalData = false;
+  // Dynamic column headers from first item's dataValues
+  dataColumn1Name: string = '';
+  dataColumn2Name: string = '';
+
+  // Scales list for filter
+  scales: Scale[] = [];
+
 
   // Thresholds
   WARNING_THRESHOLD_MINUTES = 5;
   ERROR_THRESHOLD_MINUTES = 15;
 
+  // WebSocket
+  private stompClient!: Client;
+  private stompSubscription!: StompSubscription;
+  private isReconnecting: boolean = false;
+  private reconnectTimeout: any = null;
+  private readonly RECONNECT_DELAY: number = 5000;
+  isConnectWebsocket = false;
+
   filterFields: FilterField[] = [
     {
-      key: 'scaleName',
+      key: 'scale_ids',
       label: 'scales.name',
-      type: 'text',
-      placeholder: 'scales.name',
+      type: 'multiselect',
+      placeholder: 'scales.selectScale',
+      options: [],
     },
     {
       key: 'status',
       label: 'connectionStatus.status',
-      type: 'select',
+      type: 'multiselect',
       placeholder: 'connectionStatus.status',
       options: [
         { label: 'connectionStatus.online', value: 'ONLINE' },
         { label: 'connectionStatus.offline', value: 'OFFLINE' },
-        { label: 'connectionStatus.error', value: 'ERROR' },
       ],
     },
   ];
 
   constructor(
     private activityMonitoringService: ActivityMonitoringService,
-    private scaleDataService: ScaleDataService
+    private scaleService: ScaleService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.loadScales();
     this.loadActivityData();
+    // this.connectWebSocket();
 
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 30 seconds (fallback if WebSocket fails)
     interval(30000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        this.loadActivityData();
-        // Refresh historical data if showing
-        if (this.showHistoricalData && this.selectedScaleId) {
-          this.loadHistoricalData();
+        if (!this.isConnectWebsocket) {
+          this.loadActivityData();
         }
       });
   }
 
   ngOnDestroy(): void {
+    // this.disconnectWebSocket();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  async loadScales(): Promise<void> {
+    try {
+      const result = await this.scaleService.getScales();
+      this.scales = result.data || [];
+      // Update filter options
+      const scaleField = this.filterFields.find(f => f.key === 'scale_ids');
+      if (scaleField) {
+        scaleField.options = this.scales.map(scale => ({
+          label: scale.name,
+          value: scale.id,
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading scales:', error);
+    }
   }
 
   async loadActivityData(): Promise<void> {
     this.loading = true;
     try {
-      const data = await this.activityMonitoringService.getActivityData({
-        page: this.pageIndex,
-        size: this.pageSize,
-        ...this.filterData,
-      });
-      const items = Array.isArray(data) ? data : data?.data || [];
-      this.activityData = items.map((item: any) => ({
+      // Build query params
+      const params: any = {};
+      if (this.filterData.scale_ids && Array.isArray(this.filterData.scale_ids) && this.filterData.scale_ids.length > 0) {
+        params.scale_ids = this.filterData.scale_ids;
+      }
+      if (this.filterData.status && Array.isArray(this.filterData.status) && this.filterData.status.length > 0) {
+        params.status = this.filterData.status;
+      }
+
+      const result = await this.activityMonitoringService.getCurrentStates(params);
+      this.activityData = result.data || [];
+      this.total = result.total || this.activityData.length;
+
+      // Extract column names from first item's dataValues
+      if (this.activityData.length > 0) {
+        const firstItem = this.activityData[0];
+        if (firstItem.dataValues) {
+          this.dataColumn1Name = firstItem.dataValues.data_1?.name || '';
+          this.dataColumn2Name = firstItem.dataValues.data_2?.name || '';
+        }
+      }
+
+      // Map data for backward compatibility
+      this.activityData = this.activityData.map((item: ActivityMonitoringItem) => ({
         ...item,
-        lastDataTime: item.lastDataTime
-          ? new Date(item.lastDataTime)
-          : undefined,
-        currentTimestamp: item.currentTimestamp
-          ? new Date(item.currentTimestamp)
-          : undefined,
+        lastDataTime: item.lastTime ? new Date(item.lastTime) : undefined,
         minutesWithoutData: this.getMinutesWithoutData(
-          item.lastDataTime ? new Date(item.lastDataTime) : undefined
+          item.lastTime ? new Date(item.lastTime) : undefined
         ),
       }));
-      this.total = data?.total || this.activityData.length;
     } catch (error) {
+      console.error('Error loading activity data:', error);
       this.activityData = [];
       this.total = 0;
     } finally {
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 
-  async loadHistoricalData(): Promise<void> {
-    if (!this.selectedScaleId) return;
-
-    this.historicalDataLoading = true;
-    const params: any = {
-      scaleId: this.selectedScaleId,
-      page: this.historicalPageIndex,
-      size: this.historicalPageSize,
-    };
-
-    try {
-      const data = await this.scaleDataService.getScaleData(params);
-      this.historicalData = Array.isArray(data) ? data : data?.data || [];
-      this.historicalTotal = data?.total || this.historicalData.length;
-    } catch (error) {
-      this.historicalData = [];
-      this.historicalTotal = 0;
-    } finally {
-      this.historicalDataLoading = false;
-    }
-  }
-
-  onRowClick(item: ActivityMonitoringItem): void {
-    this.selectedScaleId = item.scaleId;
-    this.selectedScale = item.scale || null;
-    this.showHistoricalData = true;
-    this.historicalPageIndex = 1;
-    this.loadHistoricalData();
-  }
-
-  closeHistoricalData(): void {
-    this.showHistoricalData = false;
-    this.selectedScaleId = null;
-    this.selectedScale = null;
-    this.historicalData = [];
-  }
 
   onSearch(filters: any): void {
     this.filterData = filters;
@@ -169,11 +173,6 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
     this.loadActivityData();
   }
 
-  onHistoricalPaginationChange(event: { page: number; size: number }): void {
-    this.historicalPageIndex = event.page;
-    this.historicalPageSize = event.size;
-    this.loadHistoricalData();
-  }
 
   getStatusClass(status: string): string {
     switch (status) {
@@ -181,8 +180,6 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       case 'OFFLINE':
         return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
-      case 'ERROR':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -246,15 +243,153 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
     return 'text-gray-900 dark:text-white';
   }
 
-  formatDate(date?: Date): string {
-    if (!date) return '-';
-    return new Date(date).toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  }
+
+  // WebSocket methods
+  // private async connectWebSocket(): Promise<void> {
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     const socketUrl = `${environment.api_end_point}`;
+
+  //     console.log('[WebSocket] Đang kết nối đến:', socketUrl);
+
+  //     this.stompClient = new Client({
+  //       webSocketFactory: () => new SockJS(socketUrl),
+  //       connectHeaders: {
+  //         Authorization: `Bearer ${token}`,
+  //         clientType: 'public',
+  //       },
+  //       reconnectDelay: 0,
+  //       heartbeatIncoming: 10000,
+  //       heartbeatOutgoing: 10000,
+  //       onConnect: (frame) => {
+  //         console.log('[WebSocket] ✅ Kết nối thành công:', frame);
+  //         this.isConnectWebsocket = true;
+  //         this.isReconnecting = false;
+  //         if (this.reconnectTimeout) {
+  //           clearTimeout(this.reconnectTimeout);
+  //           this.reconnectTimeout = null;
+  //         }
+  //         this.subscribeToTopic();
+  //         this.cdr.markForCheck();
+  //       },
+  //       onStompError: (error) => {
+  //         console.error('[WebSocket] ❌ STOMP error:', error);
+  //         this.cdr.markForCheck();
+  //       },
+  //       onWebSocketClose: (event) => {
+  //         console.warn('[WebSocket] ⚠️ WebSocket đã đóng:', event.code, event.reason);
+  //         this.isConnectWebsocket = false;
+  //         if (event.code !== 1000) {
+  //           if (this.isReconnecting) {
+  //             this.isReconnecting = false;
+  //           }
+  //           this.handleReconnect();
+  //         }
+  //         this.cdr.markForCheck();
+  //       },
+  //       onWebSocketError: (error) => {
+  //         console.error('[WebSocket] ❌ WebSocket error:', error);
+  //         this.isConnectWebsocket = false;
+  //         if (this.isReconnecting) {
+  //           this.isReconnecting = false;
+  //         }
+  //         this.handleReconnect();
+  //         this.cdr.markForCheck();
+  //       },
+  //       onDisconnect: (frame) => {
+  //         console.warn('[WebSocket] ⚠️ Disconnected:', frame);
+  //         this.isConnectWebsocket = false;
+  //         this.cdr.markForCheck();
+  //       },
+  //     });
+  //     this.stompClient.activate();
+  //   } catch (error) {
+  //     console.error('[WebSocket] ❌ Lỗi khi khởi tạo kết nối:', error);
+  //     this.cdr.markForCheck();
+  //   }
+  // }
+
+  // private subscribeToTopic(): void {
+  //   if (!this.stompClient || !this.stompClient.connected) {
+  //     return;
+  //   }
+
+  //   try {
+  //     this.stompSubscription = this.stompClient.subscribe('/topic/all-scales-data', (message) => {
+  //       try {
+  //         console.log('[WebSocket] 📨 Nhận được message:', message.body);
+  //         // When WebSocket receives data, reload the API
+  //         this.loadActivityData();
+  //       } catch (error) {
+  //         console.error('[WebSocket] ❌ Lỗi khi xử lý message:', error);
+  //       }
+  //     });
+  //     console.log('[WebSocket] ✅ Đã subscribe vào /topic/all-scales-data');
+  //   } catch (error) {
+  //     console.error('[WebSocket] ❌ Lỗi khi subscribe:', error);
+  //   }
+  // }
+
+  // private handleReconnect(): void {
+  //   if (this.isReconnecting) {
+  //     return;
+  //   }
+  //   this.isReconnecting = true;
+  //   console.log('[WebSocket] 🔄 Bắt đầu reconnect sau', this.RECONNECT_DELAY, 'ms...');
+  //   if (this.reconnectTimeout) {
+  //     clearTimeout(this.reconnectTimeout);
+  //   }
+  //   this.reconnectTimeout = setTimeout(async () => {
+  //     try {
+  //       console.log('[WebSocket] 🔄 Đang thử reconnect...');
+  //       if (this.stompClient) {
+  //         try {
+  //           if (this.stompSubscription && this.stompClient.connected) {
+  //             try {
+  //               this.stompSubscription.unsubscribe();
+  //             } catch (unsubError) {
+  //               console.warn('[WebSocket] ⚠️ Lỗi khi unsubscribe:', unsubError);
+  //             }
+  //           }
+  //           this.stompSubscription = null as any;
+  //           if (this.stompClient.active) {
+  //             try {
+  //               await this.stompClient.deactivate();
+  //               await new Promise((resolve) => setTimeout(resolve, 100));
+  //             } catch (deactivateError) {
+  //               console.warn('[WebSocket] ⚠️ Lỗi khi deactivate:', deactivateError);
+  //             }
+  //           }
+  //         } catch (cleanupError) {
+  //           console.warn('[WebSocket] ⚠️ Lỗi khi cleanup client cũ:', cleanupError);
+  //         }
+  //         this.stompClient = null as any;
+  //       }
+  //       await this.connectWebSocket();
+  //     } catch (error) {
+  //       console.error('[WebSocket] ❌ Lỗi khi reconnect:', error);
+  //       this.isReconnecting = false;
+  //       this.handleReconnect();
+  //     }
+  //   }, this.RECONNECT_DELAY);
+  // }
+
+  // private disconnectWebSocket(): void {
+  //   if (this.stompClient) {
+  //     try {
+  //       if (this.stompSubscription && this.stompClient.connected) {
+  //         this.stompSubscription.unsubscribe();
+  //       }
+  //       if (this.stompClient.active) {
+  //         this.stompClient.deactivate();
+  //       }
+  //     } catch (error) {
+  //       console.warn('[WebSocket] ⚠️ Lỗi khi disconnect:', error);
+  //     }
+  //   }
+  //   if (this.reconnectTimeout) {
+  //     clearTimeout(this.reconnectTimeout);
+  //     this.reconnectTimeout = null;
+  //   }
+  // }
 }

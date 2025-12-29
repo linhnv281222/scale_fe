@@ -49,4 +49,29 @@ export class ScaleDataService {
     }
     return [];
   }
+
+  async getScaleHistory(params: {
+    scaleId: number;
+    startTime: string;
+    endTime: string;
+    page?: number;
+    size?: number;
+  }): Promise<any> {
+    const queryParams: any = {
+      scaleId: params.scaleId,
+      startTime: params.startTime,
+      endTime: params.endTime,
+    };
+    if (params.page !== undefined) {
+      queryParams.page = params.page;
+    }
+    if (params.size !== undefined) {
+      queryParams.size = params.size;
+    }
+    const res = await this.baseService.getData('scales/history', queryParams);
+    if (res && res.success === true && res.data) {
+      return res.data || null;
+    }
+    return null;
+  }
 }

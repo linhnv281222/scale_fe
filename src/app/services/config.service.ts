@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import * as moment from 'moment';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Config, ConfigCategory, ConfigDataType } from '../models';
@@ -26,7 +27,7 @@ export class ConfigService {
       })
       .pipe(
         map((data: any) => {
-          const configs = Array.isArray(data) ? data : data?.data || [];
+          const configs = Array.isArray(data) ? data : (data?.data ?? []);
           this.configsCache = configs;
           return configs;
         })
@@ -40,16 +41,14 @@ export class ConfigService {
     return configs
       .filter((config) => config.category === ConfigCategory.FIELD_METADATA)
       .map((config) => {
+        const fieldKey = config.fieldKey ?? (config.key ? config.key.split('.').pop() ?? '' : '');
+        const displayName = config.displayName ?? config.fieldKey ?? config.key ?? '';
         const field: DynamicFormField = {
-          fieldKey: config.fieldKey || config.key.split('.').pop() || '',
-          displayName: config.displayName || config.fieldKey || config.key,
+          fieldKey,
+          displayName,
           dataType: config.dataType,
-          required: config.required || false,
-          placeholder: `Nhập ${(
-            config.displayName ||
-            config.fieldKey ||
-            config.key
-          ).toLowerCase()}`,
+          required: config.required ?? false,
+          placeholder: `Nhập ${displayName.toLowerCase()}`,
           description: config.description,
         };
 
@@ -84,42 +83,35 @@ export class ConfigService {
     return configs
       .filter((config) => config.category === ConfigCategory.FIELD_METADATA)
       .map((config) => {
+        const fieldKey = config.fieldKey ?? (config.key ? config.key.split('.').pop() ?? '' : '');
+        const displayName = config.displayName ?? config.fieldKey ?? config.key ?? '';
         const column: DynamicTableColumn = {
-          fieldKey: config.fieldKey || config.key.split('.').pop() || '',
-          displayName: config.displayName || config.fieldKey || config.key,
+          fieldKey,
+          displayName,
           dataType: config.dataType,
-          required: config.required || false,
-          width: config.width || '150px',
+          required: config.required ?? false,
+          width: config.width ?? '150px',
         };
 
         // Add formatter based on data type
         switch (config.dataType) {
           case ConfigDataType.DATETIME:
             column.formatter = (value: any) => {
-              if (!value) return '-';
-              const date = new Date(value);
-              return date.toLocaleString('vi-VN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              });
+              if (!value) return '';
+              return moment(value).format('DD/MM/YYYY HH:mm:ss');
             };
             break;
           case ConfigDataType.DATE:
             column.formatter = (value: any) => {
-              if (!value) return '-';
-              const date = new Date(value);
-              return date.toLocaleDateString('vi-VN');
+              if (!value) return '';
+              return moment(value).format('DD/MM/YYYY');
             };
             break;
           case ConfigDataType.TIME:
             column.formatter = (value: any) => {
-              if (!value) return '-';
+              if (!value) return '';
               if (value instanceof Date) {
-                return value.toLocaleTimeString('vi-VN');
+                return moment(value).format('HH:mm:ss');
               }
               // If value is string like "HH:mm:ss" or "HH:mm"
               if (typeof value === 'string') {
@@ -135,17 +127,17 @@ export class ConfigService {
           case ConfigDataType.INTEGER:
           case ConfigDataType.DECIMAL:
             column.formatter = (value: any) =>
-              value !== null && value !== undefined ? value.toString() : '-';
+              value !== null && value !== undefined ? value.toString() : '';
             break;
           case ConfigDataType.SELECT:
             column.formatter = (value: any) => {
-              if (value === null || value === undefined) return '-';
+              if (value === null || value === undefined) return '';
               return String(value);
             };
             break;
           case ConfigDataType.MULTISELECT:
             column.formatter = (value: any) => {
-              if (!value) return '-';
+              if (!value) return '';
               if (Array.isArray(value)) {
                 return value.join(', ');
               }
@@ -154,7 +146,7 @@ export class ConfigService {
             break;
           case ConfigDataType.TEXTAREA:
             column.formatter = (value: any) => {
-              if (!value) return '-';
+              if (!value) return '';
               const str = String(value);
               // Truncate long textarea content
               return str.length > 100 ? str.substring(0, 100) + '...' : str;
@@ -163,7 +155,7 @@ export class ConfigService {
           case ConfigDataType.STRING:
           default:
             column.formatter = (value: any) => {
-              if (value === null || value === undefined) return '-';
+              if (value === null || value === undefined) return '';
               return String(value);
             };
             break;
@@ -200,7 +192,7 @@ export class ConfigService {
         c.module === module &&
         (c.fieldKey === fieldKey || c.key.endsWith(`.${fieldKey}`))
     );
-    return config?.displayName || fieldKey;
+    return config?.displayName ?? fieldKey;
   }
 
   convertToFilterFields(configs: Config[]): FilterField[] {
@@ -226,12 +218,13 @@ export class ConfigService {
     });
 
     return sortedConfigs.map((config) => {
-      const fieldKey = config.fieldKey || config.key.split('.').pop() || '';
+      const fieldKey = config.fieldKey ?? (config.key ? config.key.split('.').pop() ?? '' : '');
+      const displayName = config.displayName ?? fieldKey;
       const filterField: FilterField = {
         key: fieldKey,
-        label: config.displayName || fieldKey,
+        label: displayName,
         type: this.mapDataTypeToFilterType(config.dataType),
-        placeholder: config.displayName || fieldKey,
+        placeholder: displayName,
       };
 
       // Handle date range for DATETIME
@@ -250,7 +243,7 @@ export class ConfigService {
       if (config.dataType === ConfigDataType.TIME) {
         filterField.type = 'text';
         filterField.placeholder =
-          (filterField.placeholder || '') + ' (HH:mm:ss)';
+          (filterField.placeholder ?? '') + ' (HH:mm:ss)';
       }
 
       // Handle NUMBER, INTEGER, DECIMAL - use text input with number validation
@@ -288,9 +281,9 @@ export class ConfigService {
             if (Array.isArray(parsed)) {
               filterField.options = parsed.map((v: any) => ({
                 label:
-                  typeof v === 'string' ? v : v.label || v.value || String(v),
+                  typeof v === 'string' ? v : (v.label ?? v.value ?? String(v)),
                 value:
-                  typeof v === 'string' ? v : v.value || v.label || String(v),
+                  typeof v === 'string' ? v : (v.value ?? v.label ?? String(v)),
               }));
             }
           } catch (e) {

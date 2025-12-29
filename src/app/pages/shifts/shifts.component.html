@@ -102,22 +102,26 @@
                 <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ shift.name }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{ shift.startTime }}</span>
+                <span class="text-sm text-gray-900 dark:text-white">
+                  {{ shift.startTime || formatTime(shift.start_time) }}
+                </span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{ shift.endTime }}</span>
+                <span class="text-sm text-gray-900 dark:text-white">
+                  {{ shift.endTime || formatTime(shift.end_time) }}
+                </span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
-                <span *ngIf="shift.status === 'active'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                <span *ngIf="shift.is_active || shift.isActive" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                   {{ "common.active" | translate }}
                 </span>
-                <span *ngIf="shift.status === 'inactive'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                <span *ngIf="!shift.is_active && !shift.isActive" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
                   {{ "common.inactive" | translate }}
                 </span>
-                <span *ngIf="!shift.status" class="text-sm text-gray-500 dark:text-gray-400">-</span>
+                <span *ngIf="shift.is_active === undefined && shift.isActive === undefined" class="text-sm text-gray-500 dark:text-gray-400">-</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
-                <div class="flex items-center gap-2 justify-center">
+                <div class="flex items-center justify-center gap-2">
                   <button nz-button nzType="text" nzSize="small" class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30" (click)="viewShift(shift)" [nzTooltipTitle]="'common.view' | translate" nz-tooltip>
                     <span nz-icon nzType="eye" nzTheme="outline" class="text-base"></span>
                   </button>
@@ -172,7 +176,7 @@
     <div *ngIf="formFields.length === 0">
       <div class="mb-4">
         <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ "shifts.name" | translate }}<span class="text-red-500 ml-1">*</span>
+          {{ "shifts.name" | translate }}<span class="ml-1 text-red-500">*</span>
         </label>
         <nz-input-group>
           <input type="text" nz-input [(ngModel)]="dataShift.name" [placeholder]="'shifts.name' | translate" class="w-full" required />
@@ -181,20 +185,37 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="mb-4">
           <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ "shifts.startTime" | translate }}<span class="text-red-500 ml-1">*</span>
+            {{ "shifts.startTime" | translate }}<span class="ml-1 text-red-500">*</span>
           </label>
-          <nz-input-group>
-            <input type="time" nz-input [(ngModel)]="dataShift.startTime" class="w-full" required />
-          </nz-input-group>
+          <nz-time-picker
+            [(ngModel)]="dataShift.startTime"
+            [nzFormat]="'HH:mm'"
+            [nzPlaceHolder]="'shifts.startTime' | translate"
+            class="w-full"
+            nzSize="default"
+          ></nz-time-picker>
         </div>
         <div class="mb-4">
           <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ "shifts.endTime" | translate }}<span class="text-red-500 ml-1">*</span>
+            {{ "shifts.endTime" | translate }}<span class="ml-1 text-red-500">*</span>
           </label>
-          <nz-input-group>
-            <input type="time" nz-input [(ngModel)]="dataShift.endTime" class="w-full" required />
-          </nz-input-group>
+          <nz-time-picker
+            [(ngModel)]="dataShift.endTime"
+            [nzFormat]="'HH:mm'"
+            [nzPlaceHolder]="'shifts.endTime' | translate"
+            class="w-full"
+            nzSize="default"
+          ></nz-time-picker>
         </div>
+      </div>
+      <div class="mb-4">
+        <label
+          nz-checkbox
+          [(ngModel)]="dataShift.is_active"
+          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "common.active" | translate }}
+        </label>
       </div>
     </div>
   </div>

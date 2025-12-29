@@ -10,12 +10,141 @@
         {{ "reports.scaleReport" | translate }}
       </h3>
     </div>
-    <div class="flex-1 min-h-0 p-3">
-      <app-filter-sidebar
-        [fields]="filterFields"
-        [filterData]="filterData"
-        (search)="onSearch($event)"
-      ></app-filter-sidebar>
+
+    <!-- Export Button -->
+    <div class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700">
+      <button
+        nz-button
+        nzType="primary"
+        (click)="exportReport()"
+        [nzLoading]="exporting"
+        class="flex items-center justify-center w-full gap-2 rounded-md"
+      >
+        <span nz-icon nzType="download" nzTheme="outline"></span>
+        <span>{{ "reports.export" | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Scrollable Content with Fixed Search Button -->
+    <div class="flex flex-col flex-1 min-h-0">
+      <!-- Scrollable Filter Fields -->
+      <div class="flex-1 min-h-0 overflow-y-auto">
+        <div class="p-3">
+          <!-- Filter Fields (without search button) -->
+          <div class="space-y-3">
+            <div *ngFor="let field of filterFields" class="space-y-2">
+              <label
+                class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-200"
+              >
+                {{ field.label | translate }}
+              </label>
+
+              <!-- Text Input -->
+              <nz-input-group
+                *ngIf="field.type === 'text'"
+                class="!mt-0"
+              >
+                <input
+                  type="text"
+                  nz-input
+                  [(ngModel)]="filterData[field.key]"
+                  [placeholder]="field.placeholder || '' | translate"
+                  class="w-full"
+                />
+              </nz-input-group>
+
+              <!-- Select -->
+              <nz-select
+                *ngIf="field.type === 'select'"
+                [(ngModel)]="filterData[field.key]"
+                (ngModelChange)="field.onChange && field.onChange($event)"
+                [nzPlaceHolder]="field.placeholder || '' | translate"
+                [nzDropdownMatchSelectWidth]="false"
+                [nzPlacement]="'bottomLeft'"
+                nzAllowClear
+                class="w-full !mt-0"
+              >
+                <nz-option
+                  *ngFor="let option of field.options"
+                  [nzValue]="option.value"
+                  [nzLabel]="option.label | translate"
+                ></nz-option>
+              </nz-select>
+
+              <!-- Multiselect -->
+              <nz-select
+                *ngIf="field.type === 'multiselect'"
+                [(ngModel)]="filterData[field.key]"
+                [nzPlaceHolder]="field.placeholder || '' | translate"
+                [nzMode]="'multiple'"
+                [nzMaxTagCount]="1"
+                [nzDropdownMatchSelectWidth]="false"
+                [nzPlacement]="'bottomLeft'"
+                nzAllowClear
+                class="w-full !mt-0"
+              >
+                <nz-option
+                  *ngFor="let option of field.options"
+                  [nzValue]="option.value"
+                  [nzLabel]="option.label | translate"
+                ></nz-option>
+              </nz-select>
+
+              <!-- Date Range -->
+              <nz-range-picker
+                *ngIf="field.type === 'dateRange'"
+                [(ngModel)]="filterData[field.key]"
+                [nzPlaceHolder]="[
+                  ('filter.from' | translate) + ' ' + (field.placeholder || '' | translate),
+                  ('filter.to' | translate) + ' ' + (field.placeholder || '' | translate)
+                ]"
+                [nzFormat]="field.format || 'dd/MM/yyyy'"
+                [nzShowTime]="field.showTime || false"
+                class="w-full"
+              ></nz-range-picker>
+            </div>
+
+            <!-- Aggregation By Field -->
+            <div *ngIf="dataColumns.length > 0" class="mt-4">
+              <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200">
+                {{ "reports.aggregationByField" | translate }}
+              </h4>
+              <div class="space-y-2">
+                <div *ngFor="let col of dataColumns" class="space-y-1">
+                  <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {{ col.name }}
+                  </label>
+                  <nz-select
+                    [ngModel]="filterData.aggregationByField[col.key]"
+                    (ngModelChange)="updateAggregation(col.key, $event)"
+                    class="w-full"
+                    nzPlaceHolder="{{ 'reports.selectAggregation' | translate }}"
+                  >
+                    <nz-option
+                      *ngFor="let opt of aggregationOptions"
+                      [nzValue]="opt.value"
+                      [nzLabel]="opt.label"
+                    ></nz-option>
+                  </nz-select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fixed Search Button at Bottom -->
+      <div class="flex-shrink-0 p-3 border-gray-200 dark:border-gray-700">
+        <button
+          nz-button
+          nzType="primary"
+          (click)="onSearch()"
+          class="flex items-center justify-center w-full gap-2 rounded-md"
+        >
+          <span nz-icon nzType="search" nzTheme="outline"></span>
+          <span>{{ "filter.search" | translate }}</span>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -35,7 +164,7 @@
     <div class="flex-1 overflow-hidden bg-white dark:bg-gray-800">
       <nz-table
         #basicTable
-        [nzData]="reportData"
+        [nzData]="reportRows"
         [nzLoading]="loading"
         [nzShowPagination]="false"
         [nzNoResult]="noResultTemplate"
@@ -56,59 +185,69 @@
               {{ "scales.name" | translate }}
             </th>
             <th
-              class="px-2 !py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
             >
-              {{ "scaleData.weight" | translate }}
+              {{ "scales.code" | translate }}
             </th>
             <th
-              class="px-2 !py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
             >
-              {{ "scaleData.timestamp" | translate }}
+              {{ "locations.name" | translate }}
             </th>
             <th
-              class="px-2 !py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
             >
-              {{ "reports.hour" | translate }}
+              {{ "reports.period" | translate }}
+            </th>
+            <th
+              *ngFor="let col of dataColumns"
+              class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+            >
+              {{ col.name }}
             </th>
           </tr>
         </thead>
         <tbody>
           <tr
-            *ngFor="let data of reportData; let i = index"
-            [ngClass]="getHighlightClass(data)"
-            class="hover:bg-gray-50 dark:hover:bg-gray-700"
+            *ngFor="let row of reportRows; let i = index"
+            (click)="onRowClick(row)"
+            class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <td class="px-2 !py-1 whitespace-nowrap">
+            <td class="px-2 !py-1 whitespace-nowrap text-center">
               <span class="text-xs text-gray-900 dark:text-white">{{ i + 1 }}</span>
             </td>
             <td class="px-2 !py-1 whitespace-nowrap">
               <span
                 class="text-xs font-medium text-gray-900 dark:text-white"
               >
-                {{ data.scale?.name || data.scaleId }}
-              </span>
-            </td>
-            <td class="px-2 !py-1 whitespace-nowrap">
-              <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ data.weight }}
-              </span>
-            </td>
-            <td class="px-2 !py-1 whitespace-nowrap">
-              <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ data.timestamp | date : "dd/MM/yyyy HH:mm:ss" }}
+                {{ row.scale.name }}
               </span>
             </td>
             <td class="px-2 !py-1 whitespace-nowrap">
               <span
-                class="text-xs px-1 py-0.5 rounded font-medium"
-                [ngClass]="{
-                  'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300':
-                    data.isImportant,
-                  'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white':
-                    !data.isImportant
-                }"
+                class="text-xs font-medium text-gray-900 dark:text-white"
               >
-                {{ data.hour }}:00
+                {{ row.scale.model }}
+              </span>
+            </td>
+            <td class="px-2 !py-1 whitespace-nowrap">
+              <span
+                class="text-xs font-medium text-gray-900 dark:text-white"
+              >
+                {{ row.scale.location?.name }}
+              </span>
+            </td>
+            <td class="px-2 !py-1 whitespace-nowrap">
+              <span class="text-xs font-medium text-gray-900 dark:text-white">
+                {{ row.period | date: "dd/MM/yyyy" }}
+              </span>
+            </td>
+            <td
+              *ngFor="let col of dataColumns"
+              class="px-2 !py-1 whitespace-nowrap text-center"
+            >
+              <span class="text-xs font-medium text-gray-900 dark:text-white">
+                {{ getDataValue(row, col.key) }}
               </span>
             </td>
           </tr>
@@ -121,3 +260,80 @@
     </div>
   </main>
 </div>
+
+<!-- History Modal -->
+<nz-modal
+  [(nzVisible)]="isHistoryModalVisible"
+  [nzTitle]="'reports.history' | translate"
+  [nzWidth]="1200"
+  (nzOnCancel)="closeHistoryModal()"
+  [nzFooter]="null"
+>
+  <div *nzModalContent>
+    <nz-table
+      #historyTable
+      [nzData]="historyData"
+      [nzLoading]="historyLoading"
+      [nzShowPagination]="true"
+      [nzPageIndex]="historyPageIndex"
+      [nzPageSize]="historyPageSize"
+      [nzTotal]="historyTotal"
+      (nzPageIndexChange)="onHistoryPaginationChange({ page: $event, size: historyPageSize })"
+      (nzPageSizeChange)="onHistoryPaginationChange({ page: historyPageIndex, size: $event })"
+      [nzNoResult]="noHistoryResultTemplate"
+      class="w-full"
+    >
+      <thead>
+        <tr class="bg-gray-50 dark:bg-gray-800">
+          <th
+            class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+          >
+            {{ "scales.name" | translate }}
+          </th>
+          <th
+            class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+          >
+            {{ "reports.lastTime" | translate }}
+          </th>
+          <th
+            *ngFor="let col of dataColumns"
+            class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+          >
+            {{ col.name }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let item of historyData"
+          class="hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <td class="px-2 !py-1 whitespace-nowrap">
+            <span
+              class="text-xs font-medium text-gray-900 dark:text-white"
+            >
+              {{ item.scaleName }}
+            </span>
+          </td>
+          <td class="px-2 !py-1 whitespace-nowrap">
+            <span class="text-xs font-medium text-gray-900 dark:text-white">
+              {{ item.lastTime | date: "dd/MM/yyyy HH:mm:ss" }}
+            </span>
+          </td>
+          <td
+            *ngFor="let col of dataColumns"
+            class="px-2 !py-1 whitespace-nowrap text-center"
+          >
+            <span class="text-xs font-medium text-gray-900 dark:text-white">
+              {{ getHistoryDataValue(item, col.key) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </nz-table>
+
+    <ng-template #noHistoryResultTemplate>
+      <nz-empty></nz-empty>
+    </ng-template>
+  </div>
+</nz-modal>

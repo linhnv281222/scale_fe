@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import * as moment from 'moment';
 import { Config } from '../../../models';
 
 export interface DynamicTableColumn {
@@ -37,7 +38,7 @@ export class DynamicTableComponent {
       return '-';
     }
     if (value instanceof Date) {
-      return value.toLocaleString();
+      return moment(value).format('DD/MM/YYYY HH:mm:ss');
     }
     return String(value);
   }

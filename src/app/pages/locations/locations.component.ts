@@ -291,9 +291,9 @@ export class LocationsComponent implements OnInit, OnDestroy {
     }
     if (location.parentId) {
       const parent = this.locations.find((l) => l.id === location.parentId);
-      return parent?.name || '-';
+      return parent?.name ?? '';
     }
-    return '-';
+    return '';
   }
 
   getLevelIndices(level: number): number[] {

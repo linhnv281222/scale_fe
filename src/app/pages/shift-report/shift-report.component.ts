@@ -1,7 +1,16 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import * as moment from 'moment';
 import { Subject } from 'rxjs';
-import { ShiftReport, Shift, Scale } from '../../models';
-import { ShiftService } from '../../services/shift.service';
+import { saveAs } from 'file-saver';
+import { ToastrService } from 'ngx-toastr';
+import {
+  AggregationType,
+  IntervalReportResponse,
+  IntervalReportRow,
+  IntervalType,
+  Scale
+} from '../../models';
+import { ReportService } from '../../services/report.service';
 import { ScaleService } from '../../services/scale.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
@@ -14,21 +23,33 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   // Data
-  shifts: Shift[] = [];
   scales: Scale[] = [];
-  reportData: ShiftReport[] = [];
+  reportData: IntervalReportResponse | null = null;
+  reportRows: IntervalReportRow[] = [];
   loading = false;
+
+  // Data columns (dynamic based on API response)
+  dataColumns: { key: string; name: string }[] = [];
 
   // Filter data
   filterData: any = {
     dateRange: null,
-    shiftIds: [],
     scaleIds: [],
+    interval: 'SHIFT' as IntervalType,
+    aggregationByField: {} as { [key: string]: AggregationType },
   };
 
   // Chart data
   chartData: any[] = [];
   chartOptions: any = {};
+
+  // Aggregation options
+  aggregationOptions = [
+    { label: 'ABS', value: 'ABS' },
+    { label: 'SUM', value: 'SUM' },
+    { label: 'MAX', value: 'MAX' },
+    { label: 'AVG', value: 'AVG' },
+  ];
 
   filterFields: FilterField[] = [
     {
@@ -36,15 +57,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       label: 'reports.dateRange',
       type: 'dateRange',
       placeholder: 'reports.dateRange',
-      format: 'dd/MM/yyyy HH:mm',
-      showTime: true,
-    },
-    {
-      key: 'shiftIds',
-      label: 'shiftReport.selectShifts',
-      type: 'multiselect',
-      placeholder: 'shiftReport.selectShifts',
-      options: [],
+      format: 'dd/MM/yyyy',
+      showTime: false,
     },
     {
       key: 'scaleIds',
@@ -55,15 +69,17 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     },
   ];
 
+  // Export
+  exporting = false;
+
   constructor(
-    private shiftService: ShiftService,
-    private scaleService: ScaleService
+    private scaleService: ScaleService,
+    private reportService: ReportService,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
-    this.loadShifts();
     this.loadScales();
-    this.loadReportData();
   }
 
   ngOnDestroy(): void {
@@ -71,162 +87,178 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  async loadShifts(): Promise<void> {
-    try {
-      const data = await this.shiftService.getShifts({ page: 1, size: 1000 });
-      this.shifts = data.data || [];
-      this.updateShiftOptions();
-    } catch (error) {
-      this.shifts = [];
-    }
-  }
-
   async loadScales(): Promise<void> {
     try {
-      const data = await this.scaleService.getScales({ page: 1, size: 1000 });
-      this.scales = data.data || [];
+      const data = await this.scaleService.getScales({});
+      this.scales = Array.isArray(data) ? data : (data?.data ?? []);
       this.updateScaleOptions();
+      // Load scale configs to get data fields
+      await this.loadScaleConfigs();
     } catch (error) {
       this.scales = [];
     }
   }
 
-  updateShiftOptions(): void {
-    const shiftField = this.filterFields.find((f) => f.key === 'shiftIds');
-    if (shiftField) {
-      shiftField.options = this.shifts.map((shift) => ({
-        label: shift.name,
-        value: shift.id!,
-      }));
+  async loadScaleConfigs(): Promise<void> {
+    // Load configs for selected scales to get data field names
+    const selectedScaleIds = this.filterData.scaleIds ?? [];
+    if (selectedScaleIds.length === 0) {
+      // If no scales selected, use first scale as default to get data fields
+      if (this.scales.length > 0 && this.scales[0].id) {
+        try {
+          const config = await this.scaleService.getScaleConfig(this.scales[0].id);
+          if (config && config.data) {
+            this.initializeAggregationFields(config.data);
+          }
+        } catch (error) {
+          // Ignore error
+        }
+      }
+    } else {
+      // Load config for first selected scale
+      const firstScaleId = selectedScaleIds[0];
+      try {
+        const config = await this.scaleService.getScaleConfig(firstScaleId);
+        if (config && config.data) {
+          this.initializeAggregationFields(config.data);
+        }
+      } catch (error) {
+        // Ignore error
+      }
     }
+  }
+
+  initializeAggregationFields(config: any): void {
+    // Initialize aggregationByField for data_1 to data_5
+    const aggregation: { [key: string]: AggregationType } = {};
+    const columns: { key: string; name: string }[] = [];
+    
+    for (let i = 1; i <= 5; i++) {
+      const channel = config[`data_${i}`];
+      if (channel && channel.is_used) {
+        const dataKey = `data_${i}`;
+        const dataName = channel.name ?? `Data ${i}`;
+        // Default to ABS for all fields
+        aggregation[dataKey] = 'ABS';
+        columns.push({ key: dataKey, name: dataName });
+      }
+    }
+    
+    this.filterData.aggregationByField = aggregation;
+    this.dataColumns = columns;
   }
 
   updateScaleOptions(): void {
     const scaleField = this.filterFields.find((f) => f.key === 'scaleIds');
     if (scaleField) {
       scaleField.options = this.scales.map((scale) => ({
-        label: scale.name,
-        value: scale.id!,
+        label: scale.name || `Scale ${scale.id}`,
+        value: scale.id,
       }));
     }
   }
 
   async loadReportData(): Promise<void> {
+    if (!this.filterData.dateRange || this.filterData.dateRange.length !== 2) {
+      return;
+    }
+
     this.loading = true;
-
-    // Prepare params
-    const params: any = {};
-    if (this.filterData.dateRange && this.filterData.dateRange.length === 2) {
-      params.startDate = this.filterData.dateRange[0].toISOString();
-      params.endDate = this.filterData.dateRange[1].toISOString();
-    }
-    if (this.filterData.shiftIds && this.filterData.shiftIds.length > 0) {
-      params.shiftIds = this.filterData.shiftIds;
-    }
-    if (this.filterData.scaleIds && this.filterData.scaleIds.length > 0) {
-      params.scaleIds = this.filterData.scaleIds;
-    }
-
-    // TODO: API 'reports/shift' chưa có trong api-docs.json - tạm thời comment lại
-    // Có thể sử dụng '/reports/generate' thay thế
     try {
-      // const data = await this.reportService.generateReport(params);
-      // this.reportData = data.data || [];
-      this.reportData = [];
-      this.processChartData();
+      const fromDate = moment(this.filterData.dateRange[0]).format('YYYY-MM-DD');
+      const toDate = moment(this.filterData.dateRange[1]).format('YYYY-MM-DD');
+      const fromTime = moment(this.filterData.dateRange[0]).toISOString();
+      const toTime = moment(this.filterData.dateRange[1]).endOf('day').toISOString();
+
+      const data = await this.reportService.getIntervalReport({
+        scaleIds: this.filterData.scaleIds ?? [],
+        fromDate,
+        toDate,
+        fromTime,
+        toTime,
+        interval: 'SHIFT' as IntervalType,
+        aggregationByField: this.filterData.aggregationByField ?? {},
+      });
+
+      if (data) {
+        this.reportData = data;
+        this.reportRows = data.rows ?? [];
+        // Update data columns from API response if available (for display names)
+        if (data.dataFieldNames) {
+          const apiColumns = Object.keys(data.dataFieldNames).map((key) => ({
+            key,
+            name: data.dataFieldNames![key],
+          }));
+          // Merge with existing columns, update names if key matches
+          if (this.dataColumns.length > 0) {
+            this.dataColumns = this.dataColumns.map(col => {
+              const apiCol = apiColumns.find(ac => ac.key === col.key);
+              return apiCol ? { ...col, name: apiCol.name } : col;
+            });
+          } else {
+            // If no columns from config, use API columns
+            this.dataColumns = apiColumns;
+          }
+        }
+        this.prepareChartData();
+      } else {
+        this.reportData = null;
+        this.reportRows = [];
+        // Keep dataColumns for filter display
+      }
     } catch (error) {
-      this.reportData = [];
+      this.reportData = null;
+      this.reportRows = [];
+      this.dataColumns = [];
     } finally {
       this.loading = false;
     }
   }
 
-  processChartData(): void {
-    if (this.reportData.length === 0) {
+  prepareChartData(): void {
+    if (!this.reportData || !this.reportRows.length) {
       this.chartData = [];
       this.chartOptions = {};
       return;
     }
 
-    // Group data by hour
-    const hourlyData: { [key: string]: any } = {};
+    // Get data_1 (Weight) for chart
+    const weightData = this.reportRows
+      .map((row, index) => {
+        const data1 = row.data_values?.data_1;
+        if (data1 && data1.used && data1.value) {
+          return {
+            period: row.period,
+            value: parseFloat(data1.value) ?? 0,
+            index,
+          };
+        }
+        return null;
+      })
+      .filter((item) => item !== null) as any[];
 
-    this.reportData.forEach((item) => {
-      const date = new Date(item.date);
-      const hour = date.getHours();
-      const key = `${date.toDateString()}_${hour}`;
+    this.chartData = weightData;
 
-      if (!hourlyData[key]) {
-        hourlyData[key] = {
-          hour: hour,
-          date: date.toDateString(),
-          flowRate: [],
-          totalAccumulated: [],
-          speed: [],
-          weight: [],
-          count: 0,
-        };
-      }
-
-      if (item.flowRate !== undefined && item.flowRate !== null) {
-        hourlyData[key].flowRate.push(item.flowRate);
-      }
-      if (item.totalAccumulated !== undefined && item.totalAccumulated !== null) {
-        hourlyData[key].totalAccumulated.push(item.totalAccumulated);
-      }
-      if (item.speed !== undefined && item.speed !== null) {
-        hourlyData[key].speed.push(item.speed);
-      }
-      if (item.weight !== undefined && item.weight !== null) {
-        hourlyData[key].weight.push(item.weight);
-      }
-      hourlyData[key].count++;
-    });
-
-    // Convert to array and calculate averages
-    this.chartData = Object.values(hourlyData)
-      .map((data: any) => ({
-        hour: data.hour,
-        date: data.date,
-        flowRate: data.flowRate.length > 0
-          ? data.flowRate.reduce((a: number, b: number) => a + b, 0) / data.flowRate.length
-          : 0,
-        totalAccumulated: data.totalAccumulated.length > 0
-          ? data.totalAccumulated.reduce((a: number, b: number) => a + b, 0) / data.totalAccumulated.length
-          : 0,
-        speed: data.speed.length > 0
-          ? data.speed.reduce((a: number, b: number) => a + b, 0) / data.speed.length
-          : 0,
-        weight: data.weight.length > 0
-          ? data.weight.reduce((a: number, b: number) => a + b, 0) / data.weight.length
-          : 0,
-        count: data.count,
-      }))
-      .sort((a, b) => {
-        const dateCompare = a.date.localeCompare(b.date);
-        if (dateCompare !== 0) return dateCompare;
-        return a.hour - b.hour;
-      });
-
+    // Prepare ECharts options
     this.updateChartOptions();
   }
 
   updateChartOptions(): void {
-    if (this.chartData.length === 0) {
+    if (!this.chartData.length) {
       this.chartOptions = {};
       return;
     }
 
-    const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#f9fafb' : '#1f2937';
-    const lineColor = isDark ? '#374151' : '#e5e7eb';
-    const splitLineColor = isDark ? '#374151' : '#e5e7eb';
+    const periods = this.chartData.map((d) => d.period);
+    const values = this.chartData.map((d) => d.value);
 
-    const hours = this.chartData.map((d) => `${d.hour}:00`);
-    const flowRates = this.chartData.map((d) => d.flowRate);
-    const totalAccumulated = this.chartData.map((d) => d.totalAccumulated);
-    const speeds = this.chartData.map((d) => d.speed);
-    const weights = this.chartData.map((d) => d.weight);
+    // Detect dark theme
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#e5e7eb' : '#374151';
+    const lineColor = isDark ? '#4b5563' : '#e5e7eb';
+    const splitLineColor = isDark ? '#374151' : '#f3f4f6';
+
+    const data1Name = this.reportData?.dataFieldNames?.['data_1'] ?? '';
 
     this.chartOptions = {
       backgroundColor: 'transparent',
@@ -241,35 +273,27 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           color: textColor,
         },
         formatter: (params: any) => {
-          if (!params || params.length === 0) return '';
-          const data = this.chartData[params[0].dataIndex];
-          let result = `<div><strong>${params[0].axisValue}</strong></div>`;
-          params.forEach((param: any) => {
-            // param.seriesName already includes unit
-            result += `<div>${param.seriesName}: ${param.value.toFixed(1)}</div>`;
-          });
-          result += `<div>Số lượng: ${data.count}</div>`;
-          return result;
+          const param = params[0];
+          const data = this.chartData[param.dataIndex];
+          return `
+            <div>
+              <div><strong>${param.axisValue}</strong></div>
+              <div>${param.seriesName}: ${new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(param.value)}</div>
+            </div>
+          `;
         },
-      },
-      legend: {
-        data: ['Lưu lượng (m³/h)', 'Tổng tích lũy (kg)', 'Tốc độ (m/s)', 'Khối lượng (kg)'],
-        textStyle: {
-          color: textColor,
-        },
-        top: '5%',
       },
       grid: {
         left: '5%',
         right: '2%',
-        top: '20%',
+        top: '13%',
         bottom: '15%',
         containLabel: false,
       },
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: hours,
+        data: periods,
         axisLabel: {
           color: textColor,
         },
@@ -281,7 +305,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       },
       yAxis: {
         type: 'value',
-        name: 'Giá trị',
+        name: data1Name,
         nameLocation: 'middle',
         nameGap: 50,
         nameTextStyle: {
@@ -289,7 +313,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         },
         axisLabel: {
           color: textColor,
-          formatter: (value: number) => value.toFixed(1),
+          formatter: (value: number) => new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value),
         },
         axisLine: {
           show: false,
@@ -303,59 +327,160 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       },
       series: [
         {
-          name: 'Lưu lượng (m³/h)',
+          name: data1Name,
           type: 'line',
           smooth: true,
-          data: flowRates,
+          data: values,
           itemStyle: {
             color: '#3b82f6',
-          },
-        },
-        {
-          name: 'Tổng tích lũy (kg)',
-          type: 'line',
-          smooth: true,
-          data: totalAccumulated,
-          itemStyle: {
-            color: '#10b981',
-          },
-        },
-        {
-          name: 'Tốc độ (m/s)',
-          type: 'line',
-          smooth: true,
-          data: speeds,
-          itemStyle: {
-            color: '#f59e0b',
-          },
-        },
-        {
-          name: 'Khối lượng (kg)',
-          type: 'line',
-          smooth: true,
-          data: weights,
-          itemStyle: {
-            color: '#ef4444',
           },
         },
       ],
     };
   }
 
-  onSearch(filters: any): void {
-    this.filterData = { ...filters };
+  async onSearch(filters?: any): Promise<void> {
+    if (filters) {
+      if (filters.dateRangeFrom && filters.dateRangeTo) {
+        this.filterData.dateRange = [
+          filters.dateRangeFrom,
+          filters.dateRangeTo,
+        ];
+      } else {
+        this.filterData.dateRange = null;
+      }
+      if (filters.scaleIds !== undefined) {
+        this.filterData.scaleIds = filters.scaleIds;
+        // Reload scale configs when scales change to update data columns
+        await this.loadScaleConfigs();
+      }
+    }
     this.loadReportData();
   }
 
-  getConnectionStatusClass(status: string): string {
-    if (status === 'CONNECTED') {
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-    }
-    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+  onReset(): void {
+    this.filterData = {
+      dateRange: null,
+      scaleIds: [],
+      interval: 'SHIFT' as IntervalType,
+      aggregationByField: {} as { [key: string]: AggregationType },
+    };
+    this.reportData = null;
+    this.reportRows = [];
+    this.dataColumns = [];
+    this.chartData = [];
+    this.chartOptions = {};
   }
 
-  formatNumber(value: number | null | undefined): string {
-    if (value === null || value === undefined) return '-';
-    return value.toFixed(1);
+  getDataValue(row: IntervalReportRow, dataKey: string): string {
+    const dataValue = row.data_values?.[dataKey as keyof typeof row.data_values] as any;
+    if (dataValue && dataValue.used && dataValue.value !== null && dataValue.value !== undefined) {
+      return dataValue.value;
+    }
+    return '';
+  }
+
+  updateAggregation(fieldKey: string, aggregation: AggregationType): void {
+    this.filterData.aggregationByField[fieldKey] = aggregation;
+  }
+
+  async exportReport(): Promise<void> {
+    if (!this.filterData.dateRange || this.filterData.dateRange.length !== 2) {
+      this.toastr.warning('Vui lòng chọn khoảng thời gian', 'Cảnh báo');
+      return;
+    }
+
+    if (!this.filterData.scaleIds || this.filterData.scaleIds.length === 0) {
+      this.toastr.warning('Vui lòng chọn ít nhất một cân', 'Cảnh báo');
+      return;
+    }
+
+    this.exporting = true;
+    try {
+      const scaleIds = this.filterData.scaleIds ?? [];
+      const startTime = moment(this.filterData.dateRange[0]).toISOString();
+      const endTime = moment(this.filterData.dateRange[1]).endOf('day').toISOString();
+
+      // Get dataFields from dataColumns
+      const dataFields = this.dataColumns.map(col => col.key);
+
+      const payload = {
+        type: 'WORD',
+        scaleIds,
+        startTime,
+        endTime,
+        dataFields: dataFields.length > 0 ? dataFields : ['data_1', 'data_2', 'data_3', 'data_4', 'data_5'],
+        aggregationMethod: 'SUM',
+        aggregationByField: this.filterData.aggregationByField ?? {},
+        intervalReport: true,
+        timeInterval: 'SHIFT' as IntervalType,
+        activeOnly: true,
+        reportTitle: 'Báo cáo ca',
+        reportCode: 'BCSL',
+        preparedBy: 'System'
+      };
+
+      const base64String = await this.reportService.exportReport(payload);
+
+      if (!base64String) {
+        this.toastr.error('Không nhận được dữ liệu từ server', 'Lỗi');
+        return;
+      }
+
+      // Parse base64 string
+      let base64Data = '';
+      if (typeof base64String === 'string') {
+        try {
+          const jsonData = JSON.parse(base64String);
+          base64Data = jsonData.base64 ?? jsonData.data ?? jsonData.file ?? jsonData.content ?? base64String;
+        } catch {
+          base64Data = base64String;
+        }
+      } else if (base64String && typeof base64String === 'object') {
+        base64Data = (base64String as any).base64 ?? (base64String as any).data ?? (base64String as any).file ?? (base64String as any).content ?? '';
+      }
+
+      if (!base64Data) {
+        this.toastr.error('Không tìm thấy dữ liệu base64 trong response', 'Lỗi');
+        return;
+      }
+
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      // Generate filename
+      const fromDate = moment(this.filterData.dateRange[0]).format('YYYY-MM-DD');
+      const toDate = moment(this.filterData.dateRange[1]).format('YYYY-MM-DD');
+      const fileName = `Bao_cao_ca_${fromDate}_${toDate}.docx`;
+
+      // Download file
+      saveAs(blob, fileName);
+      this.toastr.success('Xuất báo cáo thành công', 'Thành công');
+    } catch (error: any) {
+      let errorMessage = 'Đã có lỗi xảy ra, vui lòng thử lại';
+      if (error.error) {
+        if (typeof error.error === 'object') {
+          errorMessage = error.error.result?.message ?? error.error.message ?? errorMessage;
+        } else if (typeof error.error === 'string') {
+          try {
+            const json = JSON.parse(error.error);
+            errorMessage = json.result?.message ?? json.message ?? errorMessage;
+          } catch {
+            errorMessage = error.error ?? errorMessage;
+          }
+        }
+      }
+      this.toastr.error(errorMessage, 'Lỗi');
+    } finally {
+      this.exporting = false;
+    }
   }
 }

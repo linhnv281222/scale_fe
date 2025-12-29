@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import * as moment from 'moment';
 import { Shift } from '../../models';
 import { ConfigService } from '../../services/config.service';
 import { ShiftService } from '../../services/shift.service';
@@ -39,13 +40,13 @@ export class ShiftsComponent implements OnInit {
       placeholder: 'shifts.name',
     },
     {
-      key: 'status',
+      key: 'is_active',
       label: 'common.status',
       type: 'select',
-      placeholder: 'common.status',
+      placeholder: 'common.selectStatus',
       options: [
-        { label: 'common.active', value: 'active' },
-        { label: 'common.inactive', value: 'inactive' },
+        { label: 'common.active', value: true },
+        { label: 'common.inactive', value: false },
       ],
     },
   ];
@@ -86,14 +87,15 @@ export class ShiftsComponent implements OnInit {
   async loadShifts(): Promise<void> {
     this.loading = true;
     try {
-      const data = await this.shiftService.getShifts({
+      const result = await this.shiftService.getShifts({
         page: this.pageIndex,
         size: this.pageSize,
         ...this.filterData,
       });
-      this.shifts = Array.isArray(data) ? data : data?.data || [];
-      this.total = data?.total || this.shifts.length;
+      this.shifts = result.data || [];
+      this.total = result.total || this.shifts.length;
     } catch (error) {
+      console.error('Error loading shifts:', error);
       this.shifts = [];
       this.total = 0;
     } finally {
@@ -115,10 +117,13 @@ export class ShiftsComponent implements OnInit {
   openAddModal(): void {
     this.isEditMode = false;
     this.selectedShift = null;
-    this.dataShift = {};
-    this.formFields.forEach((field) => {
-      this.dataShift[field.fieldKey] = '';
-    });
+    this.dataShift = {
+      name: '',
+      code: '',
+      startTime: null,
+      endTime: null,
+      is_active: true,
+    };
     this.isModalVisible = true;
   }
 
@@ -127,14 +132,49 @@ export class ShiftsComponent implements OnInit {
     this.openEditModal(shift);
   }
 
-  openEditModal(shift: Shift): void {
+  async openEditModal(shift: Shift): Promise<void> {
     this.isEditMode = true;
     this.selectedShift = shift;
-    this.dataShift = {
-      name: shift.name,
-      startTime: shift.startTime,
-      endTime: shift.endTime,
-    };
+
+    // Load full shift details if needed
+    if (shift.id) {
+      const fullShift = await this.shiftService.getShiftById(shift.id);
+      if (fullShift) {
+        this.selectedShift = fullShift;
+        this.dataShift = {
+          name: fullShift.name,
+          startTime: fullShift.startTime
+            ? moment(fullShift.startTime, 'HH:mm').toDate()
+            : (fullShift.start_time ? moment(fullShift.start_time, 'HH:mm:ss').toDate() : null),
+          endTime: fullShift.endTime
+            ? moment(fullShift.endTime, 'HH:mm').toDate()
+            : (fullShift.end_time ? moment(fullShift.end_time, 'HH:mm:ss').toDate() : null),
+          is_active: fullShift.is_active !== undefined ? fullShift.is_active : (fullShift.isActive !== undefined ? fullShift.isActive : true),
+        };
+      } else {
+        this.dataShift = {
+          name: shift.name,
+          startTime: shift.startTime
+            ? moment(shift.startTime, 'HH:mm').toDate()
+            : (shift.start_time ? moment(shift.start_time, 'HH:mm:ss').toDate() : null),
+          endTime: shift.endTime
+            ? moment(shift.endTime, 'HH:mm').toDate()
+            : (shift.end_time ? moment(shift.end_time, 'HH:mm:ss').toDate() : null),
+          is_active: shift.is_active !== undefined ? shift.is_active : (shift.isActive !== undefined ? shift.isActive : true),
+        };
+      }
+    } else {
+      this.dataShift = {
+        name: shift.name,
+        startTime: shift.startTime
+          ? moment(shift.startTime, 'HH:mm').toDate()
+          : (shift.start_time ? moment(shift.start_time, 'HH:mm:ss').toDate() : null),
+        endTime: shift.endTime
+          ? moment(shift.endTime, 'HH:mm').toDate()
+          : (shift.end_time ? moment(shift.end_time, 'HH:mm:ss').toDate() : null),
+        is_active: shift.is_active !== undefined ? shift.is_active : (shift.isActive !== undefined ? shift.isActive : true),
+      };
+    }
     this.isModalVisible = true;
   }
 
@@ -148,11 +188,24 @@ export class ShiftsComponent implements OnInit {
     }
 
     this.saving = true;
-    const data = { ...this.dataShift };
-
     try {
-      if (this.isEditMode) {
-        await this.shiftService.updateShift(this.selectedShift?.id!, data);
+      // Convert Date object from time picker to HH:mm:ss format using moment
+      const startTime = this.dataShift.startTime
+        ? moment(this.dataShift.startTime).format('HH:mm:ss')
+        : '';
+      const endTime = this.dataShift.endTime
+        ? moment(this.dataShift.endTime).format('HH:mm:ss')
+        : '';
+
+      const data = {
+        ...this.dataShift,
+        start_time: startTime,
+        end_time: endTime,
+        code: this.dataShift.code || this.dataShift.name?.toUpperCase().replace(/\s+/g, ''),
+      };
+
+      if (this.isEditMode && this.selectedShift?.id) {
+        await this.shiftService.updateShift(this.selectedShift.id, data);
       } else {
         await this.shiftService.createShift(data);
       }
@@ -196,5 +249,12 @@ export class ShiftsComponent implements OnInit {
     this.pageIndex = event.page;
     this.pageSize = event.size;
     this.loadShifts();
+  }
+
+  // Format time from HH:mm:ss to HH:mm using moment
+  formatTime(time: string | undefined): string {
+    if (!time) return '-';
+    if (time.length === 5) return time; // Already HH:mm format
+    return moment(time, 'HH:mm:ss').format('HH:mm');
   }
 }

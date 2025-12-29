@@ -174,7 +174,8 @@
     "selectScale": "Chọn cân",
     "enterName": "Nhập tên cân",
     "enterModel": "Nhập model",
-    "selectLocation": "Chọn vị trí"
+    "selectLocation": "Chọn vị trí",
+    "selectLocations": "Chọn vị trí"
   },
   "shifts": {
     "title": "Quản lý Thông tin Ca",
@@ -290,7 +291,19 @@
     "scaleReportDescription": "Truy vết dữ liệu cân trong khoảng thời gian với highlight các mốc quan trọng",
     "trendChart": "Biểu đồ xu hướng",
     "dataTable": "Bảng dữ liệu",
-    "hour": "Giờ"
+    "hour": "Giờ",
+    "interval": "Khoảng thời gian tổng hợp",
+    "selectInterval": "Chọn khoảng thời gian",
+    "day": "Ngày",
+    "week": "Tuần",
+    "month": "Tháng",
+    "year": "Năm",
+    "aggregationByField": "Tổng hợp theo trường",
+    "selectAggregation": "Chọn phương thức tổng hợp",
+    "period": "Thời gian",
+    "lastTime": "Thời gian dữ liệu gần nhất",
+    "history": "Lịch sử",
+    "export": "Xuất báo cáo"
   },
   "templates": {
     "title": "Quản lý Biểu mẫu",

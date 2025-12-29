@@ -8,6 +8,7 @@ export * from './role.model';
 export * from './scale-data.model';
 export * from './scale-manufacturer.model';
 export * from './scale.model';
+export * from './scale-report.model';
 export * from './shift-report.model';
 export * from './shift.model';
 export * from './template.model';

@@ -118,7 +118,9 @@
     "treeView": "Location Tree",
     "detailedQuery": "Detailed Query",
     "enterName": "Enter location name",
-    "enterCode": "Enter location code"
+    "enterCode": "Enter location code",
+    "selectLocation": "Select location",
+    "selectLocations": "Select locations"
   },
   "scales": {
     "title": "Scale Information Management",
@@ -286,7 +288,19 @@
     "scaleReportDescription": "Track scale data over time with highlights for important milestones",
     "trendChart": "Trend Chart",
     "dataTable": "Data Table",
-    "hour": "Hour"
+    "hour": "Hour",
+    "interval": "Aggregation Interval",
+    "selectInterval": "Select Interval",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "aggregationByField": "Aggregation by Field",
+    "selectAggregation": "Select Aggregation",
+    "period": "Period",
+    "lastTime": "Last Data Time",
+    "history": "History",
+    "export": "Export Report"
   },
   "templates": {
     "title": "Template Management",
