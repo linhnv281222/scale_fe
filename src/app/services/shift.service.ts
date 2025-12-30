@@ -52,20 +52,19 @@ export class ShiftService {
   //   }
   // }
 
-  async getShifts(params?: any): Promise<{ data: Shift[]; total: number }> {
+  async getShifts(): Promise<Shift[]> {
     try {
-      // API endpoint is 'shift' not 'shifts'
-      const res = await this.baseService.getData('shift', params);
+      // API endpoint is 'shift' (not 'shifts') and doesn't support pagination or query params
+      const res = await this.baseService.getData('shift');
       if (res && res.success === true && res.data) {
         const shifts = Array.isArray(res.data) ? res.data : [];
         // Map API response to Shift model
-        const mappedShifts = shifts.map((shift: any) => this.mapApiToShift(shift));
-        return { data: mappedShifts, total: mappedShifts.length };
+        return shifts.map((shift: any) => this.mapApiToShift(shift));
       }
-      return { data: [], total: 0 };
+      return [];
     } catch (error) {
       console.error('Error getting shifts:', error);
-      return { data: [], total: 0 };
+      return [];
     }
   }
 

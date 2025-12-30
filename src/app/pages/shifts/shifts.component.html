@@ -46,7 +46,7 @@
         <app-dynamic-table
           *ngIf="tableColumns.length > 0"
           [columns]="tableColumns"
-          [data]="shifts"
+          [data]="filteredShifts"
           [loading]="loading"
           (view)="viewShift($event)"
           (edit)="openEditModal($event)"
@@ -57,7 +57,7 @@
         <nz-table
           *ngIf="tableColumns.length === 0"
           #basicTable
-          [nzData]="shifts"
+          [nzData]="filteredShifts"
           [nzLoading]="loading"
           [nzShowPagination]="false"
           [nzFrontPagination]="false"
@@ -94,7 +94,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let shift of shifts; let i = index" class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <tr *ngFor="let shift of filteredShifts; let i = index" class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
               <td class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
               </td>
@@ -137,20 +137,6 @@
         <ng-template #noResultTemplate>
           <nz-empty></nz-empty>
         </ng-template>
-
-        <!-- Pagination -->
-        <div
-          *ngIf="shifts.length > 0"
-          class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
-        >
-          <app-pagination
-            [total]="total"
-            [currentPage]="pageIndex"
-            [currentSize]="pageSize"
-            (emitPage)="onPaginationChange($event)"
-            (goToChange)="onPaginationChange($event)"
-          ></app-pagination>
-        </div>
       </div>
     </div>
   </main>

@@ -14,10 +14,8 @@ import { FilterField } from '../../shared/components/filter-sidebar/filter-sideb
 })
 export class ShiftsComponent implements OnInit {
   shifts: Shift[] = [];
+  filteredShifts: Shift[] = [];
   loading = false;
-  pageIndex = 1;
-  pageSize = 20;
-  total = 0;
   isModalVisible = false;
   isEditMode = false;
   saving = false;
@@ -87,31 +85,47 @@ export class ShiftsComponent implements OnInit {
   async loadShifts(): Promise<void> {
     this.loading = true;
     try {
-      const result = await this.shiftService.getShifts({
-        page: this.pageIndex,
-        size: this.pageSize,
-        ...this.filterData,
-      });
-      this.shifts = result.data || [];
-      this.total = result.total || this.shifts.length;
+      // API doesn't support pagination or query params, load all shifts
+      this.shifts = await this.shiftService.getShifts();
+      this.applyFilters();
     } catch (error) {
       console.error('Error loading shifts:', error);
       this.shifts = [];
-      this.total = 0;
+      this.filteredShifts = [];
     } finally {
       this.loading = false;
     }
   }
 
+  private applyFilters(): void {
+    let filtered = [...this.shifts];
+
+    // Filter by name
+    if (this.filterData.name) {
+      const nameFilter = this.filterData.name.toLowerCase().trim();
+      filtered = filtered.filter(shift =>
+        shift.name?.toLowerCase().includes(nameFilter)
+      );
+    }
+
+    // Filter by is_active
+    if (this.filterData.is_active !== undefined && this.filterData.is_active !== null && this.filterData.is_active !== '') {
+      filtered = filtered.filter(shift =>
+        shift.is_active === this.filterData.is_active
+      );
+    }
+
+    this.filteredShifts = filtered;
+  }
+
   onSearch(filters: any): void {
     this.filterData = filters;
-    this.pageIndex = 1;
-    this.loadShifts();
+    this.applyFilters();
   }
 
   onReset(): void {
     this.filterData = {};
-    this.loadShifts();
+    this.applyFilters();
   }
 
   openAddModal(): void {
@@ -245,11 +259,6 @@ export class ShiftsComponent implements OnInit {
     return `Bạn có chắc chắn muốn xóa ca "${this.shiftToDelete.name}"?`;
   }
 
-  onPaginationChange(event: { page: number; size: number }): void {
-    this.pageIndex = event.page;
-    this.pageSize = event.size;
-    this.loadShifts();
-  }
 
   // Format time from HH:mm:ss to HH:mm using moment
   formatTime(time: string | undefined): string {
