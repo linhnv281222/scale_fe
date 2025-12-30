@@ -32,7 +32,7 @@
   </thead>
   <tbody>
     <tr
-      *ngFor="let row of data; let i = index"
+      *ngFor="let row of formattedData; let i = index"
       class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
     >
       <td class="px-3 !py-2 whitespace-nowrap">
@@ -42,7 +42,7 @@
       </td>
       <td *ngFor="let col of columns" class="px-3 !py-2 whitespace-nowrap">
         <span class="text-sm text-gray-900 dark:text-white">
-          {{ formatValue(getFieldValue(row, col.fieldKey), col) }}
+          {{ row._formatted?.[col.fieldKey] ?? '' }}
         </span>
       </td>
       <td *ngIf="showActions" class="px-3 !py-2 whitespace-nowrap">

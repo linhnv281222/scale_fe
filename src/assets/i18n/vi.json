@@ -119,7 +119,9 @@
     "treeView": "Cây vị trí",
     "detailedQuery": "Truy vấn chi tiết",
     "enterName": "Nhập tên vị trí",
-    "enterCode": "Nhập mã vị trí"
+    "enterCode": "Nhập mã vị trí",
+    "selectLocation": "Chọn vị trí",
+    "selectLocations": "Chọn vị trí"
   },
   "scales": {
     "title": "Quản lý thông tin Cân",

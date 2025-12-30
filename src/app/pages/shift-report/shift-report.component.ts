@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import * as moment from 'moment';
-import { Subject } from 'rxjs';
 import { saveAs } from 'file-saver';
+import * as moment from 'moment';
 import { ToastrService } from 'ngx-toastr';
+import { Subject } from 'rxjs';
 import {
   AggregationType,
   IntervalReportResponse,
@@ -13,6 +13,11 @@ import {
 import { ReportService } from '../../services/report.service';
 import { ScaleService } from '../../services/scale.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
+
+// Extended interface with formatted data
+interface FormattedIntervalReportRow extends IntervalReportRow {
+  formattedData: { [key: string]: number | string };
+}
 
 @Component({
   selector: 'app-shift-report',
@@ -25,7 +30,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   // Data
   scales: Scale[] = [];
   reportData: IntervalReportResponse | null = null;
-  reportRows: IntervalReportRow[] = [];
+  reportRows: FormattedIntervalReportRow[] = [];
   loading = false;
 
   // Data columns (dynamic based on API response)
@@ -79,7 +84,15 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadScales();
+    // Set default date range: 7 days ago to today
+    const today = moment();
+    const sevenDaysAgo = moment().subtract(7, 'days');
+    this.filterData.dateRange = [sevenDaysAgo.toDate(), today.toDate()];
+
+    this.loadScales().then(() => {
+      // Auto load report data after scales are loaded
+      this.loadReportData();
+    });
   }
 
   ngOnDestroy(): void {
@@ -132,7 +145,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     // Initialize aggregationByField for data_1 to data_5
     const aggregation: { [key: string]: AggregationType } = {};
     const columns: { key: string; name: string }[] = [];
-    
+
     for (let i = 1; i <= 5; i++) {
       const channel = config[`data_${i}`];
       if (channel && channel.is_used) {
@@ -143,7 +156,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         columns.push({ key: dataKey, name: dataName });
       }
     }
-    
+
     this.filterData.aggregationByField = aggregation;
     this.dataColumns = columns;
   }
@@ -159,16 +172,20 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   }
 
   async loadReportData(): Promise<void> {
-    if (!this.filterData.dateRange || this.filterData.dateRange.length !== 2) {
-      return;
-    }
-
     this.loading = true;
     try {
-      const fromDate = moment(this.filterData.dateRange[0]).format('YYYY-MM-DD');
-      const toDate = moment(this.filterData.dateRange[1]).format('YYYY-MM-DD');
-      const fromTime = moment(this.filterData.dateRange[0]).toISOString();
-      const toTime = moment(this.filterData.dateRange[1]).endOf('day').toISOString();
+      // Use default date range if not set
+      let dateRange = this.filterData.dateRange;
+      if (!dateRange || dateRange.length !== 2) {
+        const today = moment();
+        const sevenDaysAgo = moment().subtract(7, 'days');
+        dateRange = [sevenDaysAgo.toDate(), today.toDate()];
+      }
+
+      const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
+      const toDate = moment(dateRange[1]).format('YYYY-MM-DD');
+      const fromTime = moment(dateRange[0]).toISOString();
+      const toTime = moment(dateRange[1]).endOf('day').toISOString();
 
       const data = await this.reportService.getIntervalReport({
         scaleIds: this.filterData.scaleIds ?? [],
@@ -182,8 +199,9 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
       if (data) {
         this.reportData = data;
-        this.reportRows = data.rows ?? [];
-        // Update data columns from API response if available (for display names)
+        const rawRows = data.rows ?? [];
+
+        // Update data columns from API response first (for display names)
         if (data.dataFieldNames) {
           const apiColumns = Object.keys(data.dataFieldNames).map((key) => ({
             key,
@@ -200,6 +218,23 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             this.dataColumns = apiColumns;
           }
         }
+
+        // Format data for each row (after dataColumns is updated)
+        this.reportRows = rawRows.map((row): FormattedIntervalReportRow => {
+          const formattedRow: FormattedIntervalReportRow = { ...row, formattedData: {} };
+          // Format each data column
+          this.dataColumns.forEach(col => {
+            const dataValue = row.data_values?.[col.key as keyof typeof row.data_values] as any;
+            if (dataValue && dataValue.used && dataValue.value !== null && dataValue.value !== undefined) {
+              const numValue = parseFloat(dataValue.value);
+              formattedRow.formattedData[col.key] = !isNaN(numValue) ? numValue : '';
+            } else {
+              formattedRow.formattedData[col.key] = '';
+            }
+          });
+          return formattedRow;
+        });
+
         this.prepareChartData();
       } else {
         this.reportData = null;
@@ -260,6 +295,24 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
     const data1Name = this.reportData?.dataFieldNames?.['data_1'] ?? '';
 
+    // Format large numbers (divide by 1000 and add 'k' suffix, or use compact notation)
+    const formatLargeNumber = (value: number): string => {
+      if (value >= 1000000) {
+        return (value / 1000000).toFixed(1) + 'M';
+      } else if (value >= 1000) {
+        return (value / 1000).toFixed(1) + 'k';
+      }
+      return value.toFixed(1);
+    };
+
+    // Format number with thousand separators
+    const formatNumber = (value: number): string => {
+      return new Intl.NumberFormat('vi-VN', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(value);
+    };
+
     this.chartOptions = {
       backgroundColor: 'transparent',
       tooltip: {
@@ -278,15 +331,15 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           return `
             <div>
               <div><strong>${param.axisValue}</strong></div>
-              <div>${param.seriesName}: ${new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(param.value)}</div>
+              <div>${param.seriesName}: ${formatNumber(param.value)}</div>
             </div>
           `;
         },
       },
       grid: {
         left: '5%',
-        right: '2%',
-        top: '13%',
+        right: '5%',
+        top: '15%',
         bottom: '15%',
         containLabel: false,
       },
@@ -307,13 +360,14 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         type: 'value',
         name: data1Name,
         nameLocation: 'middle',
-        nameGap: 50,
+        nameGap: 60,
         nameTextStyle: {
           color: textColor,
+          fontSize: 12,
         },
         axisLabel: {
           color: textColor,
-          formatter: (value: number) => new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value),
+          formatter: (value: number) => formatLargeNumber(value),
         },
         axisLine: {
           show: false,
@@ -372,34 +426,25 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.chartOptions = {};
   }
 
-  getDataValue(row: IntervalReportRow, dataKey: string): string {
-    const dataValue = row.data_values?.[dataKey as keyof typeof row.data_values] as any;
-    if (dataValue && dataValue.used && dataValue.value !== null && dataValue.value !== undefined) {
-      return dataValue.value;
-    }
-    return '';
-  }
 
   updateAggregation(fieldKey: string, aggregation: AggregationType): void {
     this.filterData.aggregationByField[fieldKey] = aggregation;
   }
 
   async exportReport(): Promise<void> {
-    if (!this.filterData.dateRange || this.filterData.dateRange.length !== 2) {
-      this.toastr.warning('Vui lòng chọn khoảng thời gian', 'Cảnh báo');
-      return;
-    }
-
-    if (!this.filterData.scaleIds || this.filterData.scaleIds.length === 0) {
-      this.toastr.warning('Vui lòng chọn ít nhất một cân', 'Cảnh báo');
-      return;
+    // Use default date range if not set
+    let dateRange = this.filterData.dateRange;
+    if (!dateRange || dateRange.length !== 2) {
+      const today = moment();
+      const sevenDaysAgo = moment().subtract(7, 'days');
+      dateRange = [sevenDaysAgo.toDate(), today.toDate()];
     }
 
     this.exporting = true;
     try {
       const scaleIds = this.filterData.scaleIds ?? [];
-      const startTime = moment(this.filterData.dateRange[0]).toISOString();
-      const endTime = moment(this.filterData.dateRange[1]).endOf('day').toISOString();
+      const startTime = moment(dateRange[0]).toISOString();
+      const endTime = moment(dateRange[1]).endOf('day').toISOString();
 
       // Get dataFields from dataColumns
       const dataFields = this.dataColumns.map(col => col.key);
@@ -457,8 +502,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       });
 
       // Generate filename
-      const fromDate = moment(this.filterData.dateRange[0]).format('YYYY-MM-DD');
-      const toDate = moment(this.filterData.dateRange[1]).format('YYYY-MM-DD');
+      const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
+      const toDate = moment(dateRange[1]).format('YYYY-MM-DD');
       const fileName = `Bao_cao_ca_${fromDate}_${toDate}.docx`;
 
       // Download file

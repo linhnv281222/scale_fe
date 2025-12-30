@@ -234,7 +234,7 @@
               class="px-2 !py-1 whitespace-nowrap text-center"
             >
               <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ getDataValue(row, col.key) }}
+                {{ row.formattedData[col.key] | number:'0.0-2' }}
               </span>
             </td>
           </tr>

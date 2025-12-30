@@ -108,12 +108,12 @@
               </td>
               <td *ngIf="dataColumn1Name" class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{
-                  (item.dataValues && item.dataValues.data_1) ? item.dataValues.data_1.value : "-"
+                  (item.dataValues && item.dataValues.data_1 && item.dataValues.data_1.value) ? (item.dataValues.data_1.value | number:'0.0-2') : ""
                 }}</span>
               </td>
               <td *ngIf="dataColumn2Name" class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{
-                  (item.dataValues && item.dataValues.data_2) ? item.dataValues.data_2.value : "-"
+                  (item.dataValues && item.dataValues.data_2 && item.dataValues.data_2.value) ? (item.dataValues.data_2.value | number:'0.0-2') : ""
                 }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
