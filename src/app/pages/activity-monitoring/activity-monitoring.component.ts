@@ -240,7 +240,7 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
   private async connectWebSocket(): Promise<void> {
     try {
       const token = localStorage.getItem('token');
-      const socketUrl = `${environment.api_end_point}/ws-scalehub`;
+      const socketUrl = `${environment.api_end_point}/api/v1/ws-scalehub`;
 
       console.log('[WebSocket] Đang kết nối đến:', socketUrl);
 
