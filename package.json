@@ -6,7 +6,7 @@
     "start": "node --max_old_space_size=6044 ./node_modules/@angular/cli/bin/ng serve",
     "start:avison": "ng serve --configuration avison",
     "start:saas": "ng serve --configuration saas",
-    "build": "ng build --configuration production --base-href=/scale/",
+    "build": "ng build --configuration production --base-href /",
     "build:prod": "ng build --configuration production --base-href=/scale/",
     "build:dev": "ng build --configuration development --base-href=/scale/",
     "watch": "ng build --watch --configuration production",
