@@ -1,8 +1,9 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
-import { Subject, interval } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 // @ts-ignore
+import * as SockJS from 'sockjs-client';
+import { environment } from 'src/environment/environment';
 import { Scale } from '../../models';
 import {
   ActivityMonitoringItem,
@@ -76,20 +77,11 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadScales();
     this.loadActivityData();
-    // this.connectWebSocket();
-
-    // Auto-refresh every 30 seconds (fallback if WebSocket fails)
-    interval(30000)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        if (!this.isConnectWebsocket) {
-          this.loadActivityData();
-        }
-      });
+    this.connectWebSocket();
   }
 
   ngOnDestroy(): void {
-    // this.disconnectWebSocket();
+    this.disconnectWebSocket();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -245,151 +237,150 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
 
 
   // WebSocket methods
-  // private async connectWebSocket(): Promise<void> {
-  //   try {
-  //     const token = localStorage.getItem('token');
-  //     const socketUrl = `${environment.api_end_point}`;
+  private async connectWebSocket(): Promise<void> {
+    try {
+      const token = localStorage.getItem('token');
+      const socketUrl = `${environment.api_end_point}/ws-scalehub`;
 
-  //     console.log('[WebSocket] Đang kết nối đến:', socketUrl);
+      console.log('[WebSocket] Đang kết nối đến:', socketUrl);
 
-  //     this.stompClient = new Client({
-  //       webSocketFactory: () => new SockJS(socketUrl),
-  //       connectHeaders: {
-  //         Authorization: `Bearer ${token}`,
-  //         clientType: 'public',
-  //       },
-  //       reconnectDelay: 0,
-  //       heartbeatIncoming: 10000,
-  //       heartbeatOutgoing: 10000,
-  //       onConnect: (frame) => {
-  //         console.log('[WebSocket] ✅ Kết nối thành công:', frame);
-  //         this.isConnectWebsocket = true;
-  //         this.isReconnecting = false;
-  //         if (this.reconnectTimeout) {
-  //           clearTimeout(this.reconnectTimeout);
-  //           this.reconnectTimeout = null;
-  //         }
-  //         this.subscribeToTopic();
-  //         this.cdr.markForCheck();
-  //       },
-  //       onStompError: (error) => {
-  //         console.error('[WebSocket] ❌ STOMP error:', error);
-  //         this.cdr.markForCheck();
-  //       },
-  //       onWebSocketClose: (event) => {
-  //         console.warn('[WebSocket] ⚠️ WebSocket đã đóng:', event.code, event.reason);
-  //         this.isConnectWebsocket = false;
-  //         if (event.code !== 1000) {
-  //           if (this.isReconnecting) {
-  //             this.isReconnecting = false;
-  //           }
-  //           this.handleReconnect();
-  //         }
-  //         this.cdr.markForCheck();
-  //       },
-  //       onWebSocketError: (error) => {
-  //         console.error('[WebSocket] ❌ WebSocket error:', error);
-  //         this.isConnectWebsocket = false;
-  //         if (this.isReconnecting) {
-  //           this.isReconnecting = false;
-  //         }
-  //         this.handleReconnect();
-  //         this.cdr.markForCheck();
-  //       },
-  //       onDisconnect: (frame) => {
-  //         console.warn('[WebSocket] ⚠️ Disconnected:', frame);
-  //         this.isConnectWebsocket = false;
-  //         this.cdr.markForCheck();
-  //       },
-  //     });
-  //     this.stompClient.activate();
-  //   } catch (error) {
-  //     console.error('[WebSocket] ❌ Lỗi khi khởi tạo kết nối:', error);
-  //     this.cdr.markForCheck();
-  //   }
-  // }
+      this.stompClient = new Client({
+        webSocketFactory: () => new SockJS(socketUrl),
+        connectHeaders: {
+          Authorization: `Bearer ${token}`,
+          clientType: 'public',
+        },
+        reconnectDelay: 0,
+        heartbeatIncoming: 10000,
+        heartbeatOutgoing: 10000,
+        onConnect: (frame) => {
+          console.log('[WebSocket] ✅ Kết nối thành công:', frame);
+          this.isConnectWebsocket = true;
+          this.isReconnecting = false;
+          if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+          }
+          this.subscribeToTopic();
+          this.cdr.markForCheck();
+        },
+        onStompError: (error) => {
+          console.error('[WebSocket] ❌ STOMP error:', error);
+          this.cdr.markForCheck();
+        },
+        onWebSocketClose: (event) => {
+          console.warn('[WebSocket] ⚠️ WebSocket đã đóng:', event.code, event.reason);
+          this.isConnectWebsocket = false;
+          if (event.code !== 1000) {
+            if (this.isReconnecting) {
+              this.isReconnecting = false;
+            }
+            this.handleReconnect();
+          }
+          this.cdr.markForCheck();
+        },
+        onWebSocketError: (error) => {
+          console.error('[WebSocket] ❌ WebSocket error:', error);
+          this.isConnectWebsocket = false;
+          if (this.isReconnecting) {
+            this.isReconnecting = false;
+          }
+          this.handleReconnect();
+          this.cdr.markForCheck();
+        },
+        onDisconnect: (frame) => {
+          console.warn('[WebSocket] ⚠️ Disconnected:', frame);
+          this.isConnectWebsocket = false;
+          this.cdr.markForCheck();
+        },
+      });
+      this.stompClient.activate();
+    } catch (error) {
+      console.error('[WebSocket] ❌ Lỗi khi khởi tạo kết nối:', error);
+      this.cdr.markForCheck();
+    }
+  }
 
-  // private subscribeToTopic(): void {
-  //   if (!this.stompClient || !this.stompClient.connected) {
-  //     return;
-  //   }
+  private subscribeToTopic(): void {
+    if (!this.stompClient || !this.stompClient.connected) {
+      return;
+    }
 
-  //   try {
-  //     this.stompSubscription = this.stompClient.subscribe('/topic/all-scales-data', (message) => {
-  //       try {
-  //         console.log('[WebSocket] 📨 Nhận được message:', message.body);
-  //         // When WebSocket receives data, reload the API
-  //         this.loadActivityData();
-  //       } catch (error) {
-  //         console.error('[WebSocket] ❌ Lỗi khi xử lý message:', error);
-  //       }
-  //     });
-  //     console.log('[WebSocket] ✅ Đã subscribe vào /topic/all-scales-data');
-  //   } catch (error) {
-  //     console.error('[WebSocket] ❌ Lỗi khi subscribe:', error);
-  //   }
-  // }
+    try {
+      this.stompSubscription = this.stompClient.subscribe('/topic/all-scales-data', (message) => {
+        try {
+          console.log('[WebSocket] 📨 Nhận được message:', message.body);
+          this.loadActivityData();
+        } catch (error) {
+          console.error('[WebSocket] ❌ Lỗi khi xử lý message:', error);
+        }
+      });
+      console.log('[WebSocket] ✅ Đã subscribe vào /topic/all-scales-data');
+    } catch (error) {
+      console.error('[WebSocket] ❌ Lỗi khi subscribe:', error);
+    }
+  }
 
-  // private handleReconnect(): void {
-  //   if (this.isReconnecting) {
-  //     return;
-  //   }
-  //   this.isReconnecting = true;
-  //   console.log('[WebSocket] 🔄 Bắt đầu reconnect sau', this.RECONNECT_DELAY, 'ms...');
-  //   if (this.reconnectTimeout) {
-  //     clearTimeout(this.reconnectTimeout);
-  //   }
-  //   this.reconnectTimeout = setTimeout(async () => {
-  //     try {
-  //       console.log('[WebSocket] 🔄 Đang thử reconnect...');
-  //       if (this.stompClient) {
-  //         try {
-  //           if (this.stompSubscription && this.stompClient.connected) {
-  //             try {
-  //               this.stompSubscription.unsubscribe();
-  //             } catch (unsubError) {
-  //               console.warn('[WebSocket] ⚠️ Lỗi khi unsubscribe:', unsubError);
-  //             }
-  //           }
-  //           this.stompSubscription = null as any;
-  //           if (this.stompClient.active) {
-  //             try {
-  //               await this.stompClient.deactivate();
-  //               await new Promise((resolve) => setTimeout(resolve, 100));
-  //             } catch (deactivateError) {
-  //               console.warn('[WebSocket] ⚠️ Lỗi khi deactivate:', deactivateError);
-  //             }
-  //           }
-  //         } catch (cleanupError) {
-  //           console.warn('[WebSocket] ⚠️ Lỗi khi cleanup client cũ:', cleanupError);
-  //         }
-  //         this.stompClient = null as any;
-  //       }
-  //       await this.connectWebSocket();
-  //     } catch (error) {
-  //       console.error('[WebSocket] ❌ Lỗi khi reconnect:', error);
-  //       this.isReconnecting = false;
-  //       this.handleReconnect();
-  //     }
-  //   }, this.RECONNECT_DELAY);
-  // }
+  private handleReconnect(): void {
+    if (this.isReconnecting) {
+      return;
+    }
+    this.isReconnecting = true;
+    console.log('[WebSocket] 🔄 Bắt đầu reconnect sau', this.RECONNECT_DELAY, 'ms...');
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+    this.reconnectTimeout = setTimeout(async () => {
+      try {
+        console.log('[WebSocket] 🔄 Đang thử reconnect...');
+        if (this.stompClient) {
+          try {
+            if (this.stompSubscription && this.stompClient.connected) {
+              try {
+                this.stompSubscription.unsubscribe();
+              } catch (unsubError) {
+                console.warn('[WebSocket] ⚠️ Lỗi khi unsubscribe:', unsubError);
+              }
+            }
+            this.stompSubscription = null as any;
+            if (this.stompClient.active) {
+              try {
+                await this.stompClient.deactivate();
+                await new Promise((resolve) => setTimeout(resolve, 100));
+              } catch (deactivateError) {
+                console.warn('[WebSocket] ⚠️ Lỗi khi deactivate:', deactivateError);
+              }
+            }
+          } catch (cleanupError) {
+            console.warn('[WebSocket] ⚠️ Lỗi khi cleanup client cũ:', cleanupError);
+          }
+          this.stompClient = null as any;
+        }
+        await this.connectWebSocket();
+      } catch (error) {
+        console.error('[WebSocket] ❌ Lỗi khi reconnect:', error);
+        this.isReconnecting = false;
+        this.handleReconnect();
+      }
+    }, this.RECONNECT_DELAY);
+  }
 
-  // private disconnectWebSocket(): void {
-  //   if (this.stompClient) {
-  //     try {
-  //       if (this.stompSubscription && this.stompClient.connected) {
-  //         this.stompSubscription.unsubscribe();
-  //       }
-  //       if (this.stompClient.active) {
-  //         this.stompClient.deactivate();
-  //       }
-  //     } catch (error) {
-  //       console.warn('[WebSocket] ⚠️ Lỗi khi disconnect:', error);
-  //     }
-  //   }
-  //   if (this.reconnectTimeout) {
-  //     clearTimeout(this.reconnectTimeout);
-  //     this.reconnectTimeout = null;
-  //   }
-  // }
+  private disconnectWebSocket(): void {
+    if (this.stompClient) {
+      try {
+        if (this.stompSubscription && this.stompClient.connected) {
+          this.stompSubscription.unsubscribe();
+        }
+        if (this.stompClient.active) {
+          this.stompClient.deactivate();
+        }
+      } catch (error) {
+        console.warn('[WebSocket] ⚠️ Lỗi khi disconnect:', error);
+      }
+    }
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+  }
 }
