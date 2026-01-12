@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { TranslateService } from '@ngx-translate/core';
-import { NzUploadFile } from 'ng-zorro-antd/upload';
 import { ToastrService } from 'ngx-toastr';
-import { WebsiteSettings } from '../../models';
-import { WebsiteSettingsService } from '../../services/website-settings.service';
+import { environment } from 'src/environment/environment';
+import { OrganizationSettings } from '../../models/organization-settings.model';
+import { OrganizationSettingsService } from '../../services/organization-settings.service';
 
 @Component({
   selector: 'app-website-settings',
@@ -12,30 +12,25 @@ import { WebsiteSettingsService } from '../../services/website-settings.service'
   styleUrls: ['./website-settings.component.css'],
 })
 export class WebsiteSettingsComponent implements OnInit {
-  settings: WebsiteSettings = {
-    siteName: 'Factory Data Manager',
-    loginSystemName: 'Factory Data Manager',
-    logo: '',
-    favicon: '',
-    loginLogo: '',
-    copyright: '',
-    description: '',
-    primaryColor: '#2563eb',
-    secondaryColor: '#64748b',
+  settings: OrganizationSettings = {
+    companyName: '',
+    companyNameEn: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    taxCode: '',
+    watermarkText: '',
   };
 
   loading = false;
   saving = false;
-  logoPreview: string | null = null;
-  faviconPreview: string | null = null;
-  loginLogoPreview: string | null = null;
-
-  logoFile: File | null = null;
-  faviconFile: File | null = null;
-  loginLogoFile: File | null = null;
+  logoFiles: File[] = [];
+  logoFilesFromBE: any[] = [];
+  hasExistingSettings = false;
 
   constructor(
-    private websiteSettingsService: WebsiteSettingsService,
+    private organizationSettingsService: OrganizationSettingsService,
     private titleService: Title,
     private translate: TranslateService,
     private toastr: ToastrService
@@ -48,158 +43,58 @@ export class WebsiteSettingsComponent implements OnInit {
   async loadSettings(): Promise<void> {
     this.loading = true;
     try {
-      this.settings = await this.websiteSettingsService.getSettings();
-      this.logoPreview = this.settings.logo || null;
-      this.faviconPreview = this.settings.favicon || null;
-      this.loginLogoPreview = this.settings.loginLogo || null;
+      const data = await this.organizationSettingsService.getSettings();
+      if (data) {
+        this.settings = data;
+        this.hasExistingSettings = !!data.id;
 
-      if (this.settings.siteName) {
-        this.titleService.setTitle(this.settings.siteName);
+        // Set logo files from backend
+        this.logoFilesFromBE = [];
+        if (data.logoUrl || data.logoBase64) {
+          const logoUrl = data.logoUrl
+            ? `${environment.api_end_point}/${data.logoUrl}`
+            : `data:image/png;base64,${data.logoBase64}`;
+
+          this.logoFilesFromBE = [
+            {
+              id: data.id,
+              fileName: 'logo.png',
+              path: data.logoUrl || '',
+              resourcePath: data.logoUrl || '',
+              size: 0,
+              createdAt: data.updatedAt || data.createdAt,
+            },
+          ];
+        }
+
+        // Set page title
+        if (this.settings.companyName) {
+          this.titleService.setTitle(this.settings.companyName);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading settings:', error);
+      const errorMessage =
+        error?.error?.message || error?.message || 'Không thể tải cấu hình';
+      this.toastr.error(errorMessage, 'Lỗi');
     } finally {
       this.loading = false;
     }
   }
 
-  beforeUploadLogo = (file: NzUploadFile): boolean => {
-    const actualFile = file.originFileObj || (file as any);
-    if (
-      !actualFile ||
-      !actualFile.type ||
-      !actualFile.type.startsWith('image/')
-    ) {
-      this.toastr.error(
-        this.translate.instant('systemConfig.imageFileRequired')
-      );
-      return false;
-    }
-    // Kiểm tra kích thước file (10MB = 10 * 1024 * 1024 bytes)
-    const maxSize = 10 * 1024 * 1024;
-    if (actualFile.size > maxSize) {
-      this.toastr.error(
-        this.translate.instant('systemConfig.fileSizeExceeded')
-      );
-      return false;
-    }
-    this.logoFile = actualFile;
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      this.logoPreview = e.target.result;
-    };
-    reader.readAsDataURL(actualFile);
-
-    // Tự động download file khi upload
-    const fileName = `logo.${actualFile.name.split('.').pop()}`;
-    this.websiteSettingsService.downloadFile(actualFile, fileName);
-    this.settings.logoFileName = fileName;
-    this.settings.logo = `assets/img/${fileName}`;
-    this.toastr.success(
-      `File ${fileName} đã được tải về. Vui lòng copy vào thư mục src/assets/img/`
-    );
-
-    return false;
-  };
-
-  beforeUploadFavicon = (file: NzUploadFile): boolean => {
-    const actualFile = file.originFileObj || (file as any);
-    if (
-      !actualFile ||
-      !actualFile.type ||
-      !actualFile.type.startsWith('image/')
-    ) {
-      this.toastr.error(
-        this.translate.instant('systemConfig.imageFileRequired')
-      );
-      return false;
-    }
-    // Kiểm tra kích thước file (10MB = 10 * 1024 * 1024 bytes)
-    const maxSize = 10 * 1024 * 1024;
-    if (actualFile.size > maxSize) {
-      this.toastr.error(
-        this.translate.instant('systemConfig.fileSizeExceeded')
-      );
-      return false;
-    }
-    this.faviconFile = actualFile;
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      this.faviconPreview = e.target.result;
-    };
-    reader.readAsDataURL(actualFile);
-
-    // Tự động download file khi upload
-    const fileName = `favicon.${actualFile.name.split('.').pop()}`;
-    this.websiteSettingsService.downloadFile(actualFile, fileName);
-    this.settings.faviconFileName = fileName;
-    this.settings.favicon = `assets/img/${fileName}`;
-    this.toastr.success(
-      `File ${fileName} đã được tải về. Vui lòng copy vào thư mục src/assets/img/`
-    );
-
-    return false;
-  };
-
-  beforeUploadLoginLogo = (file: NzUploadFile): boolean => {
-    const actualFile = file.originFileObj || (file as any);
-    if (
-      !actualFile ||
-      !actualFile.type ||
-      !actualFile.type.startsWith('image/')
-    ) {
-      this.toastr.error(
-        this.translate.instant('systemConfig.imageFileRequired')
-      );
-      return false;
-    }
-    // Kiểm tra kích thước file (10MB = 10 * 1024 * 1024 bytes)
-    const maxSize = 10 * 1024 * 1024;
-    if (actualFile.size > maxSize) {
-      this.toastr.error(
-        this.translate.instant('systemConfig.fileSizeExceeded')
-      );
-      return false;
-    }
-    this.loginLogoFile = actualFile;
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      this.loginLogoPreview = e.target.result;
-    };
-    reader.readAsDataURL(actualFile);
-
-    // Tự động download file khi upload
-    const fileName = `login-logo.${actualFile.name.split('.').pop()}`;
-    this.websiteSettingsService.downloadFile(actualFile, fileName);
-    this.settings.loginLogoFileName = fileName;
-    this.settings.loginLogo = `assets/img/${fileName}`;
-    this.toastr.success(
-      `File ${fileName} đã được tải về. Vui lòng copy vào thư mục src/assets/img/`
-    );
-
-    return false;
-  };
-
-  removeLogo(): void {
-    this.logoFile = null;
-    this.logoPreview = null;
-    this.settings.logo = '';
+  onLogoFilesChanged(files: File[]): void {
+    this.logoFiles = files;
   }
 
-  removeFavicon(): void {
-    this.faviconFile = null;
-    this.faviconPreview = null;
-    this.settings.favicon = '';
-  }
-
-  removeLoginLogo(): void {
-    this.loginLogoFile = null;
-    this.loginLogoPreview = null;
-    this.settings.loginLogo = '';
+  onLogoFilesFromBEChanged(event: any): void {
+    // Handle delete from backend if needed
+    if (event.type === 'delete') {
+      this.logoFilesFromBE = [];
+    }
   }
 
   async saveSettings(): Promise<void> {
-    if (!this.settings.siteName) {
+    if (!this.settings.companyName || this.settings.companyName.trim() === '') {
       this.toastr.error(
         this.translate.instant('systemConfig.systemNameRequired')
       );
@@ -208,39 +103,75 @@ export class WebsiteSettingsComponent implements OnInit {
 
     this.saving = true;
     try {
-      // Files đã được download khi upload, chỉ cần lưu settings
-      const success = await this.websiteSettingsService.saveSettings(
-        this.settings
-      );
-      if (success) {
-        this.titleService.setTitle(this.settings.siteName);
-        this.updateFavicon();
-        this.toastr.success(
-          this.translate.instant('systemConfig.saveSuccess')
+      const data = {
+        companyName: this.settings.companyName.trim(),
+        companyNameEn: this.settings.companyNameEn?.trim() || '',
+        address: this.settings.address?.trim() || '',
+        phone: this.settings.phone?.trim() || '',
+        email: this.settings.email?.trim() || '',
+        website: this.settings.website?.trim() || '',
+        taxCode: this.settings.taxCode?.trim() || '',
+        watermarkText: this.settings.watermarkText?.trim() || '',
+      };
+
+      let result: OrganizationSettings | null = null;
+
+      // Get logo file from uploaded files
+      const logoFile =
+        this.logoFiles && this.logoFiles.length > 0
+          ? this.logoFiles[0]
+          : undefined;
+
+      if (this.hasExistingSettings) {
+        // Update existing settings
+        result = await this.organizationSettingsService.updateSettings(
+          data,
+          logoFile
         );
-        this.logoFile = null;
-        this.faviconFile = null;
-        this.loginLogoFile = null;
+      } else {
+        // Create new settings
+        result = await this.organizationSettingsService.createSettings(
+          data,
+          logoFile
+        );
+      }
+
+      if (result) {
+        this.settings = result;
+        this.hasExistingSettings = true;
+
+        // Update logo files from backend
+        this.logoFiles = [];
+        this.logoFilesFromBE = [];
+        if (result.logoUrl || result.logoBase64) {
+          this.logoFilesFromBE = [
+            {
+              id: result.id,
+              fileName: 'logo.png',
+              path: result.logoUrl || '',
+              resourcePath: result.logoUrl || '',
+              size: 0,
+              createdAt: result.updatedAt || result.createdAt,
+            },
+          ];
+        }
+
+        // Update page title
+        if (this.settings.companyName) {
+          this.titleService.setTitle(this.settings.companyName);
+        }
+
+        this.toastr.success(this.translate.instant('systemConfig.saveSuccess'));
       } else {
         this.toastr.error(this.translate.instant('systemConfig.saveError'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving settings:', error);
-      this.toastr.error(this.translate.instant('systemConfig.saveError'));
+      const errorMessage =
+        error?.error?.message || error?.message || 'Không thể lưu cấu hình';
+      this.toastr.error(errorMessage, 'Lỗi');
     } finally {
       this.saving = false;
-    }
-  }
-
-  private updateFavicon(): void {
-    if (this.settings.favicon) {
-      let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'shortcut icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
-      }
-      link.href = this.settings.favicon;
     }
   }
 }

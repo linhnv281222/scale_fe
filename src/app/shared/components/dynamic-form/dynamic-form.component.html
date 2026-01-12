@@ -1,6 +1,8 @@
 <div class="space-y-4">
   <div *ngFor="let field of fields" class="w-full">
-    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+    <label
+      class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+    >
       {{ field.displayName }}
       <span *ngIf="field.required" class="text-red-500">*</span>
     </label>
@@ -14,11 +16,14 @@
           [(ngModel)]="model[field.fieldKey]"
           (ngModelChange)="onFieldChange(field.fieldKey, $event)"
           [placeholder]="field.placeholder || field.displayName"
-          [readonly]="readonly"
+          [disabled]="field.disabled ?? false"
           class="w-full"
         />
       </nz-input-group>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
@@ -31,18 +36,27 @@
           [(ngModel)]="model[field.fieldKey]"
           (ngModelChange)="onFieldChange(field.fieldKey, $event)"
           [placeholder]="field.placeholder || field.displayName"
-          [readonly]="readonly"
+          [disabled]="field.disabled ?? false"
           [rows]="field.rows || 3"
           class="w-full"
         ></textarea>
       </nz-input-group>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
 
     <!-- NUMBER, INTEGER, DECIMAL - Number Input -->
-    <div *ngIf="field.dataType === ConfigDataType.NUMBER || field.dataType === ConfigDataType.INTEGER || field.dataType === ConfigDataType.DECIMAL">
+    <div
+      *ngIf="
+        field.dataType === ConfigDataType.NUMBER ||
+        field.dataType === ConfigDataType.INTEGER ||
+        field.dataType === ConfigDataType.DECIMAL
+      "
+    >
       <nz-input-group>
         <input
           type="number"
@@ -50,21 +64,31 @@
           [(ngModel)]="model[field.fieldKey]"
           (ngModelChange)="onFieldChange(field.fieldKey, $event)"
           [placeholder]="field.placeholder || field.displayName"
-          [readonly]="readonly"
+          [disabled]="field.disabled ?? false"
           [min]="field.min ?? null"
           [max]="field.max ?? null"
-          [step]="field.step || (field.dataType === ConfigDataType.INTEGER ? 1 : 0.01)"
+          [step]="
+            field.step || (field.dataType === ConfigDataType.INTEGER ? 1 : 0.01)
+          "
           class="w-full"
         />
       </nz-input-group>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
 
     <!-- BOOLEAN - Checkbox -->
     <div *ngIf="field.dataType === ConfigDataType.BOOLEAN">
-      <label nz-checkbox [(ngModel)]="model[field.fieldKey]" (ngModelChange)="onFieldChange(field.fieldKey, $event)" [nzDisabled]="readonly">
+      <label
+        nz-checkbox
+        [(ngModel)]="model[field.fieldKey]"
+        (ngModelChange)="onFieldChange(field.fieldKey, $event)"
+        [nzDisabled]="field.disabled ?? false"
+      >
         {{ field.displayName }}
       </label>
     </div>
@@ -74,13 +98,16 @@
       <nz-date-picker
         [(ngModel)]="model[field.fieldKey]"
         (ngModelChange)="onFieldChange(field.fieldKey, $event)"
-        [nzDisabled]="readonly"
+        [nzDisabled]="field.disabled ?? false"
         [nzShowTime]="true"
         [nzFormat]="'yyyy-MM-dd HH:mm:ss'"
         class="w-full"
         [nzPlaceHolder]="field.placeholder || field.displayName"
       ></nz-date-picker>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
@@ -90,12 +117,15 @@
       <nz-date-picker
         [(ngModel)]="model[field.fieldKey]"
         (ngModelChange)="onFieldChange(field.fieldKey, $event)"
-        [nzDisabled]="readonly"
+        [nzDisabled]="field.disabled ?? false"
         [nzFormat]="'yyyy-MM-dd'"
         class="w-full"
         [nzPlaceHolder]="field.placeholder || field.displayName"
       ></nz-date-picker>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
@@ -105,12 +135,15 @@
       <nz-time-picker
         [(ngModel)]="model[field.fieldKey]"
         (ngModelChange)="onFieldChange(field.fieldKey, $event)"
-        [nzDisabled]="readonly"
+        [nzDisabled]="field.disabled ?? false"
         [nzFormat]="'HH:mm:ss'"
         class="w-full"
         [nzPlaceHolder]="field.placeholder || field.displayName"
       ></nz-time-picker>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
@@ -120,15 +153,22 @@
       <nz-select
         [(ngModel)]="model[field.fieldKey]"
         (ngModelChange)="onFieldChange(field.fieldKey, $event)"
-        [nzDisabled]="readonly"
+        [nzDisabled]="field.disabled ?? false"
         [nzPlaceHolder]="field.placeholder || field.displayName"
         [nzDropdownMatchSelectWidth]="false"
         [nzPlacement]="'bottomLeft'"
         class="w-full"
       >
-        <nz-option *ngFor="let option of field.options" [nzValue]="option.value" [nzLabel]="option.label"></nz-option>
+        <nz-option
+          *ngFor="let option of field.options"
+          [nzValue]="option.value"
+          [nzLabel]="option.label"
+        ></nz-option>
       </nz-select>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
@@ -138,20 +178,25 @@
       <nz-select
         [(ngModel)]="model[field.fieldKey]"
         (ngModelChange)="onFieldChange(field.fieldKey, $event)"
-        [nzDisabled]="readonly"
+        [nzDisabled]="field.disabled ?? false"
         [nzPlaceHolder]="field.placeholder || field.displayName"
         [nzMode]="'multiple'"
         [nzDropdownMatchSelectWidth]="false"
         [nzPlacement]="'bottomLeft'"
         class="w-full"
       >
-        <nz-option *ngFor="let option of field.options" [nzValue]="option.value" [nzLabel]="option.label"></nz-option>
+        <nz-option
+          *ngFor="let option of field.options"
+          [nzValue]="option.value"
+          [nzLabel]="option.label"
+        ></nz-option>
       </nz-select>
-      <p *ngIf="isFieldInvalid(field)" class="mt-1 text-sm font-bold text-red-500">
+      <p
+        *ngIf="isFieldInvalid(field)"
+        class="mt-1 text-sm font-bold text-red-500"
+      >
         {{ "common.required" | translate }}
       </p>
     </div>
-
   </div>
 </div>
-

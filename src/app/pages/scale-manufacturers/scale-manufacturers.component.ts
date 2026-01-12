@@ -19,6 +19,7 @@ export class ScaleManufacturersComponent implements OnInit {
   total = 0;
   isModalVisible = false;
   isEditMode = false;
+  isViewMode = false;
   saving = false;
   selectedManufacturer: ScaleManufacturer | null = null;
   filterData: any = {};
@@ -33,16 +34,16 @@ export class ScaleManufacturersComponent implements OnInit {
 
   filterFields: FilterField[] = [
     {
-      key: 'name',
-      label: 'scales.manufacturerName',
-      type: 'text',
-      placeholder: 'scales.enterManufacturerName',
-    },
-    {
       key: 'code',
       label: 'scales.manufacturerCode',
       type: 'text',
       placeholder: 'scales.enterManufacturerCode',
+    },
+    {
+      key: 'country',
+      label: 'scales.country',
+      type: 'text',
+      placeholder: 'scales.enterCountry',
     },
   ];
 
@@ -82,13 +83,27 @@ export class ScaleManufacturersComponent implements OnInit {
   async loadManufacturers(): Promise<void> {
     this.loading = true;
     try {
-      const data = await this.scaleManufacturerService.getScaleManufacturers({
-        page: this.pageIndex,
+      // Build query params according to API
+      const params: any = {
+        page: this.pageIndex - 1, // API uses 0-indexed
         size: this.pageSize,
-        ...this.filterData,
-      });
-      this.manufacturers = data.data || [];
-      this.total = data.total || this.manufacturers.length;
+      };
+
+      if (this.filterData.code) {
+        params.code = this.filterData.code;
+      }
+      if (this.filterData.country) {
+        params.country = this.filterData.country;
+      }
+      if (this.filterData.sort) {
+        params.sort = this.filterData.sort;
+      }
+
+      const data = await this.scaleManufacturerService.getScaleManufacturers(
+        params
+      );
+      this.manufacturers = data.data;
+      this.total = data.total;
     } catch (error) {
       this.manufacturers = [];
       this.total = 0;
@@ -110,26 +125,139 @@ export class ScaleManufacturersComponent implements OnInit {
 
   openAddModal(): void {
     this.isEditMode = false;
+    this.isViewMode = false;
     this.selectedManufacturer = null;
-    this.dataManufacturer = {};
-    this.formFields.forEach((field) => {
-      this.dataManufacturer[field.fieldKey] = '';
-    });
+    this.dataManufacturer = {
+      code: '',
+      name: '',
+      country: '',
+      website: '',
+      phone: '',
+      email: '',
+      address: '',
+      description: '',
+      is_active: true,
+    };
     this.isModalVisible = true;
   }
 
-  viewManufacturer(manufacturer: ScaleManufacturer): void {
-    // For now, view opens edit modal
-    this.openEditModal(manufacturer);
+  async viewManufacturer(manufacturer: ScaleManufacturer): Promise<void> {
+    this.isViewMode = true;
+    this.isEditMode = false;
+    this.selectedManufacturer = manufacturer;
+
+    // Load full manufacturer details
+    if (manufacturer.id) {
+      const fullManufacturer =
+        await this.scaleManufacturerService.getScaleManufacturerById(
+          manufacturer.id
+        );
+      if (fullManufacturer) {
+        this.selectedManufacturer = fullManufacturer;
+        this.dataManufacturer = {
+          code: fullManufacturer.code || '',
+          name: fullManufacturer.name || '',
+          country: fullManufacturer.country || '',
+          website: fullManufacturer.website || '',
+          phone: fullManufacturer.phone || '',
+          email: fullManufacturer.email || '',
+          address: fullManufacturer.address || '',
+          description: fullManufacturer.description || '',
+          is_active:
+            fullManufacturer.is_active !== undefined
+              ? fullManufacturer.is_active
+              : true,
+        };
+      } else {
+        this.dataManufacturer = {
+          code: manufacturer.code || '',
+          name: manufacturer.name || '',
+          country: manufacturer.country || '',
+          website: manufacturer.website || '',
+          phone: manufacturer.phone || '',
+          email: manufacturer.email || '',
+          address: manufacturer.address || '',
+          description: manufacturer.description || '',
+          is_active:
+            manufacturer.is_active !== undefined
+              ? manufacturer.is_active
+              : true,
+        };
+      }
+    } else {
+      this.dataManufacturer = {
+        code: manufacturer.code || '',
+        name: manufacturer.name || '',
+        country: manufacturer.country || '',
+        website: manufacturer.website || '',
+        phone: manufacturer.phone || '',
+        email: manufacturer.email || '',
+        address: manufacturer.address || '',
+        description: manufacturer.description || '',
+        is_active:
+          manufacturer.is_active !== undefined ? manufacturer.is_active : true,
+      };
+    }
+    this.isModalVisible = true;
   }
 
-  openEditModal(manufacturer: ScaleManufacturer): void {
+  async openEditModal(manufacturer: ScaleManufacturer): Promise<void> {
     this.isEditMode = true;
+    this.isViewMode = false;
     this.selectedManufacturer = manufacturer;
-    this.dataManufacturer = {
-      name: manufacturer.name,
-      code: manufacturer.code,
-    };
+
+    // Load full manufacturer details
+    if (manufacturer.id) {
+      const fullManufacturer =
+        await this.scaleManufacturerService.getScaleManufacturerById(
+          manufacturer.id
+        );
+      if (fullManufacturer) {
+        this.selectedManufacturer = fullManufacturer;
+        this.dataManufacturer = {
+          code: fullManufacturer.code || '',
+          name: fullManufacturer.name || '',
+          country: fullManufacturer.country || '',
+          website: fullManufacturer.website || '',
+          phone: fullManufacturer.phone || '',
+          email: fullManufacturer.email || '',
+          address: fullManufacturer.address || '',
+          description: fullManufacturer.description || '',
+          is_active:
+            fullManufacturer.is_active !== undefined
+              ? fullManufacturer.is_active
+              : true,
+        };
+      } else {
+        this.dataManufacturer = {
+          code: manufacturer.code || '',
+          name: manufacturer.name || '',
+          country: manufacturer.country || '',
+          website: manufacturer.website || '',
+          phone: manufacturer.phone || '',
+          email: manufacturer.email || '',
+          address: manufacturer.address || '',
+          description: manufacturer.description || '',
+          is_active:
+            manufacturer.is_active !== undefined
+              ? manufacturer.is_active
+              : true,
+        };
+      }
+    } else {
+      this.dataManufacturer = {
+        code: manufacturer.code || '',
+        name: manufacturer.name || '',
+        country: manufacturer.country || '',
+        website: manufacturer.website || '',
+        phone: manufacturer.phone || '',
+        email: manufacturer.email || '',
+        address: manufacturer.address || '',
+        description: manufacturer.description || '',
+        is_active:
+          manufacturer.is_active !== undefined ? manufacturer.is_active : true,
+      };
+    }
     this.isModalVisible = true;
   }
 
@@ -140,19 +268,43 @@ export class ScaleManufacturersComponent implements OnInit {
     }
 
     this.saving = true;
-    const data = { ...this.dataManufacturer };
+    // Build payload according to API
+    const data: any = {
+      code: this.dataManufacturer.code,
+      name: this.dataManufacturer.name,
+      country: this.dataManufacturer.country || '',
+      website: this.dataManufacturer.website || '',
+      phone: this.dataManufacturer.phone || '',
+      email: this.dataManufacturer.email || '',
+      address: this.dataManufacturer.address || '',
+      description: this.dataManufacturer.description || '',
+      is_active:
+        this.dataManufacturer.is_active !== undefined
+          ? this.dataManufacturer.is_active
+          : true,
+    };
 
     try {
       if (this.isEditMode && this.selectedManufacturer?.id) {
-        await this.scaleManufacturerService.updateScaleManufacturer(
-          this.selectedManufacturer.id,
-          data
-        );
+        const updated =
+          await this.scaleManufacturerService.updateScaleManufacturer(
+            this.selectedManufacturer.id,
+            data
+          );
+        if (updated) {
+          this.isModalVisible = false;
+          this.isViewMode = false;
+          await this.loadManufacturers();
+        }
       } else {
-        await this.scaleManufacturerService.createScaleManufacturer(data);
+        const created =
+          await this.scaleManufacturerService.createScaleManufacturer(data);
+        if (created) {
+          this.isModalVisible = false;
+          this.isViewMode = false;
+          await this.loadManufacturers();
+        }
       }
-      this.isModalVisible = false;
-      await this.loadManufacturers();
     } catch (error) {
       console.error('Error saving manufacturer:', error);
     } finally {
@@ -183,6 +335,11 @@ export class ScaleManufacturersComponent implements OnInit {
     }
   }
 
+  closeViewModal(): void {
+    this.isModalVisible = false;
+    this.isViewMode = false;
+  }
+
   // Getter for delete message
   get deleteMessage(): string {
     if (!this.manufacturerToDelete) return '';
@@ -193,5 +350,13 @@ export class ScaleManufacturersComponent implements OnInit {
     this.pageIndex = event.page;
     this.pageSize = event.size;
     this.loadManufacturers();
+  }
+
+  // Helper method to check if required field is empty
+  isRequiredFieldEmpty(value: any): boolean {
+    if (typeof value === 'number') {
+      return value === null || value === undefined;
+    }
+    return value === null || value === undefined || value === '';
   }
 }

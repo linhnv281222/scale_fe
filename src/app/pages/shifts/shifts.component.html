@@ -144,10 +144,12 @@
 
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isEditMode ? 'common.edit' : 'common.addNew') | translate"
-  (nzOnCancel)="isModalVisible = false"
-  (nzOnOk)="saveShift()"
+  [nzTitle]="(isViewMode ? 'common.view' : (isEditMode ? 'common.edit' : 'common.addNew')) | translate"
+  (nzOnCancel)="isViewMode ? closeViewModal() : (isModalVisible = false)"
+  (nzOnOk)="isViewMode ? closeViewModal() : saveShift()"
   [nzOkLoading]="saving"
+  [nzOkText]="isViewMode ? ('common.close' | translate) : ('common.save' | translate)"
+  [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
 >
   <div *nzModalContent>
     <!-- Dynamic Form -->
@@ -156,6 +158,7 @@
       [fields]="formFields"
       [(model)]="dataShift"
       (modelChange)="dataShift = $event"
+      [disabled]="isViewMode"
     ></app-dynamic-form>
 
     <!-- Fallback to static form if configs not loaded -->
@@ -165,7 +168,7 @@
           {{ "shifts.name" | translate }}<span class="ml-1 text-red-500">*</span>
         </label>
         <nz-input-group>
-          <input type="text" nz-input [(ngModel)]="dataShift.name" [placeholder]="'shifts.name' | translate" class="w-full" required />
+          <input type="text" nz-input [(ngModel)]="dataShift.name" [placeholder]="'shifts.name' | translate" class="w-full" [disabled]="isViewMode" required />
         </nz-input-group>
       </div>
       <div class="grid grid-cols-2 gap-4">
@@ -179,6 +182,7 @@
             [nzPlaceHolder]="'shifts.startTime' | translate"
             class="w-full"
             nzSize="default"
+            [nzDisabled]="isViewMode"
           ></nz-time-picker>
         </div>
         <div class="mb-4">
@@ -187,6 +191,7 @@
           </label>
           <nz-time-picker
             [(ngModel)]="dataShift.endTime"
+            [nzDisabled]="isViewMode"
             [nzFormat]="'HH:mm'"
             [nzPlaceHolder]="'shifts.endTime' | translate"
             class="w-full"
@@ -197,6 +202,7 @@
       <div class="mb-4">
         <label
           nz-checkbox
+          [nzDisabled]="isViewMode"
           [(ngModel)]="dataShift.is_active"
           class="text-sm font-medium text-gray-700 dark:text-gray-300"
         >

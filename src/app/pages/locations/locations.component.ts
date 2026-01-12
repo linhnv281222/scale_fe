@@ -20,8 +20,9 @@ export class LocationsComponent implements OnInit, OnDestroy {
   locations: Location[] = [];
   flatLocations: Location[] = [];
   loading = false;
-  pageIndex = 1;
-  pageSize = 20;
+  // Pagination removed - tree structure doesn't need pagination
+  // pageIndex = 1;
+  // pageSize = 20;
   total = 0;
   isModalVisible = false;
   isEditMode = false;
@@ -40,32 +41,17 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
   filterFields: FilterField[] = [
     {
-      key: 'name',
-      label: 'locations.name',
-      type: 'text',
-      placeholder: 'locations.enterName',
-    },
-    {
       key: 'code',
       label: 'locations.code',
       type: 'text',
       placeholder: 'locations.enterCode',
     },
     {
-      key: 'status',
-      label: 'common.status',
+      key: 'parentId',
+      label: 'locations.parent',
       type: 'select',
-      placeholder: 'common.status',
-      options: [
-        { label: 'common.active', value: 'active' },
-        { label: 'common.inactive', value: 'inactive' },
-      ],
-    },
-    {
-      key: 'dateCreated',
-      label: 'table.dateCreated',
-      type: 'dateRange',
-      placeholder: 'filter.dateFormat',
+      placeholder: 'locations.selectParent',
+      options: [],
     },
   ];
 
@@ -115,32 +101,60 @@ export class LocationsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // Helper method to check if required field is empty
+  isRequiredFieldEmpty(value: any): boolean {
+    if (typeof value === 'number') {
+      return value === null || value === undefined;
+    }
+    return value === null || value === undefined || value === '';
+  }
+
   async loadLocations(): Promise<void> {
     this.loading = true;
     try {
-      let treeData: Location[] = [];
-      try {
-        treeData = await this.locationService.getLocationsTree();
-      } catch (error) {
-        this.toastr.error('Có lỗi xảy ra vui lòng thử lại');
+      const params: any = {};
+
+      const hasFilters = this.filterData.code || this.filterData.parentId;
+
+      if (hasFilters) {
+        if (this.filterData.code) {
+          params.code = this.filterData.code;
+        }
+        if (this.filterData.parentId) {
+          params.parentId = this.filterData.parentId;
+        }
+        if (this.filterData.sort) {
+          params.sort = this.filterData.sort;
+        }
       }
 
-      if (treeData && treeData.length > 0) {
-        this.locations = treeData;
-        this.total = this.countAllNodes(treeData);
-      } else {
-      const response = await this.locationService.getLocations({
-        page: this.pageIndex,
-        size: this.pageSize,
-        ...this.filterData,
-      });
-        if (response && response.data) {
-          const allItems = response.data;
-          const rootItems = allItems.filter((item) => !item.parent_id && !item.parentId);
+      const response = await this.locationService.getLocations(params);
 
+      if (response && response.data) {
+        if (
+          response.data.length > 0 &&
+          response.data[0].children !== undefined
+        ) {
+          this.locations = response.data;
+          this.total = this.countAllNodes(response.data);
+        } else if (response.content) {
+          const allItems = response.content;
+          const rootItems = allItems.filter(
+            (item) => !item.parent_id && !item.parentId
+          );
           this.locations = this.buildTreeFromFlat(allItems, rootItems);
-          this.total = allItems.length;
+          this.total = response.total_elements ?? 0;
+        } else {
+          const allItems = response.data;
+          const rootItems = allItems.filter(
+            (item) => !item.parent_id && !item.parentId
+          );
+          this.locations = this.buildTreeFromFlat(allItems, rootItems);
+          this.total = response.total ?? 0;
         }
+      } else {
+        this.locations = [];
+        this.total = 0;
       }
 
       this.expandedIds.clear();
@@ -149,18 +163,26 @@ export class LocationsComponent implements OnInit, OnDestroy {
           this.expandedIds.add(item.id);
         }
       });
-        this.flattenLocations();
-        this.loadParentLocations();
+      this.flattenLocations();
+      this.loadParentLocations();
     } catch (error) {
+      this.toastr.error('Có lỗi xảy ra vui lòng thử lại');
+      this.locations = [];
+      this.total = 0;
     } finally {
       this.loading = false;
     }
   }
 
-  private buildTreeFromFlat(allItems: Location[], rootItems: Location[]): Location[] {
+  private buildTreeFromFlat(
+    allItems: Location[],
+    rootItems: Location[]
+  ): Location[] {
     const buildChildren = (parentId: number): Location[] => {
       return allItems
-        .filter((item) => (item.parent_id === parentId || item.parentId === parentId))
+        .filter(
+          (item) => item.parent_id === parentId || item.parentId === parentId
+        )
         .map((item) => ({
           ...item,
           children: buildChildren(item.id!),
@@ -199,6 +221,14 @@ export class LocationsComponent implements OnInit, OnDestroy {
     };
     flatten(this.locations);
     this.parentLocations = allLocations;
+
+    const parentField = this.filterFields.find((f) => f.key === 'parentId');
+    if (parentField) {
+      parentField.options = allLocations.map((loc) => ({
+        label: loc.name || '',
+        value: loc.id,
+      }));
+    }
   }
 
   flattenLocations(): void {
@@ -262,11 +292,11 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
     if (this.expandedIds.has(locationId)) {
       this.expandedIds.delete(locationId);
-      } else {
+    } else {
       this.expandedIds.add(locationId);
-      }
+    }
 
-      this.flattenLocations();
+    this.flattenLocations();
     this.cdr.detectChanges();
   }
 
@@ -309,7 +339,6 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
   onSearch(filters: any): void {
     this.filterData = filters;
-    this.pageIndex = 1;
     this.loadLocations();
   }
 
@@ -343,16 +372,21 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
     try {
       // Gọi API GET để lấy data mới nhất
-      const locationData = await this.locationService.getLocationById(location.id);
+      const locationData = await this.locationService.getLocationById(
+        location.id
+      );
 
       if (locationData) {
         this.selectedLocation = locationData;
 
-    // Filter parentLocations để loại trừ chính location đó và các children
+        // Filter parentLocations để loại trừ chính location đó và các children
         const allLocations: Location[] = [];
         const flatten = (items: Location[]) => {
           items.forEach((item) => {
-            if (item.id !== locationData.id && !this.isDescendant(locationData.id!, item)) {
+            if (
+              item.id !== locationData.id &&
+              !this.isDescendant(locationData.id!, item)
+            ) {
               allLocations.push(item);
             }
             if (item.children && item.children.length > 0) {
@@ -368,7 +402,7 @@ export class LocationsComponent implements OnInit, OnDestroy {
           name: locationData.name,
           parentId: locationData.parentId || locationData.parent_id || null,
         };
-    this.isModalVisible = true;
+        this.isModalVisible = true;
       }
     } catch (error) {
       this.toastr.error('Không thể tải dữ liệu vị trí');
@@ -383,7 +417,9 @@ export class LocationsComponent implements OnInit, OnDestroy {
     }
     // Check recursively in children
     if (location.children && location.children.length > 0) {
-      return location.children.some((child) => this.isDescendant(parentId, child));
+      return location.children.some((child) =>
+        this.isDescendant(parentId, child)
+      );
     }
     return false;
   }
@@ -405,22 +441,25 @@ export class LocationsComponent implements OnInit, OnDestroy {
         if (this.dataLocation.parentId) {
           data.parentId = this.dataLocation.parentId;
         }
-        result = await this.locationService.updateLocation(this.selectedLocation?.id!, data);
+        result = await this.locationService.updateLocation(
+          this.selectedLocation?.id!,
+          data
+        );
       } else {
         const createData: { code: string; name: string; parentId?: number } = {
-        code: this.dataLocation.code,
-        name: this.dataLocation.name,
-      };
-      if (this.dataLocation.parentId) {
+          code: this.dataLocation.code,
+          name: this.dataLocation.name,
+        };
+        if (this.dataLocation.parentId) {
           createData.parentId = this.dataLocation.parentId;
-      }
+        }
         result = await this.locationService.createLocation(createData);
       }
 
       if (result.success) {
         this.toastr.success('Thành công');
-      this.isModalVisible = false;
-      await this.loadLocations();
+        this.isModalVisible = false;
+        await this.loadLocations();
       } else {
         this.toastr.error('Thất bại');
       }
@@ -442,7 +481,9 @@ export class LocationsComponent implements OnInit, OnDestroy {
     this.loading = true;
 
     try {
-      const locationData = await this.locationService.getLocationById(location.id);
+      const locationData = await this.locationService.getLocationById(
+        location.id
+      );
 
       if (locationData) {
         this.selectedLocation = locationData;
@@ -450,7 +491,10 @@ export class LocationsComponent implements OnInit, OnDestroy {
         const allLocations: Location[] = [];
         const flatten = (items: Location[]) => {
           items.forEach((item) => {
-            if (item.id !== locationData.id && !this.isDescendant(locationData.id!, item)) {
+            if (
+              item.id !== locationData.id &&
+              !this.isDescendant(locationData.id!, item)
+            ) {
               allLocations.push(item);
             }
             if (item.children && item.children.length > 0) {
@@ -496,15 +540,17 @@ export class LocationsComponent implements OnInit, OnDestroy {
     }
 
     this.deleting = true;
-      try {
-        const success = await this.locationService.deleteLocation(this.locationToDelete.id);
-        if (success) {
+    try {
+      const success = await this.locationService.deleteLocation(
+        this.locationToDelete.id
+      );
+      if (success) {
         this.toastr.success('Xóa vị trí thành công');
         this.isConfirmVisible = false;
         this.locationToDelete = null;
-          await this.loadLocations();
-        }
-      } catch (error) {
+        await this.loadLocations();
+      }
+    } catch (error) {
     } finally {
       this.deleting = false;
     }
@@ -516,21 +562,21 @@ export class LocationsComponent implements OnInit, OnDestroy {
     return `Bạn có chắc chắn muốn xóa vị trí "${this.locationToDelete.name}"?`;
   }
 
+  // Pagination methods removed - tree structure doesn't need pagination
+  // onPaginationChange(event: { page: number; size: number }): void {
+  //   this.pageIndex = event.page;
+  //   this.pageSize = event.size;
+  //   this.loadLocations();
+  // }
 
-  onPaginationChange(event: { page: number; size: number }): void {
-    this.pageIndex = event.page;
-    this.pageSize = event.size;
-    this.loadLocations();
-  }
+  // onPageIndexChange(page: number): void {
+  //   this.pageIndex = page;
+  //   this.loadLocations();
+  // }
 
-  onPageIndexChange(page: number): void {
-    this.pageIndex = page;
-    this.loadLocations();
-  }
-
-  onPageSizeChange(size: number): void {
-    this.pageSize = size;
-    this.pageIndex = 1;
-    this.loadLocations();
-  }
+  // onPageSizeChange(size: number): void {
+  //   this.pageSize = size;
+  //   this.pageIndex = 1;
+  //   this.loadLocations();
+  // }
 }

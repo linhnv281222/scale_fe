@@ -67,8 +67,15 @@ export interface Scale {
   id?: number;
   name: string;
   model?: string;
+  direction?: string; // IMPORT, EXPORT
   location_id?: number;
   location_name?: string;
+  manufacturer_id?: number;
+  manufacturer_name?: string;
+  manufacturer_code?: string;
+  protocol_id?: number;
+  protocol_name?: string;
+  protocol_code?: string;
   is_active?: boolean;
   created_at?: string;
   created_by?: string;

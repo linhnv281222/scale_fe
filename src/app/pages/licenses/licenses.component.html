@@ -132,7 +132,7 @@
                     nzSize="small"
                     nz-tooltip
                     [nzTooltipTitle]="'common.view' | translate"
-                    (click)="openEditModal(license)"
+                    (click)="viewLicense(license)"
                     class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
                   >
                     <span
@@ -186,13 +186,15 @@
   </main>
 </div>
 
-<!-- Add/Edit Modal -->
+<!-- Add/Edit/View Modal -->
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isEditMode ? 'common.edit' : 'common.addNew') | translate"
-  (nzOnCancel)="isModalVisible = false"
-  (nzOnOk)="saveLicense()"
+  [nzTitle]="(isViewMode ? 'common.view' : (isEditMode ? 'common.edit' : 'common.addNew')) | translate"
+  (nzOnCancel)="isViewMode ? closeViewModal() : (isModalVisible = false)"
+  (nzOnOk)="isViewMode ? closeViewModal() : saveLicense()"
   [nzOkLoading]="saving"
+  [nzOkText]="isViewMode ? ('common.close' | translate) : ('common.save' | translate)"
+  [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
   [nzWidth]="'60%'"
 >
   <div *nzModalContent class="space-y-4">
@@ -202,6 +204,7 @@
       [fields]="formFields"
       [(model)]="licenseForm.value"
       (modelChange)="licenseForm.patchValue($event)"
+      [disabled]="isViewMode"
     ></app-dynamic-form>
 
     <!-- Fallback to static form if configs not loaded -->
@@ -218,6 +221,7 @@
               formControlName="licenseKey"
               [placeholder]="'licenses.licenseKey' | translate"
               class="w-full"
+              [disabled]="isViewMode"
             />
           </nz-input-group>
         </nz-form-control>
@@ -235,6 +239,7 @@
               formControlName="maxScales"
               [placeholder]="'licenses.maxScales' | translate"
               class="w-full"
+              [disabled]="isViewMode"
             />
           </nz-input-group>
         </nz-form-control>
@@ -246,6 +251,7 @@
           <nz-date-picker
             formControlName="expiresAt"
             class="w-full"
+            [nzDisabled]="isViewMode"
           ></nz-date-picker>
         </nz-form-control>
       </nz-form-item>

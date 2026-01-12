@@ -16,14 +16,42 @@ export class LocationService {
     return [];
   }
 
-  async getLocations(params?: any): Promise<{ data: Location[]; total: number }> {
+  async getLocations(params?: any): Promise<{ data: Location[]; total: number; content?: Location[]; total_elements?: number }> {
     const res = await this.baseService.getData('locations', params);
     if (res && res.success === true && res.data) {
-      const data = res.data || [];
-      const total = data.length;
-      return { data, total };
+      // If response is paginated (has content array)
+      if (Array.isArray(res.data) && res.data.length > 0 && res.data[0].children !== undefined) {
+        // Tree structure (no pagination)
+        const data = res.data;
+        const total = this.countAllNodes(data);
+        return { data, total };
+      } else if (res.data.content) {
+        // Paginated structure
+        const content = res.data.content;
+        const total = res.data.total_elements;
+        return { data: content, total, content: content, total_elements: total };
+      } else {
+        // Flat array
+        const data = Array.isArray(res.data) ? res.data : [];
+        const total = data.length;
+        return { data, total };
+      }
     }
     return { data: [], total: 0 };
+  }
+
+  private countAllNodes(items: Location[]): number {
+    let count = 0;
+    const countNodes = (nodes: Location[]) => {
+      nodes.forEach((node) => {
+        count++;
+        if (node.children && node.children.length > 0) {
+          countNodes(node.children);
+        }
+      });
+    };
+    countNodes(items);
+    return count;
   }
 
   async getLocationById(id: number): Promise<Location | null> {

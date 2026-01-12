@@ -18,6 +18,7 @@ export class ShiftsComponent implements OnInit {
   loading = false;
   isModalVisible = false;
   isEditMode = false;
+  isViewMode = false;
   saving = false;
   selectedShift: Shift | null = null;
   filterData: any = {};
@@ -103,15 +104,19 @@ export class ShiftsComponent implements OnInit {
     // Filter by name
     if (this.filterData.name) {
       const nameFilter = this.filterData.name.toLowerCase().trim();
-      filtered = filtered.filter(shift =>
+      filtered = filtered.filter((shift) =>
         shift.name?.toLowerCase().includes(nameFilter)
       );
     }
 
     // Filter by is_active
-    if (this.filterData.is_active !== undefined && this.filterData.is_active !== null && this.filterData.is_active !== '') {
-      filtered = filtered.filter(shift =>
-        shift.is_active === this.filterData.is_active
+    if (
+      this.filterData.is_active !== undefined &&
+      this.filterData.is_active !== null &&
+      this.filterData.is_active !== ''
+    ) {
+      filtered = filtered.filter(
+        (shift) => shift.is_active === this.filterData.is_active
       );
     }
 
@@ -130,6 +135,7 @@ export class ShiftsComponent implements OnInit {
 
   openAddModal(): void {
     this.isEditMode = false;
+    this.isViewMode = false;
     this.selectedShift = null;
     this.dataShift = {
       name: '',
@@ -141,13 +147,9 @@ export class ShiftsComponent implements OnInit {
     this.isModalVisible = true;
   }
 
-  viewShift(shift: Shift): void {
-    // For now, view opens edit modal
-    this.openEditModal(shift);
-  }
-
-  async openEditModal(shift: Shift): Promise<void> {
-    this.isEditMode = true;
+  async viewShift(shift: Shift): Promise<void> {
+    this.isViewMode = true;
+    this.isEditMode = false;
     this.selectedShift = shift;
 
     // Load full shift details if needed
@@ -159,22 +161,40 @@ export class ShiftsComponent implements OnInit {
           name: fullShift.name,
           startTime: fullShift.startTime
             ? moment(fullShift.startTime, 'HH:mm').toDate()
-            : (fullShift.start_time ? moment(fullShift.start_time, 'HH:mm:ss').toDate() : null),
+            : fullShift.start_time
+            ? moment(fullShift.start_time, 'HH:mm:ss').toDate()
+            : null,
           endTime: fullShift.endTime
             ? moment(fullShift.endTime, 'HH:mm').toDate()
-            : (fullShift.end_time ? moment(fullShift.end_time, 'HH:mm:ss').toDate() : null),
-          is_active: fullShift.is_active !== undefined ? fullShift.is_active : (fullShift.isActive !== undefined ? fullShift.isActive : true),
+            : fullShift.end_time
+            ? moment(fullShift.end_time, 'HH:mm:ss').toDate()
+            : null,
+          is_active:
+            fullShift.is_active !== undefined
+              ? fullShift.is_active
+              : fullShift.isActive !== undefined
+              ? fullShift.isActive
+              : true,
         };
       } else {
         this.dataShift = {
           name: shift.name,
           startTime: shift.startTime
             ? moment(shift.startTime, 'HH:mm').toDate()
-            : (shift.start_time ? moment(shift.start_time, 'HH:mm:ss').toDate() : null),
+            : shift.start_time
+            ? moment(shift.start_time, 'HH:mm:ss').toDate()
+            : null,
           endTime: shift.endTime
             ? moment(shift.endTime, 'HH:mm').toDate()
-            : (shift.end_time ? moment(shift.end_time, 'HH:mm:ss').toDate() : null),
-          is_active: shift.is_active !== undefined ? shift.is_active : (shift.isActive !== undefined ? shift.isActive : true),
+            : shift.end_time
+            ? moment(shift.end_time, 'HH:mm:ss').toDate()
+            : null,
+          is_active:
+            shift.is_active !== undefined
+              ? shift.is_active
+              : shift.isActive !== undefined
+              ? shift.isActive
+              : true,
         };
       }
     } else {
@@ -182,11 +202,94 @@ export class ShiftsComponent implements OnInit {
         name: shift.name,
         startTime: shift.startTime
           ? moment(shift.startTime, 'HH:mm').toDate()
-          : (shift.start_time ? moment(shift.start_time, 'HH:mm:ss').toDate() : null),
+          : shift.start_time
+          ? moment(shift.start_time, 'HH:mm:ss').toDate()
+          : null,
         endTime: shift.endTime
           ? moment(shift.endTime, 'HH:mm').toDate()
-          : (shift.end_time ? moment(shift.end_time, 'HH:mm:ss').toDate() : null),
-        is_active: shift.is_active !== undefined ? shift.is_active : (shift.isActive !== undefined ? shift.isActive : true),
+          : shift.end_time
+          ? moment(shift.end_time, 'HH:mm:ss').toDate()
+          : null,
+        is_active:
+          shift.is_active !== undefined
+            ? shift.is_active
+            : shift.isActive !== undefined
+            ? shift.isActive
+            : true,
+      };
+    }
+    this.isModalVisible = true;
+  }
+
+  async openEditModal(shift: Shift): Promise<void> {
+    this.isEditMode = true;
+    this.isViewMode = false;
+    this.selectedShift = shift;
+
+    // Load full shift details if needed
+    if (shift.id) {
+      const fullShift = await this.shiftService.getShiftById(shift.id);
+      if (fullShift) {
+        this.selectedShift = fullShift;
+        this.dataShift = {
+          name: fullShift.name,
+          startTime: fullShift.startTime
+            ? moment(fullShift.startTime, 'HH:mm').toDate()
+            : fullShift.start_time
+            ? moment(fullShift.start_time, 'HH:mm:ss').toDate()
+            : null,
+          endTime: fullShift.endTime
+            ? moment(fullShift.endTime, 'HH:mm').toDate()
+            : fullShift.end_time
+            ? moment(fullShift.end_time, 'HH:mm:ss').toDate()
+            : null,
+          is_active:
+            fullShift.is_active !== undefined
+              ? fullShift.is_active
+              : fullShift.isActive !== undefined
+              ? fullShift.isActive
+              : true,
+        };
+      } else {
+        this.dataShift = {
+          name: shift.name,
+          startTime: shift.startTime
+            ? moment(shift.startTime, 'HH:mm').toDate()
+            : shift.start_time
+            ? moment(shift.start_time, 'HH:mm:ss').toDate()
+            : null,
+          endTime: shift.endTime
+            ? moment(shift.endTime, 'HH:mm').toDate()
+            : shift.end_time
+            ? moment(shift.end_time, 'HH:mm:ss').toDate()
+            : null,
+          is_active:
+            shift.is_active !== undefined
+              ? shift.is_active
+              : shift.isActive !== undefined
+              ? shift.isActive
+              : true,
+        };
+      }
+    } else {
+      this.dataShift = {
+        name: shift.name,
+        startTime: shift.startTime
+          ? moment(shift.startTime, 'HH:mm').toDate()
+          : shift.start_time
+          ? moment(shift.start_time, 'HH:mm:ss').toDate()
+          : null,
+        endTime: shift.endTime
+          ? moment(shift.endTime, 'HH:mm').toDate()
+          : shift.end_time
+          ? moment(shift.end_time, 'HH:mm:ss').toDate()
+          : null,
+        is_active:
+          shift.is_active !== undefined
+            ? shift.is_active
+            : shift.isActive !== undefined
+            ? shift.isActive
+            : true,
       };
     }
     this.isModalVisible = true;
@@ -215,7 +318,9 @@ export class ShiftsComponent implements OnInit {
         ...this.dataShift,
         start_time: startTime,
         end_time: endTime,
-        code: this.dataShift.code || this.dataShift.name?.toUpperCase().replace(/\s+/g, ''),
+        code:
+          this.dataShift.code ||
+          this.dataShift.name?.toUpperCase().replace(/\s+/g, ''),
       };
 
       if (this.isEditMode && this.selectedShift?.id) {
@@ -224,6 +329,7 @@ export class ShiftsComponent implements OnInit {
         await this.shiftService.createShift(data);
       }
       this.isModalVisible = false;
+      this.isViewMode = false;
       await this.loadShifts();
     } catch (error) {
       console.error('Error saving shift:', error);
@@ -253,12 +359,16 @@ export class ShiftsComponent implements OnInit {
     }
   }
 
+  closeViewModal(): void {
+    this.isModalVisible = false;
+    this.isViewMode = false;
+  }
+
   // Getter for delete message
   get deleteMessage(): string {
     if (!this.shiftToDelete) return '';
     return `Bạn có chắc chắn muốn xóa ca "${this.shiftToDelete.name}"?`;
   }
-
 
   // Format time from HH:mm:ss to HH:mm using moment
   formatTime(time: string | undefined): string {

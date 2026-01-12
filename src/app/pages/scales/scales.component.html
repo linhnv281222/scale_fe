@@ -50,6 +50,7 @@
           [nzShowPagination]="false"
           [nzNoResult]="noResultTemplate"
           class="w-full"
+          [nzScroll]="{ x: 'auto', y: 'calc(100vh - 175px)' }"
         >
           <thead>
             <tr class="bg-blue-600 dark:bg-blue-700">
@@ -175,14 +176,14 @@
                     nz-button
                     nzType="text"
                     nzSize="small"
+                    class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                    (click)="viewScale(scale)"
+                    [nzTooltipTitle]="'common.view' | translate"
                     nz-tooltip
-                    [nzTooltipTitle]="'common.edit' | translate"
-                    (click)="openEditModal(scale)"
-                    class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
                     <span
                       nz-icon
-                      nzType="edit"
+                      nzType="eye"
                       nzTheme="outline"
                       class="text-base"
                     ></span>
@@ -192,13 +193,13 @@
                     nzType="text"
                     nzSize="small"
                     nz-tooltip
-                    [nzTooltipTitle]="'scales.config' | translate"
-                    (click)="openConfigModal(scale)"
-                    class="flex items-center justify-center w-8 h-8 text-blue-600 transition-colors rounded dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    [nzTooltipTitle]="'common.edit' | translate"
+                    (click)="openEditModal(scale)"
+                    class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
                     <span
                       nz-icon
-                      nzType="setting"
+                      nzType="edit"
                       nzTheme="outline"
                       class="text-base"
                     ></span>
@@ -247,216 +248,261 @@
   </main>
 </div>
 
-<!-- Add/Edit Modal -->
+<!-- Add/Edit/View Modal -->
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isEditMode ? 'common.edit' : 'common.addNew') | translate"
-  (nzOnCancel)="isModalVisible = false"
-  [nzOkText]="'common.save' | translate"
-  [nzCancelText]="'common.cancel' | translate"
-  (nzOnOk)="saveScale()"
+  [nzTitle]="
+    (isViewMode ? 'common.view' : isEditMode ? 'common.edit' : 'common.addNew')
+      | translate
+  "
+  (nzOnCancel)="isViewMode ? closeViewModal() : (isModalVisible = false)"
+  (nzOnOk)="isViewMode ? closeViewModal() : saveScale()"
   [nzOkLoading]="saving"
-  [nzWidth]="'60%'"
->
-  <div *nzModalContent>
-    <form nz-form>
-      <!-- Scale Name -->
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "scales.name" | translate
-          }}<span class="ml-1 text-red-500">*</span>
-        </label>
-        <nz-input-group>
-          <input
-            type="text"
-            nz-input
-            [(ngModel)]="dataScale.name"
-            [placeholder]="'scales.enterName' | translate"
-            class="w-full"
-            required
-            name="name"
-          />
-        </nz-input-group>
-      </div>
-
-      <!-- Model -->
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "scales.model" | translate }}
-        </label>
-        <nz-input-group>
-          <input
-            type="text"
-            nz-input
-            [(ngModel)]="dataScale.model"
-            [placeholder]="'scales.enterModel' | translate"
-            class="w-full"
-            name="model"
-          />
-        </nz-input-group>
-      </div>
-
-      <!-- Location -->
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "scales.location" | translate
-          }}<span class="ml-1 text-red-500">*</span>
-        </label>
-        <nz-select
-          [(ngModel)]="dataScale.location_id"
-          [nzPlaceHolder]="'scales.selectLocation' | translate"
-          [nzDropdownMatchSelectWidth]="false"
-          [nzPlacement]="'bottomLeft'"
-          class="w-full"
-          required
-          name="location_id"
-        >
-          <nz-option
-            *ngFor="let location of locations"
-            [nzValue]="location.id"
-            [nzLabel]="location.name"
-          ></nz-option>
-        </nz-select>
-      </div>
-
-      <!-- Active Status -->
-      <div class="mb-4">
-        <label class="flex items-center">
-          <input
-            type="checkbox"
-            [(ngModel)]="dataScale.is_active"
-            name="is_active"
-            class="mr-2"
-          />
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ "common.active" | translate }}
-          </span>
-        </label>
-      </div>
-    </form>
-  </div>
-</nz-modal>
-
-<!-- Scale Configuration Modal -->
-<nz-modal
-  [(nzVisible)]="isConfigModalVisible"
-  [nzTitle]="'scales.scaleConfiguration' | translate"
-  (nzOnCancel)="isConfigModalVisible = false"
-  (nzOnOk)="saveConfig()"
-  [nzOkLoading]="savingConfig"
+  [nzOkText]="
+    isViewMode ? ('common.close' | translate) : ('common.save' | translate)
+  "
+  [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
   [nzWidth]="'90%'"
   [nzStyle]="{ top: '20px' }"
+  [nzBodyStyle]="{
+    padding: '8px',
+  }"
 >
   <div *nzModalContent>
     <div class="space-y-2">
-      <!-- Scale Configuration -->
-      <div>
-        <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {{ "scales.scaleConfigurationTitle" | translate }}
-        </h3>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label
-              class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {{ "scales.protocol" | translate
-              }}<span class="text-red-500 ml-1">*</span>
-            </label>
-            <nz-select
-              [(ngModel)]="scaleConfig.protocol"
-              class="w-full"
-              [nzDropdownMatchSelectWidth]="false"
-            >
-              <nz-option nzValue="MODBUS_TCP" nzLabel="MODBUS TCP"></nz-option>
-              <nz-option nzValue="MODBUS_RTU" nzLabel="MODBUS RTU"></nz-option>
-              <nz-option nzValue="SERIAL" nzLabel="SERIAL"></nz-option>
-            </nz-select>
-          </div>
-          <div>
-            <label
-              class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {{ "scales.pollInterval" | translate
-              }}<span class="text-red-500 ml-1">*</span>
-            </label>
-            <nz-input-group>
-              <input
-                type="number"
-                nz-input
-                [(ngModel)]="scaleConfig.poll_interval"
-                placeholder="1000"
-                min="100"
+      <!-- Top Row: Scale Information and Configuration -->
+      <div class="grid grid-cols-2 gap-2">
+        <!-- Scale Information Section -->
+        <div
+          class="p-2 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700"
+        >
+          <h3
+            class="pb-1 mb-2 text-sm font-semibold text-gray-900 border-b border-gray-200 dark:text-gray-100 dark:border-gray-700"
+          >
+            {{ "scales.scaleInformation" | translate }}
+          </h3>
+          <form nz-form>
+            <!-- Scale Name -->
+            <div class="mb-2">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                {{ "scales.name" | translate
+                }}<span class="ml-1 text-red-500">*</span>
+              </label>
+              <nz-input-group>
+                <input
+                  type="text"
+                  nz-input
+                  nzSize="small"
+                  [(ngModel)]="dataScale.name"
+                  [placeholder]="'scales.enterName' | translate"
+                  class="w-full"
+                  [disabled]="isViewMode"
+                  required
+                  name="name"
+                />
+              </nz-input-group>
+            </div>
+
+            <!-- Model -->
+            <div class="mb-2">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                {{ "scales.model" | translate }}
+              </label>
+              <nz-input-group>
+                <input
+                  type="text"
+                  nz-input
+                  nzSize="small"
+                  [(ngModel)]="dataScale.model"
+                  [placeholder]="'scales.enterModel' | translate"
+                  class="w-full"
+                  [disabled]="isViewMode"
+                  name="model"
+                />
+              </nz-input-group>
+            </div>
+
+            <!-- Location -->
+            <div class="mb-2">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                {{ "scales.location" | translate
+                }}<span class="ml-1 text-red-500">*</span>
+              </label>
+              <nz-select
+                [(ngModel)]="dataScale.location_id"
+                [nzPlaceHolder]="'scales.selectLocation' | translate"
+                [nzDropdownMatchSelectWidth]="false"
+                [nzPlacement]="'bottomLeft'"
                 class="w-full"
-              />
-            </nz-input-group>
-            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              {{ "scales.pollIntervalMin" | translate }}
-            </p>
+                [nzDisabled]="isViewMode"
+                required
+                name="location_id"
+              >
+                <nz-option
+                  *ngFor="let location of locations"
+                  [nzValue]="location.id"
+                  [nzLabel]="location.name"
+                ></nz-option>
+              </nz-select>
+            </div>
+
+            <!-- Active Status -->
+            <div class="mb-2">
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="dataScale.is_active"
+                  name="is_active"
+                  class="mr-2"
+                  [disabled]="isViewMode"
+                />
+                <span
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "common.active" | translate }}
+                </span>
+              </label>
+            </div>
+          </form>
+        </div>
+
+        <!-- Scale Configuration Section -->
+        <div
+          class="p-2 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700"
+        >
+          <h3
+            class="pb-1 mb-2 text-sm font-semibold text-gray-900 border-b border-gray-200 dark:text-gray-100 dark:border-gray-700"
+          >
+            {{ "scales.scaleConfigurationTitle" | translate }}
+          </h3>
+          <div class="space-y-2">
+            <!-- Protocol and Poll Interval -->
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.protocol" | translate
+                  }}<span class="ml-1 text-red-500">*</span>
+                </label>
+                <nz-select
+                  [(ngModel)]="scaleConfig.protocol"
+                  class="w-full"
+                  [nzDropdownMatchSelectWidth]="false"
+                  [nzDisabled]="isViewMode"
+                >
+                  <nz-option
+                    nzValue="MODBUS_TCP"
+                    [nzLabel]="'scales.modbusTcp' | translate"
+                  ></nz-option>
+                  <nz-option
+                    nzValue="MODBUS_RTU"
+                    [nzLabel]="'scales.modbusRtu' | translate"
+                  ></nz-option>
+                  <nz-option nzValue="SERIAL" nzLabel="SERIAL"></nz-option>
+                </nz-select>
+              </div>
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.pollInterval" | translate
+                  }}<span class="ml-1 text-red-500">*</span>
+                </label>
+                <nz-input-group>
+                  <input
+                    type="number"
+                    nz-input
+                    nzSize="small"
+                    [(ngModel)]="scaleConfig.poll_interval"
+                    placeholder="1000"
+                    min="100"
+                    class="w-full"
+                    [disabled]="isViewMode"
+                  />
+                </nz-input-group>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ "scales.pollIntervalMin" | translate }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Connection Parameters -->
+            <div
+              class="p-2 border border-gray-200 rounded-md bg-blue-50 dark:bg-blue-900/20 dark:border-gray-700"
+            >
+              <h4
+                class="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200"
+              >
+                {{ "scales.connectionParameters" | translate }}
+              </h4>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.ipAddress" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.ip"
+                      placeholder="192.168.1.10"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.port" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.port"
+                      placeholder="502"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Connection Parameters -->
-      <div class="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-        <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {{ "scales.connectionParameters" | translate }}
-        </h3>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label
-              class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {{ "scales.ipAddress" | translate
-              }}<span class="text-red-500 ml-1">*</span>
-            </label>
-            <nz-input-group>
-              <input
-                type="text"
-                nz-input
-                [(ngModel)]="scaleConfig.conn_params.ip"
-                placeholder="192.168.1.10"
-                class="w-full"
-              />
-            </nz-input-group>
-          </div>
-          <div>
-            <label
-              class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              {{ "scales.port" | translate
-              }}<span class="text-red-500 ml-1">*</span>
-            </label>
-            <nz-input-group>
-              <input
-                type="number"
-                nz-input
-                [(ngModel)]="scaleConfig.conn_params.port"
-                placeholder="502"
-                class="w-full"
-              />
-            </nz-input-group>
-          </div>
-        </div>
-      </div>
-
-      <!-- Data Channels -->
-      <div>
-        <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <!-- Bottom Row: Data Channels Section -->
+      <div
+        class="p-2 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700"
+      >
+        <h3
+          class="pb-1 mb-2 text-sm font-semibold text-gray-900 border-b border-gray-200 dark:text-gray-100 dark:border-gray-700"
+        >
           {{ "scales.dataChannels" | translate }}
         </h3>
         <div class="space-y-1">
           <div
             *ngFor="let channelNum of [1, 2, 3, 4, 5]"
-            class="border border-gray-200 rounded dark:border-gray-700"
+            class="border border-gray-200 rounded dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30"
           >
             <div
-              class="flex items-center justify-between p-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              class="flex items-center justify-between p-1.5 transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50"
               (click)="toggleChannel(channelNum)"
             >
               <div class="flex items-center gap-2">
@@ -465,9 +511,10 @@
                   [(ngModel)]="scaleConfig['data_' + channelNum].is_used"
                   (nzCheckedChange)="onChannelToggle(channelNum, $event)"
                   (click)="$event.stopPropagation()"
+                  [nzDisabled]="isViewMode"
                 ></label>
                 <span
-                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                  class="text-xs font-medium text-gray-900 dark:text-gray-100"
                 >
                   {{ getChannelLabel(channelNum) }}
                 </span>
@@ -476,17 +523,17 @@
                 nz-icon
                 [nzType]="expandedChannels[channelNum] ? 'up' : 'down'"
                 nzTheme="outline"
-                class="text-gray-400"
+                class="text-xs text-gray-400"
               ></span>
             </div>
             <div
               *ngIf="expandedChannels[channelNum]"
-              class="p-2 border-t border-gray-200 bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700"
+              class="p-2 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700"
             >
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-4 gap-2">
                 <div>
                   <label
-                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
                     {{ "scales.channelName" | translate }}
                   </label>
@@ -494,15 +541,19 @@
                     <input
                       type="text"
                       nz-input
+                      nzSize="small"
                       [(ngModel)]="scaleConfig['data_' + channelNum].name"
-                      placeholder="e.g., Weight"
+                      [placeholder]="
+                        'scales.channelNamePlaceholder' | translate
+                      "
                       class="w-full"
+                      [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>
                 <div>
                   <label
-                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
                     {{ "scales.dataType" | translate }}
                   </label>
@@ -510,6 +561,8 @@
                     [(ngModel)]="scaleConfig['data_' + channelNum].data_type"
                     class="w-full"
                     [nzDropdownMatchSelectWidth]="false"
+                    [nzPlaceHolder]="'scales.selectDataType' | translate"
+                    [nzDisabled]="isViewMode"
                   >
                     <nz-option
                       nzValue="Integer"
@@ -531,7 +584,7 @@
                 </div>
                 <div>
                   <label
-                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
                     {{ "scales.startRegister" | translate }}
                   </label>
@@ -539,17 +592,21 @@
                     <input
                       type="number"
                       nz-input
+                      nzSize="small"
                       [(ngModel)]="
                         scaleConfig['data_' + channelNum].start_registers
                       "
-                      placeholder="40001"
+                      [placeholder]="
+                        'scales.startRegisterPlaceholder' | translate
+                      "
                       class="w-full"
+                      [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>
                 <div>
                   <label
-                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
                     {{ "scales.numRegisters" | translate }}
                   </label>
@@ -557,11 +614,15 @@
                     <input
                       type="number"
                       nz-input
+                      nzSize="small"
                       [(ngModel)]="
                         scaleConfig['data_' + channelNum].num_registers
                       "
-                      placeholder="2"
+                      [placeholder]="
+                        'scales.numRegistersPlaceholder' | translate
+                      "
                       class="w-full"
+                      [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>

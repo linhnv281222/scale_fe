@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { Config, ConfigDataType } from '../../../models';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ConfigDataType } from '../../../models';
 
 export interface DynamicFormField {
   fieldKey: string;
@@ -14,6 +14,7 @@ export interface DynamicFormField {
   step?: number;
   rows?: number; // For textarea
   multiple?: boolean; // For multiselect
+  disabled?: boolean; // Field-specific disable flag
 }
 
 @Component({
@@ -24,7 +25,7 @@ export interface DynamicFormField {
 export class DynamicFormComponent implements OnInit {
   @Input() fields: DynamicFormField[] = [];
   @Input() model: any = {};
-  @Input() readonly: boolean = false;
+  @Input() disabled: boolean = false;
   @Output() modelChange = new EventEmitter<any>();
   @Output() fieldChange = new EventEmitter<{ fieldKey: string; value: any }>();
 
@@ -93,4 +94,3 @@ export class DynamicFormComponent implements OnInit {
     return this.isFieldRequired(field) && this.isFieldEmpty(field);
   }
 }
-

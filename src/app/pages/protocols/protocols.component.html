@@ -56,33 +56,48 @@
             <tr class="bg-blue-600 dark:bg-blue-700">
               <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-                style="width: 50px;"
+                style="width: 50px"
               >
                 STT
               </th>
               <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.protocolCode" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.protocolName" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.description" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.connectionType" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.port" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "scales.baudRate" | translate }}
+              </th>
+              <th
+                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+              >
+                {{ "common.active" | translate }}
+              </th>
+              <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.protocol" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.code" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.type" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "common.status" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-                style="max-width: 150px; width: 150px;"
+                style="max-width: 150px; width: 150px"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -94,45 +109,67 @@
               class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
               <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  i + 1
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  protocol.code || "-"
+                }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
                 <span
                   class="text-sm font-medium text-gray-900 dark:text-gray-100"
-                  >{{ protocol.name }}</span
+                  >{{ protocol.name || "-" }}</span
                 >
               </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td class="px-3 !py-2">
                 <span class="text-sm text-gray-900 dark:text-white">{{
-                  protocol.code
+                  protocol.description || "-"
                 }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{
-                  (protocolTypeLabels[protocol.type] || protocol.type) | translate
+                  protocol.connection_type || "-"
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  protocol.default_port || "-"
+                }}</span>
+              </td>
+              <td class="px-3 !py-2 whitespace-nowrap">
+                <span class="text-sm text-gray-900 dark:text-white">{{
+                  protocol.default_baud_rate || "-"
                 }}</span>
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
                 <span
-                  *ngIf="protocol.status === 'active'"
+                  *ngIf="
+                    protocol.is_active === true || protocol.status === 'active'
+                  "
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
                 >
                   {{ "common.active" | translate }}
                 </span>
                 <span
-                  *ngIf="protocol.status === 'inactive'"
+                  *ngIf="
+                    protocol.is_active === false ||
+                    protocol.status === 'inactive'
+                  "
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
                 >
                   {{ "common.inactive" | translate }}
                 </span>
                 <span
-                  *ngIf="!protocol.status"
+                  *ngIf="protocol.is_active === undefined && !protocol.status"
                   class="text-sm text-gray-500 dark:text-gray-400"
                   >-</span
                 >
               </td>
               <td class="px-3 !py-2 whitespace-nowrap">
-                <div class="flex items-center gap-2 justify-center">
+                <div class="flex items-center justify-center gap-2">
                   <button
                     nz-button
                     nzType="text"
@@ -195,10 +232,18 @@
 
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isEditMode ? 'common.edit' : 'common.addNew') | translate"
-  (nzOnCancel)="isModalVisible = false"
-  (nzOnOk)="saveProtocol()"
+  [nzTitle]="
+    (isViewMode ? 'common.view' : isEditMode ? 'common.edit' : 'common.addNew')
+      | translate
+  "
+  (nzOnCancel)="isViewMode ? closeViewModal() : (isModalVisible = false)"
+  (nzOnOk)="isViewMode ? closeViewModal() : saveProtocol()"
   [nzOkLoading]="saving"
+  [nzOkText]="
+    isViewMode ? ('common.close' | translate) : ('common.save' | translate)
+  "
+  [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
+  [nzWidth]="'60%'"
 >
   <div *nzModalContent>
     <!-- Dynamic Form -->
@@ -207,35 +252,187 @@
       [fields]="formFields"
       [(model)]="dataProtocol"
       (modelChange)="dataProtocol = $event"
+      [disabled]="isViewMode"
     ></app-dynamic-form>
 
-    <!-- Fallback to static form if configs not loaded -->
-    <div *ngIf="formFields.length === 0">
-      <div class="mb-4">
-        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ "scales.protocol" | translate }}<span class="text-red-500 ml-1">*</span>
+    <!-- Static form according to API -->
+    <div class="space-y-2">
+      <!-- Mã giao thức và Tên giao thức - 1 dòng -->
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label
+            [class]="
+              'block  text-sm font-medium ' +
+              (isRequiredFieldEmpty(dataProtocol.code)
+                ? 'text-red-600 dark:text-red-400 font-bold'
+                : 'text-gray-700 dark:text-gray-300')
+            "
+          >
+            {{ "scales.protocolCode" | translate
+            }}<span class="ml-1 text-red-500">*</span>
+          </label>
+          <nz-input-group>
+            <input
+              type="text"
+              nz-input
+              [(ngModel)]="dataProtocol.code"
+              [placeholder]="'scales.enterProtocolCode' | translate"
+              class="w-full"
+              [disabled]="isViewMode"
+              required
+            />
+          </nz-input-group>
+        </div>
+        <div>
+          <label
+            [class]="
+              'block  text-sm font-medium ' +
+              (isRequiredFieldEmpty(dataProtocol.name)
+                ? 'text-red-600 dark:text-red-400 font-bold'
+                : 'text-gray-700 dark:text-gray-300')
+            "
+          >
+            {{ "scales.protocolName" | translate
+            }}<span class="ml-1 text-red-500">*</span>
+          </label>
+          <nz-input-group>
+            <input
+              type="text"
+              nz-input
+              [(ngModel)]="dataProtocol.name"
+              [placeholder]="'scales.enterProtocolName' | translate"
+              class="w-full"
+              [disabled]="isViewMode"
+              required
+            />
+          </nz-input-group>
+        </div>
+      </div>
+
+      <!-- Loại giao thức, Port mặc định và Baud Rate mặc định - 1 dòng -->
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label
+            [class]="
+              'block  text-sm font-medium ' +
+              (isRequiredFieldEmpty(dataProtocol.connection_type)
+                ? 'text-red-600 dark:text-red-400 font-bold'
+                : 'text-gray-700 dark:text-gray-300')
+            "
+          >
+            {{ "scales.connectionType" | translate
+            }}<span class="ml-1 text-red-500">*</span>
+          </label>
+          <nz-select
+            [(ngModel)]="dataProtocol.connection_type"
+            class="w-full"
+            [nzDisabled]="isViewMode"
+            [nzDropdownMatchSelectWidth]="false"
+            [nzPlacement]="'bottomLeft'"
+            required
+          >
+            <nz-option
+              [nzValue]="'TCP'"
+              [nzLabel]="'scales.tcp' | translate"
+            ></nz-option>
+            <nz-option
+              [nzValue]="'RTU'"
+              [nzLabel]="'scales.rtu' | translate"
+            ></nz-option>
+          </nz-select>
+        </div>
+        <div>
+          <label
+            [class]="
+              'block  text-sm font-medium ' +
+              (isRequiredFieldEmpty(dataProtocol.default_port)
+                ? 'text-red-600 dark:text-red-400 font-bold'
+                : 'text-gray-700 dark:text-gray-300')
+            "
+          >
+            {{ "scales.defaultPort" | translate
+            }}<span class="ml-1 text-red-500">*</span>
+          </label>
+          <nz-input-group>
+            <input
+              type="number"
+              nz-input
+              [(ngModel)]="dataProtocol.default_port"
+              placeholder="502"
+              class="w-full"
+              [disabled]="isViewMode"
+              required
+            />
+          </nz-input-group>
+        </div>
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            {{ "scales.defaultBaudRate" | translate }}
+          </label>
+          <nz-input-group>
+            <input
+              type="number"
+              nz-input
+              [(ngModel)]="dataProtocol.default_baud_rate"
+              placeholder="9600"
+              class="w-full"
+              [disabled]="isViewMode"
+            />
+          </nz-input-group>
+        </div>
+      </div>
+
+      <!-- Mô tả -->
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "scales.description" | translate }}
         </label>
         <nz-input-group>
-          <input type="text" nz-input [(ngModel)]="dataProtocol.name" [placeholder]="'scales.protocol' | translate" class="w-full" required />
+          <textarea
+            nz-input
+            [(ngModel)]="dataProtocol.description"
+            [placeholder]="'scales.enterDescription' | translate"
+            class="w-full"
+            [disabled]="isViewMode"
+            rows="3"
+          ></textarea>
         </nz-input-group>
       </div>
-      <div class="mb-4">
-        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ "scales.code" | translate }}<span class="text-red-500 ml-1">*</span>
+
+      <!-- Mẫu cấu hình -->
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "scales.configTemplate" | translate }}
         </label>
         <nz-input-group>
-          <input type="text" nz-input [(ngModel)]="dataProtocol.code" [placeholder]="'scales.code' | translate" class="w-full" required />
+          <textarea
+            nz-input
+            [(ngModel)]="dataProtocol.config_template"
+            [placeholder]="'scales.configTemplate' | translate"
+            class="w-full"
+            [disabled]="isViewMode"
+            rows="2"
+          ></textarea>
         </nz-input-group>
       </div>
-      <div class="mb-4">
-        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ "scales.type" | translate }}<span class="text-red-500 ml-1">*</span>
+      <div>
+        <label class="flex items-center">
+          <input
+            type="checkbox"
+            [(ngModel)]="dataProtocol.is_active"
+            class="mr-2"
+            [disabled]="isViewMode"
+          />
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ "common.active" | translate }}
+          </span>
         </label>
-        <nz-select [(ngModel)]="dataProtocol.type" class="w-full" [nzDropdownMatchSelectWidth]="false" [nzPlacement]="'bottomLeft'" nzAllowClear required>
-          <nz-option [nzValue]="'MODBUS_TCP'" [nzLabel]="'scales.modbusTcp' | translate"></nz-option>
-          <nz-option [nzValue]="'MODBUS_RTU'" [nzLabel]="'scales.modbusRtu' | translate"></nz-option>
-          <nz-option [nzValue]="'SABUS'" [nzLabel]="'scales.sabus' | translate"></nz-option>
-        </nz-select>
       </div>
     </div>
   </div>

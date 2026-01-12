@@ -24,6 +24,8 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzDrawerModule } from 'ng-zorro-antd/drawer';
+import { NzResizableModule } from 'ng-zorro-antd/resizable';
 
 // Components
 import { FilterSidebarComponent } from './filter-sidebar/filter-sidebar.component';
@@ -37,6 +39,7 @@ import { TableComponent } from './table/table.component';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { DynamicFormComponent } from './dynamic-form/dynamic-form.component';
 import { DynamicTableComponent } from './dynamic-table/dynamic-table.component';
+import { UploadFileComponent } from './upload-file/upload-file.component';
 
 @NgModule({
   declarations: [
@@ -50,6 +53,7 @@ import { DynamicTableComponent } from './dynamic-table/dynamic-table.component';
     NoDataComponent,
     DynamicFormComponent,
     DynamicTableComponent,
+    UploadFileComponent,
   ],
   imports: [
     CommonModule,
@@ -76,6 +80,8 @@ import { DynamicTableComponent } from './dynamic-table/dynamic-table.component';
     NzDropDownModule,
     NzBadgeModule,
     NzMenuModule,
+    NzDrawerModule,
+    NzResizableModule,
     // Standalone Components
     ConfirmDialogComponent,
   ],
@@ -91,6 +97,7 @@ import { DynamicTableComponent } from './dynamic-table/dynamic-table.component';
     ConfirmDialogComponent,
     DynamicFormComponent,
     DynamicTableComponent,
+    UploadFileComponent,
     // Export Ng-Zorro Modules so page components can use them
     NzTableModule,
     NzButtonModule,
@@ -111,6 +118,8 @@ import { DynamicTableComponent } from './dynamic-table/dynamic-table.component';
     NzDropDownModule,
     NzBadgeModule,
     NzMenuModule,
+    NzDrawerModule,
+    NzResizableModule,
     CommonModule,
     FormsModule,
     TranslateModule,

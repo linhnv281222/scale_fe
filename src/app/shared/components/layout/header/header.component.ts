@@ -1,10 +1,10 @@
 import {
-    Component,
-    EventEmitter,
-    Input,
-    OnDestroy,
-    OnInit,
-    Output,
+  Component,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
@@ -33,10 +33,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isDarkMode = false;
   currentLang = 'vi_VN';
   systemLogo = '';
-  
+
   languages = [
     { code: 'vi_VN', label: 'Tiếng Việt', flag: 'assets/img/vie.png' },
-    { code: 'en_US', label: 'Tiếng Anh', flag: 'assets/img/eng.png' }
+    { code: 'en_US', label: 'Tiếng Anh', flag: 'assets/img/eng.png' },
   ];
 
   constructor(
@@ -153,7 +153,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   getCurrentLanguageFlag(): string {
-    const lang = this.languages.find(l => l.code === this.currentLang);
+    const lang = this.languages.find((l) => l.code === this.currentLang);
     return lang ? lang.flag : this.languages[0].flag;
   }
 
@@ -182,5 +182,29 @@ export class HeaderComponent implements OnInit, OnDestroy {
   onAddNew(): void {
     this.addNew.emit();
     this.pageActionService.triggerAddNew();
+  }
+
+  // Check if any child menu item is active
+  hasActiveChild(item: any): boolean {
+    if (!item.children || item.children.length === 0) {
+      return false;
+    }
+    const currentUrl = this.router.url;
+    return item.children.some((child: any) => {
+      if (!child.path) return false;
+      return currentUrl.startsWith(child.path) || currentUrl === child.path;
+    });
+  }
+
+  // Check if menu item is active (either itself or has active child)
+  isMenuItemActive(item: any): boolean {
+    if (!item.path) {
+      return this.hasActiveChild(item);
+    }
+    const currentUrl = this.router.url;
+    if (currentUrl === item.path || currentUrl.startsWith(item.path + '/')) {
+      return true;
+    }
+    return this.hasActiveChild(item);
   }
 }

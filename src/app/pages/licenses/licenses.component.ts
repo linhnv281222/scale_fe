@@ -24,6 +24,7 @@ export class LicensesComponent implements OnInit, OnDestroy {
   total = 0;
   isModalVisible = false;
   isEditMode = false;
+  isViewMode = false;
   saving = false;
   selectedLicense: License | null = null;
   filterData: any = {};
@@ -125,6 +126,7 @@ export class LicensesComponent implements OnInit, OnDestroy {
 
   openAddModal(): void {
     this.isEditMode = false;
+    this.isViewMode = false;
     this.selectedLicense = null;
     this.licenseForm.reset({
       licenseKey: '',
@@ -134,8 +136,21 @@ export class LicensesComponent implements OnInit, OnDestroy {
     this.isModalVisible = true;
   }
 
+  viewLicense(license: License): void {
+    this.isViewMode = true;
+    this.isEditMode = false;
+    this.selectedLicense = license;
+    this.licenseForm.patchValue({
+      licenseKey: license.licenseKey,
+      maxScales: license.maxScales,
+      expiresAt: license.expiresAt,
+    });
+    this.isModalVisible = true;
+  }
+
   openEditModal(license: License): void {
     this.isEditMode = true;
+    this.isViewMode = false;
     this.selectedLicense = license;
     this.licenseForm.patchValue({
       licenseKey: license.licenseKey,
@@ -160,6 +175,7 @@ export class LicensesComponent implements OnInit, OnDestroy {
         await this.licenseService.createLicense(data);
       }
       this.isModalVisible = false;
+      this.isViewMode = false;
       await this.loadLicenses();
     } catch (error) {
       console.error('Error saving license:', error);
@@ -187,6 +203,11 @@ export class LicensesComponent implements OnInit, OnDestroy {
         console.error('Error deleting license:', error);
       }
     }
+  }
+
+  closeViewModal(): void {
+    this.isModalVisible = false;
+    this.isViewMode = false;
   }
 
   // Getter for delete message

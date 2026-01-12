@@ -14,3 +14,4 @@ export * from './shift.model';
 export * from './template.model';
 export * from './user.model';
 export * from './website-settings.model';
+export * from './organization-settings.model';

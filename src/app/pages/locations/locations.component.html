@@ -54,12 +54,12 @@
         >
           <thead>
             <tr class="bg-blue-600 dark:bg-blue-700">
-              <th
+              <!-- <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
                 style="width: 50px"
               >
                 STT
-              </th>
+              </th> -->
               <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               >
@@ -98,11 +98,11 @@
               *ngFor="let location of flatLocations; let i = index"
               class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <!-- <td class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{
                   i + 1
                 }}</span>
-              </td>
+              </td> -->
               <td class="px-3 !py-2 whitespace-nowrap">
                 <div
                   class="relative flex items-center"
@@ -317,8 +317,8 @@
           <nz-empty></nz-empty>
         </ng-template>
 
-        <!-- Pagination -->
-        <div
+        <!-- Pagination removed - tree structure doesn't need pagination -->
+        <!-- <div
           *ngIf="flatLocations.length > 0"
           class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
         >
@@ -329,7 +329,7 @@
             (emitPage)="onPaginationChange($event)"
             (goToChange)="onPaginationChange($event)"
           ></app-pagination>
-        </div>
+        </div> -->
       </div>
     </div>
   </main>
@@ -338,17 +338,25 @@
 <!-- Add/Edit/View Modal -->
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isViewMode ? 'common.view' : (isEditMode ? 'common.edit' : 'common.addNew')) | translate"
+  [nzTitle]="
+    (isViewMode ? 'common.view' : isEditMode ? 'common.edit' : 'common.addNew')
+      | translate
+  "
   (nzOnCancel)="closeViewModal()"
   (nzOnOk)="isViewMode ? closeViewModal() : saveLocation()"
   [nzOkLoading]="saving"
-  [nzOkText]="isViewMode ? ('common.close' | translate) : ('common.save' | translate)"
+  [nzOkText]="
+    isViewMode ? ('common.close' | translate) : ('common.save' | translate)
+  "
   [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
 >
   <div *nzModalContent>
     <div class="mb-4">
-      <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-        {{ "locations.code" | translate }}<span class="ml-1 text-red-500">*</span>
+      <label
+        [class]="'block text-sm font-medium ' + (isRequiredFieldEmpty(dataLocation.code) ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-700 dark:text-gray-300')"
+      >
+        {{ "locations.code" | translate
+        }}<span class="ml-1 text-red-500">*</span>
       </label>
       <nz-input-group>
         <input
@@ -363,8 +371,11 @@
       </nz-input-group>
     </div>
     <div class="mb-4">
-      <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-        {{ "locations.name" | translate }}<span class="ml-1 text-red-500">*</span>
+      <label
+        [class]="'block text-sm font-medium ' + (isRequiredFieldEmpty(dataLocation.name) ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-700 dark:text-gray-300')"
+      >
+        {{ "locations.name" | translate
+        }}<span class="ml-1 text-red-500">*</span>
       </label>
       <nz-input-group>
         <input
@@ -379,7 +390,7 @@
       </nz-input-group>
     </div>
     <div class="mb-4">
-      <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ "locations.parent" | translate }}
       </label>
       <nz-select

@@ -217,7 +217,7 @@
           [(ngModel)]="dataPermission.code"
           [placeholder]="'permissions.enterCode' | translate"
           class="w-full"
-          [disabled]="isEditMode || isViewMode"
+          [disabled]="isViewMode"
           required
         />
       </nz-input-group>
@@ -232,6 +232,7 @@
           [(ngModel)]="dataPermission.description"
           [placeholder]="'permissions.enterDescription' | translate"
           class="w-full"
+          [disabled]="isViewMode"
           [disabled]="isViewMode"
           rows="3"
         ></textarea>

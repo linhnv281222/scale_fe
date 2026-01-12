@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Template } from '../models';
+import { ReportTemplateImport, ReportTemplateDetail, Template } from '../models';
 import { BaseService } from './base.service';
 
 @Injectable({
@@ -8,50 +8,52 @@ import { BaseService } from './base.service';
 export class TemplateService {
   constructor(private baseService: BaseService) {}
 
-  // TODO: API 'templates' chưa có trong api-docs.json - tạm thời comment lại
-  // async getTemplates(params?: any): Promise<{ data: Template[]; total: number }> {
-  //   const res = await this.baseService.getData('templates', params);
-  //   if (res && res.success === true && res.data) {
-  //     const data = res.data || [];
-  //     return { data, total: data.length };
-  //   }
-  //   return { data: [], total: 0 };
-  // }
+  // New API: Import template
+  async importTemplate(data: FormData): Promise<ReportTemplateImport | null> {
+    const res = await this.baseService.postFormData('report-templates/import', data);
+    if (res && res.success === true && res.data) {
+      return res.data || null;
+    }
+    return null;
+  }
 
-  // async getTemplateById(id: number): Promise<Template | null> {
-  //   const res = await this.baseService.getData(`templates/${id}`);
-  //   if (res && res.success === true && res.data) {
-  //     return res.data || null;
-  //   }
-  //   return null;
-  // }
+  // New API: Get list of template imports
+  async getTemplateImports(templateType?: string): Promise<ReportTemplateImport[]> {
+    const params: any = {};
+    if (templateType) {
+      params.templateType = templateType;
+    }
+    const res = await this.baseService.getData('report-templates/imports/list', params);
+    if (res && res.success === true && res.data) {
+      return res.data || [];
+    }
+    return [];
+  }
 
-  // async createTemplate(data: FormData): Promise<Template | null> {
-  //   const res = await this.baseService.postFormData('templates', data);
-  //   if (res && res.success === true && res.data) {
-  //     return res.data || null;
-  //   }
-  //   return null;
-  // }
+  // New API: Get template import detail by id
+  async getTemplateImportById(importId: number): Promise<ReportTemplateDetail | null> {
+    const res = await this.baseService.getData(`report-templates/imports/${importId}`);
+    if (res && res.success === true && res.data) {
+      return res.data || null;
+    }
+    return null;
+  }
 
-  // async updateTemplate(id: number, data: FormData): Promise<Template | null> {
-  //   const res = await this.baseService.putFormData(`templates/${id}`, data);
-  //   if (res && res.success === true && res.data) {
-  //     return res.data || null;
-  //   }
-  //   return null;
-  // }
+  // New API: Download template
+  async downloadTemplate(importId: number): Promise<Blob> {
+    return await this.baseService.getFile(`report-templates/imports/${importId}/download`);
+  }
 
-  // async deleteTemplate(id: number): Promise<boolean> {
-  //   try {
-  //     await this.baseService.deleteData(`templates/${id}`);
-  //     return true;
-  //   } catch (error) {
-  //     return false;
-  //   }
-  // }
+  // New API: Archive (inactive) template
+  async archiveTemplate(importId: number): Promise<ReportTemplateImport | null> {
+    const res = await this.baseService.postData(`report-templates/imports/${importId}/archive`, {});
+    if (res && res.success === true && res.data) {
+      return res.data || null;
+    }
+    return null;
+  }
 
-  // Temporary mock implementation
+  // Legacy methods (keep for backward compatibility)
   async getTemplates(
     params?: any
   ): Promise<{ data: Template[]; total: number }> {

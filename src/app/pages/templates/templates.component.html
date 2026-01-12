@@ -21,6 +21,23 @@
 
   <!-- Main Content -->
   <main class="flex flex-col flex-1 overflow-hidden">
+    <!-- Header with Add Button -->
+    <div
+      class="flex items-center justify-between bg-white dark:bg-gray-800 dark:border-gray-700"
+    >
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">
+        {{ "templates.title" | translate }}
+      </h2>
+      <button
+        nz-button
+        nzType="primary"
+        (click)="openAddModal()"
+        class="flex items-center gap-2"
+      >
+        <span nz-icon nzType="plus" nzTheme="outline"></span>
+        <span>{{ "common.addNew" | translate }}</span>
+      </button>
+    </div>
     <!-- Table Container -->
     <div
       class="flex-1 overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
@@ -36,30 +53,50 @@
         class="w-full"
       >
         <thead>
-          <tr class="bg-gray-50 dark:bg-gray-800">
+          <tr class="bg-blue-600 dark:bg-blue-700">
             <th
-              class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               style="width: 50px"
             >
               STT
             </th>
             <th
-              class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+            >
+              {{ "scales.code" | translate }}
+            </th>
+            <th
+              class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
             >
               {{ "templates.name" | translate }}
             </th>
             <th
-              class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
             >
               {{ "templates.type" | translate }}
             </th>
             <th
-              class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+            >
+              {{ "templates.fileSize" | translate }}
+            </th>
+            <th
+              class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+            >
+              {{ "templates.importDate" | translate }}
+            </th>
+            <th
+              class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+            >
+              {{ "templates.importStatus" | translate }}
+            </th>
+            <th
+              class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
             >
               {{ "common.status" | translate }}
             </th>
             <th
-              class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               style="max-width: 150px; width: 150px"
             >
               {{ "common.actions" | translate }}
@@ -69,16 +106,21 @@
         <tbody>
           <tr
             *ngFor="let template of templates; let i = index"
-            class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+            class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
           >
             <td class="px-3 !py-2 whitespace-nowrap">
               <span class="text-sm text-gray-900 dark:text-white">{{
-                i + 1
+                (pageIndex - 1) * pageSize + i + 1
               }}</span>
             </td>
             <td class="px-3 !py-2 whitespace-nowrap">
               <span class="text-sm font-medium text-gray-900 dark:text-white">{{
-                template.name
+                template.templateCode || "-"
+              }}</span>
+            </td>
+            <td class="px-3 !py-2 whitespace-nowrap">
+              <span class="text-sm text-gray-900 dark:text-white">{{
+                template.originalFilename || "-"
               }}</span>
             </td>
             <td class="px-3 !py-2 whitespace-nowrap">
@@ -86,31 +128,55 @@
                 class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                 [ngClass]="{
                   'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300':
-                    template.type === templateTypes.SCALE_REPORT,
+                    template.templateType === 'Báo cáo cân',
                   'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300':
-                    template.type === templateTypes.SHIFT_REPORT
+                    template.templateType === 'Báo cáo ca'
                 }"
               >
-                {{
-                  template.type === templateTypes.SCALE_REPORT
-                    ? ("templates.scaleReport" | translate)
-                    : ("templates.shiftReport" | translate)
-                }}
+                {{ template.templateTypeLabel || "" | translate }}
+              </span>
+            </td>
+            <td class="px-3 !py-2 whitespace-nowrap">
+              <span class="text-sm text-gray-900 dark:text-white">{{
+                template.fileSizeFormatted
+              }}</span>
+            </td>
+            <td class="px-3 !py-2 whitespace-nowrap">
+              <span class="text-sm text-gray-900 dark:text-white">{{
+                template.importDate | date : "dd/MM/yyyy HH:mm"
+              }}</span>
+            </td>
+            <td class="px-3 !py-2 whitespace-nowrap">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                [ngClass]="{
+                  'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200':
+                    template.importStatus === 'ACTIVE',
+                  'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200':
+                    template.importStatus === 'ARCHIVED'
+                }"
+              >
+                {{ template.importStatus || "-" }}
               </span>
             </td>
             <td class="px-3 !py-2 whitespace-nowrap">
               <span
-                *ngIf="template.isActive"
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                *ngIf="template.isActive === true"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
               >
                 {{ "common.active" | translate }}
               </span>
               <span
-                *ngIf="!template.isActive"
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"
+                *ngIf="template.isActive === false"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
               >
                 {{ "common.inactive" | translate }}
               </span>
+              <span
+                *ngIf="template.isActive === undefined"
+                class="text-sm text-gray-500 dark:text-gray-400"
+                >-</span
+              >
             </td>
             <td class="px-3 !py-2 whitespace-nowrap">
               <div class="flex items-center justify-center gap-2">
@@ -118,14 +184,14 @@
                   nz-button
                   nzType="text"
                   nzSize="small"
+                  class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                  (click)="viewTemplate(template)"
+                  [nzTooltipTitle]="'common.view' | translate"
                   nz-tooltip
-                  [nzTooltipTitle]="'common.edit' | translate"
-                  (click)="openEditModal(template)"
-                  class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
                   <span
                     nz-icon
-                    nzType="edit"
+                    nzType="eye"
                     nzTheme="outline"
                     class="text-base"
                   ></span>
@@ -135,8 +201,25 @@
                   nzType="text"
                   nzSize="small"
                   nz-tooltip
-                  [nzTooltipTitle]="'common.delete' | translate"
-                  (click)="confirmDelete(template)"
+                  [nzTooltipTitle]="'common.download' | translate"
+                  (click)="downloadTemplate(template)"
+                  [nzLoading]="downloadingTemplateId === template.id"
+                  class="flex items-center justify-center w-8 h-8 text-blue-600 transition-colors rounded dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                >
+                  <span
+                    nz-icon
+                    nzType="download"
+                    nzTheme="outline"
+                    class="text-base"
+                  ></span>
+                </button>
+                <button
+                  nz-button
+                  nzType="text"
+                  nzSize="small"
+                  nz-tooltip
+                  [nzTooltipTitle]="'common.archive' | translate"
+                  (click)="confirmArchive(template)"
                   class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                 >
                   <span
@@ -173,107 +256,346 @@
   </main>
 </div>
 
-<!-- Confirm Delete Dialog -->
+<!-- Confirm Archive Dialog -->
 <app-confirm-dialog
-  [(visible)]="isConfirmVisible"
-  [title]="'common.confirmDelete'"
-  [message]="deleteMessage"
+  [(visible)]="isConfirmArchiveVisible"
+  [title]="'common.archive' | translate"
+  [message]="archiveMessage"
   [warningMessage]="'common.deleteWarning'"
-  [okText]="'common.delete'"
+  [okText]="'common.archive' | translate"
   [cancelText]="'common.cancel'"
-  (confirmed)="onDeleteConfirmed()"
+  (confirmed)="onArchiveConfirmed()"
 ></app-confirm-dialog>
 
-<!-- Add/Edit Modal -->
+<!-- Import Template Modal -->
 <nz-modal
-  [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isEditMode ? 'common.edit' : 'common.addNew') | translate"
-  (nzOnCancel)="isModalVisible = false"
+  [(nzVisible)]="isImportModalVisible"
+  [nzTitle]="'templates.importTemplate' | translate"
+  (nzOnCancel)="isImportModalVisible = false"
   (nzOnOk)="saveTemplate()"
   [nzOkLoading]="saving"
+  [nzOkText]="'common.save' | translate"
+  [nzCancelText]="'common.cancel' | translate"
   [nzWidth]="'70%'"
 >
-  <div *nzModalContent class="space-y-4">
-    <!-- Dynamic Form -->
-    <app-dynamic-form
-      *ngIf="formFields.length > 0"
-      [fields]="formFields"
-      [(model)]="templateForm.value"
-      (modelChange)="templateForm.patchValue($event)"
-    ></app-dynamic-form>
-
-    <!-- Fallback to static form if configs not loaded -->
-    <form [formGroup]="templateForm" *ngIf="formFields.length === 0">
-      <div class="mb-4">
-        <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-        >
-          {{ "templates.name" | translate
-          }}<span class="ml-1 text-red-500">*</span>
-        </label>
-        <nz-input-group>
-          <input
-            type="text"
-            nz-input
-            formControlName="name"
-            [placeholder]="'templates.name' | translate"
-            class="w-full"
-            required
-          />
-        </nz-input-group>
+  <div *nzModalContent>
+    <form [formGroup]="importForm" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label
+            class="block text-sm font-medium"
+            [ngClass]="{
+              'text-red-600 font-bold dark:text-red-400':
+                isRequiredFieldEmpty('templateCode'),
+              'text-gray-700 dark:text-gray-300':
+                !isRequiredFieldEmpty('templateCode')
+            }"
+          >
+            {{ "templates.code" | translate
+            }}<span class="ml-1 text-red-500">*</span>
+          </label>
+          <nz-input-group>
+            <input
+              type="text"
+              nz-input
+              formControlName="templateCode"
+              [placeholder]="'templates.enterTemplateCode' | translate"
+              class="w-full"
+              required
+            />
+          </nz-input-group>
+        </div>
+        <div>
+          <label
+            class="block text-sm font-medium"
+            [ngClass]="{
+              'text-red-600 font-bold dark:text-red-400':
+                isRequiredFieldEmpty('templateName'),
+              'text-gray-700 dark:text-gray-300':
+                !isRequiredFieldEmpty('templateName')
+            }"
+          >
+            {{ "templates.templateName" | translate
+            }}<span class="ml-1 text-red-500">*</span>
+          </label>
+          <nz-input-group>
+            <input
+              type="text"
+              nz-input
+              formControlName="templateName"
+              [placeholder]="'templates.enterTemplateName' | translate"
+              class="w-full"
+              required
+            />
+          </nz-input-group>
+        </div>
       </div>
-
-      <div class="mb-4">
+      <div>
         <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+          class="block text-sm font-medium"
+          [ngClass]="{
+            'text-red-600 font-bold dark:text-red-400':
+              isRequiredFieldEmpty('templateType'),
+            'text-gray-700 dark:text-gray-300':
+              !isRequiredFieldEmpty('templateType')
+          }"
         >
           {{ "templates.type" | translate
           }}<span class="ml-1 text-red-500">*</span>
         </label>
         <nz-select
-          formControlName="type"
+          formControlName="templateType"
           class="w-full"
           required
           [nzDropdownMatchSelectWidth]="false"
           [nzPlacement]="'bottomLeft'"
         >
           <nz-option
-            [nzValue]="templateTypes.SCALE_REPORT"
+            [nzValue]="'Báo cáo cân'"
             [nzLabel]="'templates.scaleReport' | translate"
           ></nz-option>
           <nz-option
-            [nzValue]="templateTypes.SHIFT_REPORT"
+            [nzValue]="'Báo cáo ca'"
+            [nzLabel]="'templates.shiftReport' | translate"
+          ></nz-option>
+        </nz-select>
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "scales.description" | translate }}
+        </label>
+        <nz-input-group>
+          <textarea
+            nz-input
+            formControlName="description"
+            [placeholder]="'scales.enterDescription' | translate"
+            class="w-full"
+            rows="3"
+          ></textarea>
+        </nz-input-group>
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "templates.titleTemplate" | translate }}
+        </label>
+        <nz-input-group>
+          <input
+            type="text"
+            nz-input
+            formControlName="titleTemplate"
+            [placeholder]="'templates.enterTitleTemplate' | translate"
+            class="w-full"
+          />
+        </nz-input-group>
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "templates.importNotes" | translate }}
+        </label>
+        <nz-input-group>
+          <textarea
+            nz-input
+            formControlName="importNotes"
+            [placeholder]="'templates.enterImportNotes' | translate"
+            class="w-full"
+            rows="2"
+          ></textarea>
+        </nz-input-group>
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium"
+          [ngClass]="{
+            'text-red-600 font-bold dark:text-red-400': isFileRequiredEmpty(),
+            'text-gray-700 dark:text-gray-300': !isFileRequiredEmpty()
+          }"
+        >
+          {{ "templates.file" | translate
+          }}<span class="ml-1 text-red-500">*</span>
+        </label>
+        <app-upload-file
+          [files]="selectedFiles"
+          [maxFiles]="1"
+          [maxFileSizeMB]="50"
+          [allowUpload]="true"
+          [allowedFileTypes]="['docx']"
+          [required]="true"
+          (outputListFile)="onFilesChanged($event)"
+        ></app-upload-file>
+      </div>
+      <div>
+        <label class="flex items-center">
+          <input type="checkbox" formControlName="isActive" class="mr-2" />
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ "common.active" | translate }}
+          </span>
+        </label>
+      </div>
+    </form>
+  </div>
+</nz-modal>
+
+<!-- View Template Modal -->
+<nz-modal
+  [(nzVisible)]="isModalVisible"
+  [nzTitle]="'common.view' | translate"
+  (nzOnCancel)="closeViewModal()"
+  (nzOnOk)="closeViewModal()"
+  [nzOkText]="'common.close' | translate"
+  [nzCancelText]="null"
+  [nzWidth]="'70%'"
+>
+  <div *nzModalContent class="space-y-4">
+    <div *ngIf="selectedTemplate" class="space-y-3">
+      <div>
+        <label
+          class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "templates.code" | translate }}
+        </label>
+        <nz-input-group>
+          <input
+            type="text"
+            nz-input
+            [value]="selectedTemplate.templateCode || '-'"
+            disabled
+            class="w-full"
+          />
+        </nz-input-group>
+      </div>
+
+      <div>
+        <label
+          class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "templates.name" | translate }}
+        </label>
+        <nz-input-group>
+          <input
+            type="text"
+            nz-input
+            [value]="selectedTemplate.originalFilename || '-'"
+            disabled
+            class="w-full"
+          />
+        </nz-input-group>
+      </div>
+
+      <div *ngIf="templateDetail?.template">
+        <div>
+          <label
+            class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            {{ "scales.description" | translate }}
+          </label>
+          <nz-input-group>
+            <textarea
+              nz-input
+              [value]="templateDetail.template.description || '-'"
+              disabled
+              class="w-full"
+              rows="3"
+            ></textarea>
+          </nz-input-group>
+        </div>
+        <div>
+          <label
+            class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            {{ "templates.titleTemplate" | translate }}
+          </label>
+          <nz-input-group>
+            <input
+              type="text"
+              nz-input
+              [value]="templateDetail.template.titleTemplate || '-'"
+              disabled
+              class="w-full"
+            />
+          </nz-input-group>
+        </div>
+      </div>
+
+      <div>
+        <label
+          class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "templates.type" | translate }}
+        </label>
+        <nz-select
+          [ngModel]="selectedTemplate.templateType"
+          disabled
+          class="w-full"
+        >
+          <nz-option
+            [nzValue]="'Báo cáo cân'"
+            [nzLabel]="'templates.scaleReport' | translate"
+          ></nz-option>
+          <nz-option
+            [nzValue]="'Báo cáo ca'"
             [nzLabel]="'templates.shiftReport' | translate"
           ></nz-option>
         </nz-select>
       </div>
 
-      <div class="mb-4">
+      <div *ngIf="selectedTemplate.importNotes">
         <label
-          class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+          class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          {{ "templates.content" | translate }}
+          {{ "templates.importNotes" | translate }}
         </label>
         <nz-input-group>
           <textarea
             nz-input
-            formControlName="content"
-            [placeholder]="'templates.content' | translate"
+            [value]="selectedTemplate.importNotes || '-'"
+            disabled
             class="w-full"
-            rows="5"
+            rows="2"
           ></textarea>
         </nz-input-group>
       </div>
 
-      <div class="mb-4">
+      <div>
         <label
-          nz-checkbox
-          formControlName="isActive"
-          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+          class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          {{ "common.active" | translate }}
+          {{ "common.status" | translate }}
+        </label>
+        <label class="flex items-center">
+          <input
+            type="checkbox"
+            [checked]="selectedTemplate.isActive === true"
+            disabled
+            class="mr-2"
+          />
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ "common.active" | translate }}
+          </span>
         </label>
       </div>
-    </form>
+
+      <div *ngIf="selectedTemplate.importDate">
+        <label
+          class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          {{ "templates.importDate" | translate }}
+        </label>
+        <nz-input-group>
+          <input
+            type="text"
+            nz-input
+            [value]="selectedTemplate.importDate | date : 'dd/MM/yyyy HH:mm'"
+            disabled
+            class="w-full"
+          />
+        </nz-input-group>
+      </div>
+    </div>
   </div>
 </nz-modal>

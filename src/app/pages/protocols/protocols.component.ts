@@ -20,6 +20,7 @@ export class ProtocolsComponent implements OnInit {
   total = 0;
   isModalVisible = false;
   isEditMode = false;
+  isViewMode = false;
   saving = false;
   selectedProtocol: Protocol | null = null;
   filterData: any = {};
@@ -43,25 +44,19 @@ export class ProtocolsComponent implements OnInit {
 
   filterFields: FilterField[] = [
     {
-      key: 'name',
-      label: 'scales.protocol',
-      type: 'text',
-      placeholder: 'scales.protocol',
-    },
-    {
       key: 'code',
-      label: 'scales.code',
+      label: 'scales.protocolCode',
       type: 'text',
-      placeholder: 'scales.code',
+      placeholder: 'scales.enterProtocolCode',
     },
     {
-      key: 'status',
-      label: 'common.status',
+      key: 'connectionType',
+      label: 'scales.connectionType',
       type: 'select',
-      placeholder: 'common.status',
+      placeholder: 'scales.selectConnectionType',
       options: [
-        { label: 'common.active', value: 'active' },
-        { label: 'common.inactive', value: 'inactive' },
+        { label: 'scales.tcp', value: 'TCP' },
+        { label: 'scales.rtu', value: 'RTU' },
       ],
     },
   ];
@@ -103,13 +98,25 @@ export class ProtocolsComponent implements OnInit {
   async loadProtocols(): Promise<void> {
     this.loading = true;
     try {
-      const data = await this.protocolService.getProtocols({
-        page: this.pageIndex,
+      // Build query params according to API
+      const params: any = {
+        page: this.pageIndex - 1, // API uses 0-indexed
         size: this.pageSize,
-        ...this.filterData,
-      });
-      this.protocols = Array.isArray(data) ? data : data?.data || [];
-      this.total = data?.total || this.protocols.length;
+      };
+
+      if (this.filterData.code) {
+        params.code = this.filterData.code;
+      }
+      if (this.filterData.connectionType) {
+        params.connectionType = this.filterData.connectionType;
+      }
+      if (this.filterData.sort) {
+        params.sort = this.filterData.sort;
+      }
+
+      const data = await this.protocolService.getProtocols(params);
+      this.protocols = data.data;
+      this.total = data.total;
     } catch (error) {
       this.protocols = [];
       this.total = 0;
@@ -131,46 +138,151 @@ export class ProtocolsComponent implements OnInit {
 
   openAddModal(): void {
     this.isEditMode = false;
+    this.isViewMode = false;
     this.selectedProtocol = null;
-    this.dataProtocol = {};
-    this.formFields.forEach((field) => {
-      this.dataProtocol[field.fieldKey] = '';
-    });
+    this.dataProtocol = {
+      code: '',
+      name: '',
+      description: '',
+      connection_type: '',
+      default_port: 502,
+      default_baud_rate: 9600,
+      is_active: true,
+      config_template: '',
+    };
     this.isModalVisible = true;
   }
 
-  viewProtocol(protocol: Protocol): void {
-    // For now, view opens edit modal
-    this.openEditModal(protocol);
+  async viewProtocol(protocol: Protocol): Promise<void> {
+    this.isViewMode = true;
+    this.isEditMode = false;
+    this.selectedProtocol = protocol;
+    
+    // Load full protocol details
+    if (protocol.id) {
+      const fullProtocol = await this.protocolService.getProtocolById(protocol.id);
+      if (fullProtocol) {
+        this.selectedProtocol = fullProtocol;
+        this.dataProtocol = {
+          code: fullProtocol.code || '',
+          name: fullProtocol.name || '',
+          description: fullProtocol.description || '',
+          connection_type: fullProtocol.connection_type || '',
+          default_port: fullProtocol.default_port || 502,
+          default_baud_rate: fullProtocol.default_baud_rate || 9600,
+          is_active: fullProtocol.is_active !== undefined ? fullProtocol.is_active : true,
+          config_template: fullProtocol.config_template || '',
+        };
+      } else {
+        this.dataProtocol = {
+          code: protocol.code || '',
+          name: protocol.name || '',
+          description: protocol.description || '',
+          connection_type: protocol.connection_type || '',
+          default_port: protocol.default_port || 502,
+          default_baud_rate: protocol.default_baud_rate || 9600,
+          is_active: protocol.is_active !== undefined ? protocol.is_active : true,
+          config_template: protocol.config_template || '',
+        };
+      }
+    } else {
+      this.dataProtocol = {
+        code: protocol.code || '',
+        name: protocol.name || '',
+        description: protocol.description || '',
+        connection_type: protocol.connection_type || '',
+        default_port: protocol.default_port || 502,
+        default_baud_rate: protocol.default_baud_rate || 9600,
+        is_active: protocol.is_active !== undefined ? protocol.is_active : true,
+        config_template: protocol.config_template || '',
+      };
+    }
+    this.isModalVisible = true;
   }
 
-  openEditModal(protocol: Protocol): void {
+  async openEditModal(protocol: Protocol): Promise<void> {
     this.isEditMode = true;
+    this.isViewMode = false;
     this.selectedProtocol = protocol;
-    this.dataProtocol = {};
-    this.formFields.forEach((field) => {
-      this.dataProtocol[field.fieldKey] = (protocol as any)[field.fieldKey] || '';
-    });
+    
+    // Load full protocol details
+    if (protocol.id) {
+      const fullProtocol = await this.protocolService.getProtocolById(protocol.id);
+      if (fullProtocol) {
+        this.selectedProtocol = fullProtocol;
+        this.dataProtocol = {
+          code: fullProtocol.code || '',
+          name: fullProtocol.name || '',
+          description: fullProtocol.description || '',
+          connection_type: fullProtocol.connection_type || '',
+          default_port: fullProtocol.default_port || 502,
+          default_baud_rate: fullProtocol.default_baud_rate || 9600,
+          is_active: fullProtocol.is_active !== undefined ? fullProtocol.is_active : true,
+          config_template: fullProtocol.config_template || '',
+        };
+      } else {
+        this.dataProtocol = {
+          code: protocol.code || '',
+          name: protocol.name || '',
+          description: protocol.description || '',
+          connection_type: protocol.connection_type || '',
+          default_port: protocol.default_port || 502,
+          default_baud_rate: protocol.default_baud_rate || 9600,
+          is_active: protocol.is_active !== undefined ? protocol.is_active : true,
+          config_template: protocol.config_template || '',
+        };
+      }
+    } else {
+      this.dataProtocol = {
+        code: protocol.code || '',
+        name: protocol.name || '',
+        description: protocol.description || '',
+        connection_type: protocol.connection_type || '',
+        default_port: protocol.default_port || 502,
+        default_baud_rate: protocol.default_baud_rate || 9600,
+        is_active: protocol.is_active !== undefined ? protocol.is_active : true,
+        config_template: protocol.config_template || '',
+      };
+    }
     this.isModalVisible = true;
   }
 
 
   async saveProtocol(): Promise<void> {
-    if (!this.dataProtocol.name || !this.dataProtocol.code || !this.dataProtocol.type) {
+    // Validation
+    if (!this.dataProtocol.name || !this.dataProtocol.code || !this.dataProtocol.connection_type || !this.dataProtocol.default_port) {
       return;
     }
 
     this.saving = true;
-    const data = { ...this.dataProtocol };
+    // Build payload according to API
+    const data: any = {
+      code: this.dataProtocol.code,
+      name: this.dataProtocol.name,
+      description: this.dataProtocol.description || '',
+      connection_type: this.dataProtocol.connection_type,
+      default_port: this.dataProtocol.default_port || 502,
+      default_baud_rate: this.dataProtocol.default_baud_rate || 9600,
+      is_active: this.dataProtocol.is_active !== undefined ? this.dataProtocol.is_active : true,
+      config_template: this.dataProtocol.config_template || '',
+    };
 
     try {
       if (this.isEditMode) {
-        await this.protocolService.updateProtocol(this.selectedProtocol?.id!, data);
+        const updated = await this.protocolService.updateProtocol(this.selectedProtocol?.id!, data);
+        if (updated) {
+          this.isModalVisible = false;
+          this.isViewMode = false;
+          await this.loadProtocols();
+        }
       } else {
-        await this.protocolService.createProtocol(data);
+        const created = await this.protocolService.createProtocol(data);
+        if (created) {
+          this.isModalVisible = false;
+          this.isViewMode = false;
+          await this.loadProtocols();
+        }
       }
-      this.isModalVisible = false;
-      await this.loadProtocols();
     } catch (error) {
       console.error('Error saving protocol:', error);
     } finally {
@@ -199,6 +311,11 @@ export class ProtocolsComponent implements OnInit {
     }
   }
 
+  closeViewModal(): void {
+    this.isModalVisible = false;
+    this.isViewMode = false;
+  }
+
   // Getter for delete message
   get deleteMessage(): string {
     if (!this.protocolToDelete) return '';
@@ -209,5 +326,13 @@ export class ProtocolsComponent implements OnInit {
     this.pageIndex = event.page;
     this.pageSize = event.size;
     this.loadProtocols();
+  }
+
+  // Helper method to check if required field is empty
+  isRequiredFieldEmpty(value: any): boolean {
+    if (typeof value === 'number') {
+      return value === null || value === undefined;
+    }
+    return value === null || value === undefined || value === '';
   }
 }

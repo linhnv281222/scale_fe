@@ -220,7 +220,7 @@ app-root {
 }
 
 .dark .ant-select-item-option-disabled {
-  color: #6b7280 !important;
+  color: black !important;
   cursor: not-allowed !important;
 }
 
@@ -592,7 +592,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .dark .pagination-btn.disabled .anticon {
-  color: #6b7280 !important;
+  color: black !important;
 }
 
 /* Center content in table cells while keeping left baseline aligned */
@@ -607,4 +607,15 @@ nz-table tbody td > * {
 
 nz-table thead th {
   text-align: center !important;
+}
+
+.ant-input[disabled],
+.ant-select-disabled.ant-select:not(.ant-select-customize-input)
+  .ant-select-selector,
+.ant-select-multiple.ant-select-disabled.ant-select:not(
+    .ant-select-customize-input
+  )
+  .ant-select-selector,
+.ant-select-disabled.ant-select-multiple .ant-select-selection-item {
+  color: black;
 }

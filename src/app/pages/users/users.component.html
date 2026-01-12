@@ -230,8 +230,7 @@
             nz-input
             [(ngModel)]="dataUser.username"
             [placeholder]="'users.enterUsername' | translate"
-            [readonly]="isViewMode || isEditMode"
-            [disabled]="isEditMode"
+            [disabled]="isViewMode || isEditMode"
             class="w-full"
             [class.bg-gray-100]="isEditMode"
             [class.dark:bg-gray-700]="isEditMode"
@@ -275,7 +274,7 @@
             nz-input
             [(ngModel)]="dataUser.fullName"
             [placeholder]="'users.enterFullName' | translate"
-            [readonly]="isViewMode"
+            [disabled]="isViewMode"
             class="w-full"
             name="fullName"
           />

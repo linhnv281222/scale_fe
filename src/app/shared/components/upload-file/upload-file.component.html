@@ -1,0 +1,294 @@
+<!-- <div
+  *ngIf="allowUpload"
+  class="create-area-drag"
+  (drop)="onFileDrop($event)"
+  (dragenter)="onDragEnter($event)"
+  (dragleave)="onDragLeave($event)"
+  (dragover)="onDragOver($event)"
+  [ngClass]="{ 'drag-over': isDragOver }"
+  (click)="fileInput.click()"
+  style="display: flex; align-items: center; flex-direction: column; cursor: pointer; margin-bottom: 6px"
+>
+  <input
+    type="file"
+    (change)="onFileChange($event)"
+    style="display: none"
+    #fileInput
+    [multiple]="maxFiles > 1 ? true : false"
+  />
+  <div>
+    <span
+      nz-icon
+      nzType="upload"
+      nzTheme="outline"
+      style="font-size: 32px; color: #244a64; margin-bottom: 16px"
+    ></span>
+  </div>
+  <div
+    class="d-flex a-items-center"
+    style="margin-bottom: 8px"
+  >
+    <span style="margin-left: 8px"
+      >{{ "message.hint_upload" | translate }}
+      <span *ngIf="maxFiles > 1">
+        {{ "message.hint_type_total_file" | translate }}</span
+      >
+    </span>
+  </div>
+  <div>
+    <span
+      style="
+        color: #6b788e;
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 16px; /* 133.333% */
+      "
+    >
+      {{ "message.hint_type_upload" | translate }} {{ maxFileSizeMB }} MB
+    </span>
+  </div>
+</div> -->
+<div
+  *ngIf="allowUpload"
+  (drop)="onFileDrop($event)"
+  (dragenter)="onDragEnter($event)"
+  class="create-area-drag"
+  (dragleave)="onDragLeave($event)"
+  (dragover)="onDragOver($event)"
+  [ngClass]="{ 'drag-over': isDragOver }"
+  (click)="fileInput.click()"
+  style="cursor: pointer; margin-bottom: 6px"
+>
+  <input
+    type="file"
+    (change)="onFileChange($event)"
+    style="display: none"
+    #fileInput
+    [multiple]="maxFiles > 1 ? true : false"
+  />
+  <div>
+    <span nz-icon nzType="paper-clip" nzTheme="outline"></span>
+    {{ "message.attachFile" | translate }}
+  </div>
+  <div
+    *ngIf="allowedFileTypes && allowedFileTypes.length > 0"
+    style="margin-top: 4px; font-size: 12px; color: #6b788e"
+  >
+    <span style="color: red">*</span>
+    {{ "message.hint_allowed_file_types" | translate }}:
+    {{ allowedFileTypesText }}
+  </div>
+  <div
+    *ngIf="required && files.length === 0 && filesFromBE.length === 0"
+    style="margin-top: 4px; font-size: 12px; color: red"
+  >
+    {{ "message.required_upload_file" | translate }}
+  </div>
+</div>
+<div [ngClass]="{ 'scroll-container': filesFromBE.length + files.length > 6 }">
+  <ng-container *ngIf="filesFromBE.length > 0">
+    <div *ngFor="let file of filesFromBE; let i = index">
+      <div
+        [ngStyle]="
+          showTime ? styleWithShowTime.left : styleWithoutShowTime.left
+        "
+        *ngIf="file.id"
+      >
+        <span style="display: flex; align-items: center; max-width: 100%">
+          <span
+            style="
+              position: relative;
+              cursor: pointer;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              flex-grow: 1;
+              margin-right: 4px;
+            "
+            (click)="previewFile(file)"
+            nz-tooltip="{{ file.fileName }}"
+          >
+            {{ file.fileName }}
+          </span>
+          <span
+            style="
+              color: #bdbdbd;
+              font-size: 8px;
+              margin-left: 4px;
+              white-space: nowrap;
+            "
+          >
+            {{
+              file.size / 1024 <= 999
+                ? (file.size / 1024 | number : "0.0-0")
+                : (file.size / 1024 / 1024 | number : "0.1-1")
+            }}
+            {{ file.size / 1024 <= 999 ? "KB" : "MB" }}
+          </span>
+        </span>
+
+        <div
+          [ngStyle]="
+            showTime ? styleWithShowTime.content : styleWithoutShowTime.content
+          "
+        >
+          <span
+            *ngIf="showTime"
+            class="mr-12"
+            [ngStyle]="
+              showTime ? styleWithShowTime.time : styleWithoutShowTime.time
+            "
+            nz-tooltip="{{ file.createdAt | date : 'dd/MM/yyyy HH:mm:ss' }}"
+          >
+            {{ "message.createdAt" | translate }}:
+            {{
+              file.createdAt
+                ? (file.createdAt | date : "dd/MM/yyyy HH:mm:ss")
+                : ""
+            }}
+          </span>
+          <div nzRight style="display: flex; align-items: center; float: right">
+            <span
+              nz-icon
+              nzType="download"
+              nzTheme="outline"
+              style="cursor: pointer; margin-right: 8px"
+              (click)="downloadFile(file)"
+            ></span>
+            <span
+              *ngIf="allowUpload"
+              style="cursor: pointer"
+              nz-icon
+              nzType="delete"
+              nzTheme="outline"
+              (click)="deleteFile(file)"
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="files.length > 0">
+    <div *ngFor="let file of files; let i = index">
+      <div
+        style="
+          padding: 4px 16px;
+          background: #eff1f4;
+          margin-bottom: 6px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        "
+      >
+        <span style="display: flex; align-items: center; flex: 1; min-width: 0; margin-right: 8px">
+          <span
+            style="
+              position: relative;
+              cursor: pointer;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              flex-grow: 1;
+            "
+            (click)="previewFile(file)"
+            nz-tooltip="{{ file.name }}"
+          >
+            {{ file.name }}
+          </span>
+          <span
+            style="
+              color: #bdbdbd;
+              font-size: 8px;
+              margin-left: 4px;
+              white-space: nowrap;
+            "
+          >
+            {{
+              file.size / 1024 <= 999
+                ? (file.size / 1024 | number : "0.0-0")
+                : (file.size / 1024 / 1024 | number : "0.1-1")
+            }}
+            {{ file.size / 1024 <= 999 ? "KB" : "MB" }}
+          </span>
+        </span>
+        <span
+          style="cursor: pointer; flex-shrink: 0; display: flex; align-items: center;"
+          nz-icon
+          nzType="delete"
+          nzTheme="outline"
+          (click)="deleteFile(file)"
+        ></span>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- PREVIEW -->
+<div style="width: 70%; display: flex; justify-content: center">
+  <nz-drawer
+    [nzClosable]="false"
+    [nzVisible]="visible"
+    [nzBodyStyle]="{
+      padding: 0,
+      height: '100%',
+    }"
+    [nzWidth]="width"
+    nzPlacement="top"
+    [nzTitle]="currentFileName"
+    [nzExtra]="extra"
+    (nzOnClose)="close()"
+    nzHeight="100%"
+  >
+    <ng-container *nzDrawerContent>
+      <div
+        *ngIf="visible"
+        class="drawer-body"
+        nz-resizable
+        nzBounds="window"
+        [nzMinWidth]="256"
+        (nzResize)="onResize($event)"
+      >
+        <nz-resize-handles [nzDirections]="['right']"></nz-resize-handles>
+        <iframe
+          *ngIf="
+            fileType !== 'jpg' && fileType !== 'jpeg' && fileType !== 'png';
+            else notPdf
+          "
+          [src]="currentFilePath"
+          width="100%"
+          height="100%"
+        ></iframe>
+        <ng-template #notPdf>
+          <iframe
+            [srcdoc]="iframeContentImage"
+            width="100%"
+            height="100%"
+          ></iframe>
+        </ng-template>
+      </div>
+    </ng-container>
+    <ng-template #extra>
+      <button
+        nz-button
+        nzType="text"
+        (click)="close()"
+        class="flex items-center justify-center"
+      >
+        <span nz-icon nzType="close" nzTheme="outline"></span>
+      </button>
+    </ng-template>
+  </nz-drawer>
+</div>
+
+<app-confirm-dialog
+  [(visible)]="isShowDeleteWarning"
+  [title]="titleDeleteWarning"
+  [message]="contentDeleteWarning"
+  [warningMessage]="'common.deleteWarning'"
+  [okText]="'common.delete'"
+  [cancelText]="'common.cancel'"
+  (confirmed)="onHandleConfirmDelete(true)"
+  (cancelled)="onHandleCancelDelete(false)"
+></app-confirm-dialog>

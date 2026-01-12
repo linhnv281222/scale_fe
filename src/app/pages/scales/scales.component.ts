@@ -14,6 +14,7 @@ import {
 import { LocationService } from '../../services/location.service';
 import { PageActionService } from '../../services/page-action.service';
 import { ProtocolService } from '../../services/protocol.service';
+import { ScaleManufacturerService } from '../../services/scale-manufacturer.service';
 import { ScaleService } from '../../services/scale.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
@@ -31,6 +32,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
   total = 0;
   isModalVisible = false;
   isEditMode = false;
+  isViewMode = false;
   saving = false;
   selectedScale: Scale | null = null;
   filterData: any = {};
@@ -88,6 +90,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
   // Data for dropdowns
   protocols: Protocol[] = [];
   locations: Location[] = [];
+  manufacturers: any[] = [];
 
   // Form data object
   dataScale: any = {
@@ -102,20 +105,50 @@ export class ScalesComponent implements OnInit, OnDestroy {
 
   filterFields: FilterField[] = [
     {
-      key: 'name',
+      key: 'search',
       label: 'scales.name',
       type: 'text',
       placeholder: 'scales.name',
     },
     {
-      key: 'location_id',
+      key: 'locationId',
       label: 'scales.location',
       type: 'select',
       placeholder: 'scales.selectLocation',
       options: [],
     },
     {
-      key: 'is_active',
+      key: 'manufacturerId',
+      label: 'scales.manufacturer',
+      type: 'select',
+      placeholder: 'scales.selectManufacturer',
+      options: [],
+    },
+    {
+      key: 'protocolId',
+      label: 'scales.protocol',
+      type: 'select',
+      placeholder: 'scales.selectProtocol',
+      options: [],
+    },
+    {
+      key: 'model',
+      label: 'scales.model',
+      type: 'text',
+      placeholder: 'scales.enterModel',
+    },
+    {
+      key: 'direction',
+      label: 'scales.direction',
+      type: 'select',
+      placeholder: 'scales.selectDirection',
+      options: [
+        { label: 'scales.import', value: 'IMPORT' },
+        { label: 'scales.export', value: 'EXPORT' },
+      ],
+    },
+    {
+      key: 'isActive',
       label: 'common.status',
       type: 'select',
       placeholder: 'common.status',
@@ -139,6 +172,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     private scaleService: ScaleService,
     private locationService: LocationService,
     private protocolService: ProtocolService,
+    private manufacturerService: ScaleManufacturerService,
     private pageActionService: PageActionService,
     private translate: TranslateService,
     private toastr: ToastrService
@@ -147,6 +181,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadLocations();
     this.loadProtocols();
+    this.loadManufacturers();
     this.loadScales();
 
     // Subscribe to add new action
@@ -168,7 +203,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
       this.locations = response.data || [];
       // Update filter options
       const locationField = this.filterFields.find(
-        (f) => f.key === 'location_id'
+        (f) => f.key === 'locationId'
       );
       if (locationField) {
         locationField.options = this.locations.map((loc) => ({
@@ -186,22 +221,82 @@ export class ScalesComponent implements OnInit, OnDestroy {
       const data = await this.protocolService.getProtocols({
         status: 'active',
       });
-      this.protocols = Array.isArray(data) ? data : data?.data || [];
+      this.protocols = Array.isArray(data) ? data : data.data;
+
+      // Update filter options
+      const protocolField = this.filterFields.find(
+        (f) => f.key === 'protocolId'
+      );
+      if (protocolField) {
+        protocolField.options = this.protocols.map((p) => ({
+          label: p.name || '',
+          value: p.id,
+        }));
+      }
     } catch (error) {
       this.protocols = [];
+    }
+  }
+
+  async loadManufacturers(): Promise<void> {
+    try {
+      const response = await this.manufacturerService.getScaleManufacturers({
+        is_active: true,
+      });
+      this.manufacturers = response.data;
+
+      // Update filter options
+      const manufacturerField = this.filterFields.find(
+        (f) => f.key === 'manufacturerId'
+      );
+      if (manufacturerField) {
+        manufacturerField.options = this.manufacturers.map((m) => ({
+          label: m.name || '',
+          value: m.id,
+        }));
+      }
+    } catch (error) {
+      this.manufacturers = [];
     }
   }
 
   async loadScales(): Promise<void> {
     this.loading = true;
     try {
-      const data = await this.scaleService.getScales({
-        page: this.pageIndex,
+      // Build query params according to API
+      const params: any = {
+        page: this.pageIndex - 1, // API uses 0-indexed
         size: this.pageSize,
-        ...this.filterData,
-      });
-      this.scales = Array.isArray(data) ? data : data?.data || [];
-      this.total = data?.total || this.scales.length;
+      };
+
+      if (this.filterData.search) {
+        params.search = this.filterData.search;
+      }
+      if (this.filterData.locationId) {
+        params.locationId = this.filterData.locationId;
+      }
+      if (this.filterData.manufacturerId) {
+        params.manufacturerId = this.filterData.manufacturerId;
+      }
+      if (this.filterData.protocolId) {
+        params.protocolId = this.filterData.protocolId;
+      }
+      if (this.filterData.model) {
+        params.model = this.filterData.model;
+      }
+      if (this.filterData.direction) {
+        params.direction = this.filterData.direction;
+      }
+      if (this.filterData.isActive !== undefined && this.filterData.isActive !== null) {
+        params.isActive = this.filterData.isActive;
+      }
+      if (this.filterData.sort) {
+        params.sort = this.filterData.sort;
+      }
+
+      const data = await this.scaleService.getScales(params);
+      this.scales = data.data;
+      this.total = data.total;
     } catch (error) {
       this.scales = [];
       this.total = 0;
@@ -221,27 +316,99 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.loadScales();
   }
 
+  /**
+   * Normalize scale data to dataScale format using spread operator
+   * This makes it easier to maintain when Scale model changes
+   */
+  private normalizeScaleToDataScale(scale: Scale | null): any {
+    if (!scale) {
+      return {
+        name: '',
+        model: '',
+        direction: 'IMPORT',
+        location_id: null,
+        manufacturer_id: null,
+        protocol_id: null,
+        is_active: true,
+      };
+    }
+
+    return {
+      name: scale.name || '',
+      model: scale.model || '',
+      direction: scale.direction || 'IMPORT',
+      location_id: scale.location_id ?? null,
+      manufacturer_id: scale.manufacturer_id ?? null,
+      protocol_id: scale.protocol_id ?? null,
+      is_active: scale.is_active !== undefined ? scale.is_active : true,
+    };
+  }
+
   openAddModal(): void {
     this.isEditMode = false;
+    this.isViewMode = false;
     this.selectedScale = null;
-    this.dataScale = {
-      name: '',
-      model: '',
-      location_id: null,
-      is_active: true,
-    };
+    this.dataScale = this.normalizeScaleToDataScale(null);
+    this.resetConfig();
     this.isModalVisible = true;
   }
 
-  openEditModal(scale: Scale): void {
-    this.isEditMode = true;
+  async viewScale(scale: Scale): Promise<void> {
+    this.isViewMode = true;
+    this.isEditMode = false;
     this.selectedScale = scale;
-    this.dataScale = {
-      name: scale.name || '',
-      model: scale.model || '',
-      location_id: scale.location_id || null,
-      is_active: scale.is_active !== undefined ? scale.is_active : true,
-    };
+
+    // Load full scale details with config
+    if (scale.id) {
+      const fullScale = await this.scaleService.getScaleById(scale.id);
+      if (fullScale) {
+        this.selectedScale = fullScale;
+        this.dataScale = this.normalizeScaleToDataScale(fullScale);
+
+        // Load config from scale_config in response
+        if (fullScale.scale_config) {
+          this.loadConfigFromScaleConfig(fullScale.scale_config);
+        } else {
+          await this.loadScaleConfig(scale.id);
+        }
+      } else {
+        this.dataScale = this.normalizeScaleToDataScale(scale);
+        await this.loadScaleConfig(scale.id);
+      }
+    } else {
+      this.dataScale = this.normalizeScaleToDataScale(scale);
+      this.resetConfig();
+    }
+    this.isModalVisible = true;
+  }
+
+  async openEditModal(scale: Scale): Promise<void> {
+    this.isEditMode = true;
+    this.isViewMode = false;
+    this.selectedScale = scale;
+
+    // Load full scale details with config
+    if (scale.id) {
+      const fullScale = await this.scaleService.getScaleById(scale.id);
+      if (fullScale) {
+        this.selectedScale = fullScale;
+        this.dataScale = this.normalizeScaleToDataScale(fullScale);
+
+        // Load config from scale_config in response
+        if (fullScale.scale_config) {
+          this.loadConfigFromScaleConfig(fullScale.scale_config);
+        } else {
+          await this.loadScaleConfig(scale.id);
+        }
+      } else {
+        this.dataScale = this.normalizeScaleToDataScale(scale);
+        await this.loadScaleConfig(scale.id);
+      }
+    } else {
+      this.dataScale = this.normalizeScaleToDataScale(scale);
+      this.resetConfig();
+    }
+
     this.isModalVisible = true;
   }
 
@@ -336,19 +503,69 @@ export class ScalesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.scaleConfig.protocol) {
+      this.toastr.warning('Vui lòng chọn giao thức');
+      return;
+    }
+
+    if (!this.scaleConfig.poll_interval || this.scaleConfig.poll_interval < 100) {
+      this.toastr.warning('Chu kỳ Poll phải tối thiểu 100ms');
+      return;
+    }
+
+    // Validate connection params based on protocol
+    const protocol = this.protocols.find((p) => p.code === this.scaleConfig.protocol);
+    if (protocol) {
+      const connectionType = protocol.connection_type || protocol.type;
+      if (connectionType === 'TCP' || this.scaleConfig.protocol === 'MODBUS_TCP') {
+        if (!this.scaleConfig.conn_params?.ip || !this.scaleConfig.conn_params?.port) {
+          this.toastr.warning('Vui lòng nhập đầy đủ thông tin kết nối (IP và Port)');
+          return;
+        }
+      } else if (connectionType === 'RTU' || this.scaleConfig.protocol === 'MODBUS_RTU') {
+        if (!this.scaleConfig.conn_params?.com_port || !this.scaleConfig.conn_params?.baud_rate) {
+          this.toastr.warning('Vui lòng nhập đầy đủ thông tin kết nối (COM Port và Baud Rate)');
+          return;
+        }
+      }
+    }
+
     this.saving = true;
     try {
-      const data = {
+      // Build scale data with config in one request
+      const data: any = {
         name: this.dataScale.name,
         model: this.dataScale.model || undefined,
+        direction: this.dataScale.direction || 'IMPORT',
         location_id: this.dataScale.location_id,
-        is_active:
-          this.dataScale.is_active !== undefined
-            ? this.dataScale.is_active
-            : true,
+        manufacturer_id: this.dataScale.manufacturer_id || undefined,
+        protocol_id: this.dataScale.protocol_id || undefined,
+        protocol: this.scaleConfig.protocol,
+        is_active: this.dataScale.is_active !== undefined ? this.dataScale.is_active : true,
+        poll_interval: this.scaleConfig.poll_interval,
+        conn_params: this.scaleConfig.conn_params || {},
       };
 
+      // Add data channels
+      for (let i = 1; i <= 5; i++) {
+        const channel = this.scaleConfig[`data_${i}`];
+        if (channel && channel.is_used) {
+          data[`data_${i}`] = {
+            name: channel.name || '',
+            start_register: channel.start_registers || channel.start_register || 0,
+            num_registers: channel.num_registers || 1,
+            data_type: channel.data_type || 'Integer',
+            function_code: channel.function_code || 3,
+            byte_order: channel.byte_order || 'big_endian',
+            is_used: true,
+          };
+        } else {
+          data[`data_${i}`] = null;
+        }
+      }
+
       if (this.isEditMode) {
+        // Update scale with config
         const updated = await this.scaleService.updateScale(
           this.selectedScale?.id!,
           data
@@ -356,15 +573,18 @@ export class ScalesComponent implements OnInit, OnDestroy {
         if (updated) {
           this.toastr.success('Cập nhật cân thành công');
           this.isModalVisible = false;
+          this.isViewMode = false;
           await this.loadScales();
         } else {
           this.toastr.error('Cập nhật cân thất bại');
         }
       } else {
+        // Create scale with config
         const created = await this.scaleService.createScale(data);
-        if (created) {
+        if (created && created.id) {
           this.toastr.success('Tạo cân thành công');
           this.isModalVisible = false;
+          this.isViewMode = false;
           await this.loadScales();
         } else {
           this.toastr.error('Tạo cân thất bại');
@@ -399,6 +619,11 @@ export class ScalesComponent implements OnInit, OnDestroy {
     }
   }
 
+  closeViewModal(): void {
+    this.isModalVisible = false;
+    this.isViewMode = false;
+  }
+
   // Getter for delete message
   get deleteMessage(): string {
     if (!this.scaleToDelete) return '';
@@ -409,6 +634,145 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.pageIndex = event.page;
     this.pageSize = event.size;
     this.loadScales();
+  }
+
+  loadConfigFromScaleConfig(scaleConfig: any): void {
+    if (!scaleConfig) {
+      this.resetConfig();
+      return;
+    }
+
+    this.scaleConfig = {
+      protocol: scaleConfig.protocol || 'MODBUS_TCP',
+      poll_interval: scaleConfig.poll_interval || 1000,
+      conn_params: scaleConfig.conn_params || { ip: '', port: 502 },
+      data_1: scaleConfig.data_1 || {
+        name: '',
+        start_registers: scaleConfig.data_1?.start_register || scaleConfig.data_1?.start_registers || 0,
+        num_registers: scaleConfig.data_1?.num_registers || 1,
+        is_used: scaleConfig.data_1?.is_used || false,
+        data_type: scaleConfig.data_1?.data_type || 'Integer',
+        function_code: scaleConfig.data_1?.function_code || 3,
+        byte_order: scaleConfig.data_1?.byte_order || 'big_endian',
+      },
+      data_2: scaleConfig.data_2 || {
+        name: '',
+        start_registers: scaleConfig.data_2?.start_register || scaleConfig.data_2?.start_registers || 0,
+        num_registers: scaleConfig.data_2?.num_registers || 1,
+        is_used: scaleConfig.data_2?.is_used || false,
+        data_type: scaleConfig.data_2?.data_type || 'Integer',
+        function_code: scaleConfig.data_2?.function_code || 3,
+        byte_order: scaleConfig.data_2?.byte_order || 'big_endian',
+      },
+      data_3: scaleConfig.data_3 || {
+        name: '',
+        start_registers: scaleConfig.data_3?.start_register || scaleConfig.data_3?.start_registers || 0,
+        num_registers: scaleConfig.data_3?.num_registers || 1,
+        is_used: scaleConfig.data_3?.is_used || false,
+        data_type: scaleConfig.data_3?.data_type || 'Integer',
+        function_code: scaleConfig.data_3?.function_code || 3,
+        byte_order: scaleConfig.data_3?.byte_order || 'big_endian',
+      },
+      data_4: scaleConfig.data_4 || {
+        name: '',
+        start_registers: scaleConfig.data_4?.start_register || scaleConfig.data_4?.start_registers || 0,
+        num_registers: scaleConfig.data_4?.num_registers || 1,
+        is_used: scaleConfig.data_4?.is_used || false,
+        data_type: scaleConfig.data_4?.data_type || 'Integer',
+        function_code: scaleConfig.data_4?.function_code || 3,
+        byte_order: scaleConfig.data_4?.byte_order || 'big_endian',
+      },
+      data_5: scaleConfig.data_5 || {
+        name: '',
+        start_registers: scaleConfig.data_5?.start_register || scaleConfig.data_5?.start_registers || 0,
+        num_registers: scaleConfig.data_5?.num_registers || 1,
+        is_used: scaleConfig.data_5?.is_used || false,
+        data_type: scaleConfig.data_5?.data_type || 'Integer',
+        function_code: scaleConfig.data_5?.function_code || 3,
+        byte_order: scaleConfig.data_5?.byte_order || 'big_endian',
+      },
+    };
+
+    // Expand channels that are in use
+    for (let i = 1; i <= 5; i++) {
+      const channel = this.scaleConfig[`data_${i}`];
+      if (channel && channel.is_used) {
+        this.expandedChannels[i] = true;
+      } else {
+        this.expandedChannels[i] = false;
+      }
+    }
+  }
+
+  async loadScaleConfig(scaleId: number): Promise<void> {
+    try {
+      const config = await this.scaleService.getScaleConfig(scaleId);
+      let configData: any = null;
+
+      if (config && config.success === true && config.data) {
+        configData = config.data;
+      } else if (config) {
+        configData = config;
+      }
+
+      if (configData) {
+        this.scaleConfig = {
+          protocol: configData.protocol || 'MODBUS_TCP',
+          poll_interval: configData.poll_interval || 1000,
+          conn_params: configData.conn_params || { ip: '', port: 502 },
+          data_1: configData.data_1 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_2: configData.data_2 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_3: configData.data_3 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_4: configData.data_4 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+          data_5: configData.data_5 || {
+            name: '',
+            start_registers: 0,
+            num_registers: 1,
+            is_used: false,
+            data_type: 'Integer',
+          },
+        };
+
+        // Expand channels that are in use
+        for (let i = 1; i <= 5; i++) {
+          const channel = this.scaleConfig[`data_${i}`];
+          if (channel && channel.is_used) {
+            this.expandedChannels[i] = true;
+          } else {
+            this.expandedChannels[i] = false;
+          }
+        }
+      } else {
+        this.resetConfig();
+      }
+    } catch (error) {
+      console.error('Error loading scale config:', error);
+      this.resetConfig();
+    }
   }
 
   async openConfigModal(scale: Scale): Promise<void> {
@@ -585,8 +949,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
     }
   }
 
-  async saveConfig(): Promise<void> {
-    if (!this.selectedScale?.id) return;
+  async saveConfig(scaleId: number): Promise<void> {
+    if (!scaleId) return;
 
     if (!this.scaleConfig.protocol || !this.scaleConfig.conn_params) {
       return;
@@ -596,7 +960,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.savingConfig = true;
     try {
       const configData: any = {
         protocol: this.scaleConfig.protocol,
@@ -611,6 +974,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
             name: channel.name,
             start_registers: channel.start_registers,
             num_registers: channel.num_registers,
+            data_type: channel.data_type || 'Integer',
             is_used: true,
           };
         } else {
@@ -618,16 +982,10 @@ export class ScalesComponent implements OnInit, OnDestroy {
         }
       }
 
-      await this.scaleService.updateScaleConfig(
-        this.selectedScale.id,
-        configData
-      );
-      this.isConfigModalVisible = false;
-      this.loadScales();
+      await this.scaleService.updateScaleConfig(scaleId, configData);
     } catch (error) {
       console.error('Error saving config:', error);
-    } finally {
-      this.savingConfig = false;
+      throw error;
     }
   }
 

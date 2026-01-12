@@ -1,8 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { saveAs } from 'file-saver';
+import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { Template, TemplateType } from '../../models';
+import { ReportTemplateImport, TemplateType } from '../../models';
 import { ConfigService } from '../../services/config.service';
 import { PageActionService } from '../../services/page-action.service';
 import { TemplateService } from '../../services/template.service';
@@ -17,16 +19,19 @@ import { FilterField } from '../../shared/components/filter-sidebar/filter-sideb
 })
 export class TemplatesComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  templates: Template[] = [];
-  allTemplates: Template[] = [];
+  templates: ReportTemplateImport[] = [];
+  allTemplates: ReportTemplateImport[] = [];
   loading = false;
   pageIndex = 1;
   pageSize = 10;
   total = 0;
   isModalVisible = false;
   isEditMode = false;
+  isViewMode = false;
   saving = false;
-  selectedTemplate: Template | null = null;
+  selectedTemplate: ReportTemplateImport | null = null;
+  templateDetail: any = null;
+  downloadingTemplateId: number | null = null;
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
@@ -38,18 +43,18 @@ export class TemplatesComponent implements OnInit, OnDestroy {
 
   // Filter data
   filterData: any = {
-    type: null,
+    templateType: null,
   };
 
   filterFields: FilterField[] = [
     {
-      key: 'type',
+      key: 'templateType',
       label: 'templates.type',
       type: 'select',
       placeholder: 'templates.selectType',
       options: [
-        { label: 'templates.scaleReport', value: TemplateType.SCALE_REPORT },
-        { label: 'templates.shiftReport', value: TemplateType.SHIFT_REPORT },
+        { label: 'templates.scaleReport', value: 'Báo cáo cân' },
+        { label: 'templates.shiftReport', value: 'Báo cáo ca' },
       ],
     },
   ];
@@ -58,7 +63,8 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     private templateService: TemplateService,
     private configService: ConfigService,
     private fb: FormBuilder,
-    private pageActionService: PageActionService
+    private pageActionService: PageActionService,
+    private toastr: ToastrService
   ) {
     this.templateForm = this.fb.group({
       name: ['', Validators.required],
@@ -109,11 +115,17 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   async loadTemplates(): Promise<void> {
     this.loading = true;
     try {
-      const data = await this.templateService.getTemplates({
-        page: 1,
-        size: 1000,
-      });
-      this.allTemplates = data.data || [];
+      // Load templates with optional filter by templateType
+      const templateType = this.filterData.templateType || undefined;
+      const templates = await this.templateService.getTemplateImports(
+        templateType
+      );
+      // Pre-calculate display values to avoid calling functions in template
+      this.allTemplates = templates.map((template) => ({
+        ...template,
+        templateTypeLabel: this.getTemplateTypeLabel(template.templateType),
+        fileSizeFormatted: this.formatFileSize(template.fileSizeBytes),
+      }));
       this.applyFilters();
     } catch (error) {
       this.allTemplates = [];
@@ -125,9 +137,11 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   applyFilters(): void {
     let filtered = [...this.allTemplates];
 
-    // Filter by type
-    if (this.filterData.type) {
-      filtered = filtered.filter((t) => t.type === this.filterData.type);
+    // Filter by templateType
+    if (this.filterData.templateType) {
+      filtered = filtered.filter(
+        (t) => t.templateType === this.filterData.templateType
+      );
     }
 
     this.total = filtered.length;
@@ -144,101 +158,231 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
+  // Import template modal
+  isImportModalVisible = false;
+  importForm!: FormGroup;
+  selectedFiles: File[] = [];
+
   openAddModal(): void {
     this.isEditMode = false;
+    this.isViewMode = false;
     this.selectedTemplate = null;
-    this.templateForm.reset({
-      name: '',
-      type: TemplateType.SCALE_REPORT,
-      content: '',
-      isActive: true,
+    this.selectedFiles = [];
+    this.importForm = this.fb.group({
+      templateCode: ['', Validators.required],
+      templateName: ['', Validators.required],
+      description: [''],
+      titleTemplate: [''],
+      importNotes: [''],
+      isActive: [true],
+      templateType: ['Báo cáo cân', Validators.required],
     });
+    this.isImportModalVisible = true;
+  }
+
+  async viewTemplate(template: ReportTemplateImport): Promise<void> {
+    this.isViewMode = true;
+    this.isEditMode = false;
+    // Pre-calculate display values to avoid calling functions in template
+    this.selectedTemplate = {
+      ...template,
+      templateTypeLabel: this.getTemplateTypeLabel(template.templateType),
+      fileSizeFormatted: this.formatFileSize(template.fileSizeBytes),
+    };
+    this.templateDetail = null;
+
+    if (template.id) {
+      try {
+        const detail = await this.templateService.getTemplateImportById(
+          template.id
+        );
+        if (detail) {
+          this.templateDetail = detail;
+        }
+      } catch (error) {
+        console.error('Error loading template detail:', error);
+      }
+    }
+
     this.isModalVisible = true;
   }
 
-  openEditModal(template: Template): void {
-    this.isEditMode = true;
-    this.selectedTemplate = template;
-    // Map template data to form fields or fallback to form
-    if (this.formFields.length > 0) {
-      const dataTemplate: any = {};
-      this.formFields.forEach((field) => {
-        dataTemplate[field.fieldKey] = (template as any)[field.fieldKey] || '';
-      });
-      this.templateForm.patchValue(dataTemplate);
-    } else {
-      this.templateForm.patchValue({
-        name: template.name,
-        type: template.type,
-        content: template.content || '',
-        isActive: template.isActive,
-      });
-    }
-    this.isModalVisible = true;
+  openEditModal(template: ReportTemplateImport): void {
+    // Edit is not supported for imported templates, use view instead
+    this.viewTemplate(template);
   }
 
   async saveTemplate(): Promise<void> {
-    if (this.templateForm.invalid) {
+    if (this.importForm && this.importForm.invalid) {
+      Object.keys(this.importForm.controls).forEach((key) => {
+        const control = this.importForm.get(key);
+        if (control && control.invalid) {
+          control.markAsTouched();
+          control.markAsDirty();
+        }
+      });
+      this.toastr.warning(
+        'Vui lòng điền đầy đủ các trường bắt buộc',
+        'Cảnh báo'
+      );
+      return;
+    }
+    if (!this.selectedFiles || this.selectedFiles.length === 0) {
+      this.toastr.warning('Vui lòng chọn file để upload', 'Cảnh báo');
       return;
     }
 
     this.saving = true;
-    const data = this.templateForm.value;
-
     try {
-      if (this.isEditMode && this.selectedTemplate?.id) {
-        const formData = new FormData();
-        Object.keys(data).forEach((key) => {
-          formData.append(key, data[key]);
-        });
-        await this.templateService.updateTemplate(this.selectedTemplate.id, formData);
-      } else {
-        const formData = new FormData();
-        Object.keys(data).forEach((key) => {
-          formData.append(key, data[key]);
-        });
-        await this.templateService.createTemplate(formData);
+      const formData = new FormData();
+      formData.append('file', this.selectedFiles[0]); // Only take first file
+      formData.append('templateCode', this.importForm.value.templateCode);
+      formData.append('templateName', this.importForm.value.templateName);
+      if (this.importForm.value.description) {
+        formData.append('description', this.importForm.value.description);
       }
-      this.isModalVisible = false;
-      await this.loadTemplates();
-    } catch (error) {
-      console.error('Error saving template:', error);
+      if (this.importForm.value.titleTemplate) {
+        formData.append('titleTemplate', this.importForm.value.titleTemplate);
+      }
+      if (this.importForm.value.importNotes) {
+        formData.append('importNotes', this.importForm.value.importNotes);
+      }
+      formData.append('isActive', this.importForm.value.isActive);
+      formData.append('templateType', this.importForm.value.templateType);
+
+      const result = await this.templateService.importTemplate(formData);
+      if (result) {
+        this.toastr.success('Nhập biểu mẫu thành công', 'Thành công');
+        this.isImportModalVisible = false;
+        this.selectedFiles = [];
+        await this.loadTemplates();
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error?.error?.message ||
+        error?.message ||
+        'Đã có lỗi xảy ra, vui lòng thử lại';
+      this.toastr.error(errorMessage, 'Lỗi');
     } finally {
       this.saving = false;
     }
   }
 
-  getTemplateTypeLabel(type: TemplateType): string {
-    return type === TemplateType.SCALE_REPORT
-      ? 'templates.scaleReport'
-      : 'templates.shiftReport';
+  onFilesChanged(files: File[]): void {
+    this.selectedFiles = files;
   }
 
-  // Confirm dialog
-  isConfirmVisible = false;
-  templateToDelete: Template | null = null;
+  isRequiredFieldEmpty(fieldName: string): boolean {
+    if (!this.importForm) {
+      return false;
+    }
+    const control = this.importForm.get(fieldName);
+    if (!control) {
+      return false;
+    }
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+      return true;
+    }
+    return false;
+  }
 
-  confirmDelete(template: Template): void {
-    this.templateToDelete = template;
-    this.isConfirmVisible = true;
+  isFileRequiredEmpty(): boolean {
+    return !this.selectedFiles || this.selectedFiles.length === 0;
+  }
+
+  formatFileSize(bytes: number | undefined): string {
+    if (!bytes) return '-';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  getTemplateTypeLabel(templateType: string | null | undefined): string {
+    if (templateType === 'Báo cáo cân') {
+      return 'templates.scaleReport';
+    } else if (templateType === 'Báo cáo ca') {
+      return 'templates.shiftReport';
+    }
+    return '';
+  }
+
+  // Download template
+  async downloadTemplate(template: ReportTemplateImport): Promise<void> {
+    if (!template.id) {
+      return;
+    }
+
+    this.downloadingTemplateId = template.id;
+    try {
+      const blob = await this.templateService.downloadTemplate(template.id);
+      const fileName =
+        template.originalFilename ||
+        `${template.templateCode || 'template'}.docx`;
+      saveAs(blob, fileName);
+      this.toastr.success('Tải file thành công', 'Thành công');
+    } catch (error: any) {
+      const errorMessage =
+        error?.error?.message || error?.message || 'Không thể tải file';
+      this.toastr.error(errorMessage, 'Lỗi');
+    } finally {
+      this.downloadingTemplateId = null;
+    }
+  }
+
+  // Archive template
+  isConfirmArchiveVisible = false;
+  templateToArchive: ReportTemplateImport | null = null;
+
+  confirmArchive(template: ReportTemplateImport): void {
+    this.templateToArchive = template;
+    this.isConfirmArchiveVisible = true;
+  }
+
+  async onArchiveConfirmed(): Promise<void> {
+    if (this.templateToArchive?.id) {
+      try {
+        await this.templateService.archiveTemplate(this.templateToArchive.id);
+        this.toastr.success('Lưu trữ biểu mẫu thành công', 'Thành công');
+        await this.loadTemplates();
+        this.templateToArchive = null;
+        this.isConfirmArchiveVisible = false;
+      } catch (error: any) {
+        const errorMessage =
+          error?.error?.message ||
+          error?.message ||
+          'Đã có lỗi xảy ra, vui lòng thử lại';
+        this.toastr.error(errorMessage, 'Lỗi');
+      }
+    }
+  }
+
+  // Confirm dialog (for delete - not used for imported templates)
+  isConfirmVisible = false;
+  templateToDelete: ReportTemplateImport | null = null;
+
+  confirmDelete(template: ReportTemplateImport): void {
+    // Use archive instead of delete
+    this.confirmArchive(template);
   }
 
   async onDeleteConfirmed(): Promise<void> {
-    if (this.templateToDelete?.id) {
-      try {
-        await this.templateService.deleteTemplate(this.templateToDelete.id);
-        await this.loadTemplates();
-        this.templateToDelete = null;
-      } catch (error) {
-        console.error('Error deleting template:', error);
-      }
-    }
+    // Use archive instead
+    await this.onArchiveConfirmed();
+  }
+
+  closeViewModal(): void {
+    this.isModalVisible = false;
+    this.isViewMode = false;
   }
 
   // Getter for delete message
   get deleteMessage(): string {
     if (!this.templateToDelete) return '';
-    return `Bạn có chắc chắn muốn xóa biểu mẫu "${this.templateToDelete.name}"?`;
+    return `Bạn có chắc chắn muốn xóa biểu mẫu "${
+      this.templateToDelete.originalFilename ||
+      this.templateToDelete.templateCode
+    }"?`;
   }
 
   onPaginationChange(event: { page: number; size: number }): void {
@@ -256,5 +400,14 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     this.pageSize = size;
     this.pageIndex = 1;
     this.applyFilters();
+  }
+
+  // Getter for archive message
+  get archiveMessage(): string {
+    if (!this.templateToArchive) return '';
+    return `Bạn có chắc chắn muốn lưu trữ biểu mẫu "${
+      this.templateToArchive.originalFilename ||
+      this.templateToArchive.templateCode
+    }"?`;
   }
 }

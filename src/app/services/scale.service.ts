@@ -8,12 +8,19 @@ import { BaseService } from './base.service';
 export class ScaleService {
   constructor(private baseService: BaseService) {}
 
-  async getScales(params?: any): Promise<{ data: Scale[]; total: number }> {
+  async getScales(params?: any): Promise<{ data: Scale[]; total: number; content?: Scale[]; total_elements?: number }> {
     const res = await this.baseService.getData('scales', params);
     if (res && res.success === true && res.data) {
-      const data = res.data || [];
-      const total = res.totalElements || res.total || data.length;
-      return { data, total };
+      // Check if response has content array (paginated)
+      if (res.data.content) {
+        const content = res.data.content;
+        const total = res.data.total_elements;
+        return { data: content, total, content: content, total_elements: total };
+      } else if (Array.isArray(res.data)) {
+        // Flat array
+        const data = res.data;
+        return { data, total: data.length };
+      }
     }
     return { data: [], total: 0 };
   }
@@ -26,18 +33,24 @@ export class ScaleService {
     return null;
   }
 
-  async createScale(data: { name: string; model?: string; location_id?: number; is_active?: boolean }): Promise<Scale | null> {
+  async createScale(data: any): Promise<Scale | null> {
     const res = await this.baseService.postData('scales', data);
     if (res && res.success === true && res.data) {
       return res.data || null;
+    } else if (res && res.id) {
+      // Response without success wrapper
+      return res || null;
     }
     return null;
   }
 
-  async updateScale(id: number, data: { name?: string; model?: string; location_id?: number; is_active?: boolean }): Promise<Scale | null> {
+  async updateScale(id: number, data: any): Promise<Scale | null> {
     const res = await this.baseService.putData(`scales/${id}`, data);
     if (res && res.success === true && res.data) {
       return res.data || null;
+    } else if (res && res.id) {
+      // Response without success wrapper
+      return res || null;
     }
     return null;
   }
