@@ -8,6 +8,7 @@ import { BrowserModule, Title } from '@angular/platform-browser';
 
 import { registerLocaleData } from '@angular/common';
 import {
+  HTTP_INTERCEPTORS,
   HttpClient,
   provideHttpClient,
   withInterceptorsFromDi,
@@ -60,6 +61,7 @@ registerLocaleData(en);
 // } from '@worktile/gantt';
 import { NgxUiLoaderConfig, PB_DIRECTION, SPINNER } from 'ngx-ui-loader';
 import { initializer } from './app-init';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { NgZorroModuleExport } from './shared/modules/ng-zorro.module';
 
 // Page Components
@@ -150,11 +152,11 @@ const ngxUiLoaderConfig: NgxUiLoaderConfig = {
     //     },
     //   },
     // },
-    // {
-    //   provide: HTTP_INTERCEPTORS,
-    //   useClass: TokenInterceptor,
-    //   multi: true,
-    // },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true,
+    },
     Title,
     { provide: NZ_I18N, useValue: en_US },
     provideHttpClient(withInterceptorsFromDi()),
