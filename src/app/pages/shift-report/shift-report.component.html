@@ -196,10 +196,11 @@
         [nzShowPagination]="false"
         [nzNoResult]="noResultTemplate"
         [nzScroll]="{
+          x: 'auto',
           y:
             isChartExpanded && chartData.length > 0
-              ? 'calc(100vh - 600px)'
-              : 'calc(100vh - 340px)'
+              ? 'calc(100vh - 415px)'
+              : 'calc(100vh - 170px)'
         }"
         class="w-full"
       >
@@ -256,7 +257,7 @@
             </td>
             <td class="px-2 !py-1 whitespace-nowrap">
               <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ row.period | date : "dd/MM/yyyy" }}
+                {{ formatPeriod(row.period) }}
               </span>
             </td>
             <td
@@ -274,6 +275,18 @@
       <ng-template #noResultTemplate>
         <nz-empty></nz-empty>
       </ng-template>
+
+      <div
+        *ngIf="reportRows.length > 0"
+        class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+      >
+        <app-pagination
+          [currentPage]="pageIndex"
+          [currentSize]="pageSize"
+          [total]="total"
+          (emitPage)="onPaginationChange($event)"
+        ></app-pagination>
+      </div>
     </div>
   </main>
 </div>

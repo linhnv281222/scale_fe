@@ -34,6 +34,9 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   reportData: IntervalReportResponse | null = null;
   reportRows: FormattedIntervalReportRow[] = [];
   loading = false;
+  pageIndex = 1;
+  pageSize = 20;
+  total = 0;
 
   // Data columns (dynamic based on API response)
   dataColumns: { key: string; name: string }[] = [];
@@ -129,9 +132,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       // If no scales selected, use first scale as default to get data fields
       if (this.scales.length > 0 && this.scales[0].id) {
         try {
-          const scale = await this.scaleService.getScaleById(
-            this.scales[0].id
-          );
+          const scale = await this.scaleService.getScaleById(this.scales[0].id);
           const config = scale?.scale_config;
           if (config) {
             this.initializeAggregationFields(config);
@@ -201,7 +202,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       const fromTime = moment(dateRange[0]).toISOString();
       const toTime = moment(dateRange[1]).endOf('day').toISOString();
 
-      const data = await this.reportService.getIntervalReport({
+      const apiData: any = await this.reportService.getIntervalReport({
         scaleIds: this.filterData.scaleIds ?? [],
         fromDate,
         toDate,
@@ -209,17 +210,41 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         toTime,
         interval: 'SHIFT' as IntervalType,
         aggregationByField: this.filterData.aggregationByField ?? {},
+        page: this.pageIndex - 1,
+        size: this.pageSize,
       });
 
-      if (data) {
-        this.reportData = data;
-        const rawRows: any[] = data.rows ?? [];
+      if (apiData) {
+        // Support both old and new response shapes
+        const rawRows: IntervalReportRow[] = Array.isArray(apiData)
+          ? apiData
+          : Array.isArray(apiData?.rows)
+          ? apiData.rows!
+          : Array.isArray(apiData?.data)
+          ? apiData.data
+          : [];
+
+        // Derive dataFieldNames from response or data_values
+        let dataFieldNames = apiData?.dataFieldNames || {};
+        if (
+          (!dataFieldNames || Object.keys(dataFieldNames).length === 0) &&
+          rawRows.length > 0
+        ) {
+          const firstRow = rawRows[0];
+          const firstDataValues: any = firstRow.data_values || {};
+          const keys = Object.keys(firstDataValues);
+          dataFieldNames = keys.reduce((acc: any, key: string) => {
+            const dv = firstDataValues[key];
+            if (dv?.name) acc[key] = dv.name;
+            return acc;
+          }, {});
+        }
 
         // Update data columns from API response first (for display names)
-        if (data.dataFieldNames) {
-          const apiColumns = Object.keys(data.dataFieldNames).map((key) => ({
+        if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
+          const apiColumns = Object.keys(dataFieldNames).map((key) => ({
             key,
-            name: data.dataFieldNames![key],
+            name: dataFieldNames![key],
           }));
           // Merge with existing columns, update names if key matches
           if (this.dataColumns.length > 0) {
@@ -231,34 +256,66 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             // If no columns from config, use API columns
             this.dataColumns = apiColumns;
           }
+        } else if (this.dataColumns.length === 0 && rawRows.length > 0) {
+          // Fallback: build columns from keys in data_values
+          const firstRow = rawRows[0];
+          const firstDataValues: any = firstRow.data_values || {};
+          this.dataColumns = Object.keys(firstDataValues).map((key) => ({
+            key,
+            name: key,
+          }));
         }
 
         // Format data for each row (after dataColumns is updated)
-        this.reportRows = rawRows.map((row: any): FormattedIntervalReportRow => {
-          const formattedRow: FormattedIntervalReportRow = {
-            ...row,
-            formattedData: {},
-          };
-          // Format each data column
-          this.dataColumns.forEach((col) => {
-            const rowDataValues: any = row.data_values || {};
-            const dataValue = rowDataValues[col.key];
-            if (
-              dataValue &&
-              dataValue.used &&
-              dataValue.value !== null &&
-              dataValue.value !== undefined
-            ) {
-              const numValue = parseFloat(dataValue.value);
-              formattedRow.formattedData[col.key] = !isNaN(numValue)
-                ? numValue
-                : '';
-            } else {
-              formattedRow.formattedData[col.key] = '';
-            }
-          });
-          return formattedRow;
-        });
+        this.reportRows = rawRows.map(
+          (row: any): FormattedIntervalReportRow => {
+            const formattedRow: FormattedIntervalReportRow = {
+              ...row,
+              formattedData: {},
+            };
+            // Format each data column
+            this.dataColumns.forEach((col) => {
+              const rowDataValues: any = row.data_values || {};
+              const dataValue = rowDataValues[col.key];
+              if (
+                dataValue &&
+                dataValue.used &&
+                dataValue.value !== null &&
+                dataValue.value !== undefined
+              ) {
+                const numValue = parseFloat(dataValue.value);
+                formattedRow.formattedData[col.key] = !isNaN(numValue)
+                  ? numValue
+                  : '';
+              } else {
+                formattedRow.formattedData[col.key] = '';
+              }
+            });
+            return formattedRow;
+          }
+        );
+
+        // Store simplified reportData + pagination for downstream use (chart label)
+        this.reportData = {
+          interval: 'SHIFT' as IntervalType,
+          fromDate,
+          toDate,
+          dataFieldNames,
+          aggregationByField: this.filterData.aggregationByField ?? {},
+          rows: rawRows,
+        };
+
+        // Update pagination
+        this.total =
+          apiData.total_elements ??
+          apiData.totalElements ??
+          apiData.total ??
+          rawRows.length ??
+          0;
+        this.pageIndex =
+          (apiData.page ?? apiData.pageNumber ?? this.pageIndex - 1) + 1;
+        this.pageSize =
+          apiData.size ?? apiData.pageSize ?? this.pageSize ?? rawRows.length;
 
         this.prepareChartData();
       } else {
@@ -470,6 +527,35 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.dataColumns = [];
     this.chartData = [];
     this.chartOptions = {};
+    this.pageIndex = 1;
+    this.pageSize = 20;
+    this.total = 0;
+  }
+
+  onPaginationChange(event: { page: number; size: number }): void {
+    this.pageIndex = event.page;
+    this.pageSize = event.size;
+    this.loadReportData();
+  }
+
+  formatPeriod(period: string): string {
+    if (!period) return '';
+    // Split by space to separate date and shift
+    const parts = period.split(' ');
+    if (parts.length < 2) {
+      // If no space, try to parse as date only
+      const date = moment(period);
+      return date.isValid() ? date.format('DD/MM/YYYY') : period;
+    }
+    const datePart = parts[0];
+    const shiftPart = parts.slice(1).join(' '); // Join remaining parts in case shift has spaces
+
+    // Format date part
+    const date = moment(datePart);
+    const formattedDate = date.isValid() ? date.format('DD/MM/YYYY') : datePart;
+
+    // Return formatted date + shift
+    return `${formattedDate} ${shiftPart}`;
   }
 
   updateAggregation(fieldKey: string, aggregation: AggregationType): void {
