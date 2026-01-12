@@ -201,7 +201,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
         }
       } catch (error) {
         console.error('Error loading template detail:', error);
-      }
+    }
     }
 
     this.isModalVisible = true;
@@ -234,7 +234,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
 
     this.saving = true;
     try {
-      const formData = new FormData();
+        const formData = new FormData();
       formData.append('file', this.selectedFiles[0]); // Only take first file
       formData.append('templateCode', this.importForm.value.templateCode);
       formData.append('templateName', this.importForm.value.templateName);
@@ -255,7 +255,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
         this.toastr.success('Nhập biểu mẫu thành công', 'Thành công');
         this.isImportModalVisible = false;
         this.selectedFiles = [];
-        await this.loadTemplates();
+      await this.loadTemplates();
       }
     } catch (error: any) {
       const errorMessage =
@@ -364,7 +364,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   confirmDelete(template: ReportTemplateImport): void {
     // Use archive instead of delete
     this.confirmArchive(template);
-  }
+      }
 
   async onDeleteConfirmed(): Promise<void> {
     // Use archive instead

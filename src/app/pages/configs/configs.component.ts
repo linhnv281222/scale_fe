@@ -186,7 +186,7 @@ export class ConfigsComponent implements OnInit {
       dataType: ConfigDataType.STRING,
       description: '',
       required: false,
-      width: '150px',
+      width: '80px',
       queryable: false,
       category:
         this.selectedModule.code === 'system'
@@ -224,7 +224,7 @@ export class ConfigsComponent implements OnInit {
         dataType: field.dataType,
         description: field.description || '',
         required: field.required || false,
-        width: field.width || '150px',
+        width: field.width || '80px',
         queryable: field.queryable || false,
         category:
           this.selectedModule.code === 'system'

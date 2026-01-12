@@ -66,7 +66,7 @@
               </th>
               <th
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
-                style="max-width: 150px; width: 150px"
+                nzWidth="120px"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -219,6 +219,7 @@
           </th>
           <th
             class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-gray-700 uppercase dark:text-gray-300"
+            nzWidth="120px"
           >
             {{ "common.actions" | translate }}
           </th>
@@ -350,7 +351,7 @@
               type="text"
               nz-input
               [ngModel]="
-                getEditingField(field, i)?.width || field.width || '150px'
+                getEditingField(field, i)?.width || field.width || '80px'
               "
               (ngModelChange)="updateEditingField(field, 'width', $event, i)"
               class="w-full text-sm"

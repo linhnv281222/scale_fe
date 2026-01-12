@@ -278,9 +278,9 @@ export class ProtocolsComponent implements OnInit {
       } else {
         const created = await this.protocolService.createProtocol(data);
         if (created) {
-          this.isModalVisible = false;
-          this.isViewMode = false;
-          await this.loadProtocols();
+      this.isModalVisible = false;
+      this.isViewMode = false;
+      await this.loadProtocols();
         }
       }
     } catch (error) {

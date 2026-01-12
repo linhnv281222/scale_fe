@@ -76,7 +76,7 @@
               </th>
               <th
                 class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
-                style="max-width: 150px; width: 150px;"
+                nzWidth="120px"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -189,11 +189,16 @@
 <!-- Add/Edit/View Modal -->
 <nz-modal
   [(nzVisible)]="isModalVisible"
-  [nzTitle]="(isViewMode ? 'common.view' : (isEditMode ? 'common.edit' : 'common.addNew')) | translate"
+  [nzTitle]="
+    (isViewMode ? 'common.view' : isEditMode ? 'common.edit' : 'common.addNew')
+      | translate
+  "
   (nzOnCancel)="isViewMode ? closeViewModal() : (isModalVisible = false)"
   (nzOnOk)="isViewMode ? closeViewModal() : saveLicense()"
   [nzOkLoading]="saving"
-  [nzOkText]="isViewMode ? ('common.close' | translate) : ('common.save' | translate)"
+  [nzOkText]="
+    isViewMode ? ('common.close' | translate) : ('common.save' | translate)
+  "
   [nzCancelText]="isViewMode ? null : ('common.cancel' | translate)"
   [nzWidth]="'60%'"
 >

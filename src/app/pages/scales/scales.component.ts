@@ -184,11 +184,11 @@ export class ScalesComponent implements OnInit, OnDestroy {
 
   columns: any[] = [
     { key: 'id', title: 'table.sl', width: '80px' },
-    { key: 'code', title: 'table.code', width: '150px' },
+    { key: 'code', title: 'table.code', width: '80px' },
     { key: 'name', title: 'table.title' },
     { key: 'type', title: 'scales.type', width: '120px' },
     { key: 'status', title: 'common.status', width: '120px' },
-    { key: 'createdAt', title: 'table.dateCreated', width: '150px' },
+    { key: 'createdAt', title: 'table.dateCreated', width: '80px' },
   ];
 
   constructor(
