@@ -42,41 +42,61 @@ export class ScalesComponent implements OnInit, OnDestroy {
   scaleConfig: any = {
     protocol: 'MODBUS_TCP',
     poll_interval: 1000,
-    conn_params: { ip: '', port: 502 },
+    conn_params: {
+      ip: '',
+      port: 502,
+      // MODBUS_RTU params
+      com_port: '',
+      baud_rate: 9600,
+      data_bits: 8,
+      stop_bits: 1,
+      parity: 'even',
+      unit_id: 1,
+    },
     data_1: {
       name: '',
-      start_registers: 0,
+      start_register: 0,
       num_registers: 1,
       is_used: false,
-      data_type: 'Integer',
+      data_type: 'int32',
+      function_code: 3,
+      byte_order: 'big_endian',
     },
     data_2: {
       name: '',
-      start_registers: 0,
+      start_register: 0,
       num_registers: 1,
       is_used: false,
-      data_type: 'Integer',
+      data_type: 'int32',
+      function_code: 3,
+      byte_order: 'big_endian',
     },
     data_3: {
       name: '',
-      start_registers: 0,
+      start_register: 0,
       num_registers: 1,
       is_used: false,
-      data_type: 'Integer',
+      data_type: 'int32',
+      function_code: 3,
+      byte_order: 'big_endian',
     },
     data_4: {
       name: '',
-      start_registers: 0,
+      start_register: 0,
       num_registers: 1,
       is_used: false,
-      data_type: 'Integer',
+      data_type: 'int32',
+      function_code: 3,
+      byte_order: 'big_endian',
     },
     data_5: {
       name: '',
-      start_registers: 0,
+      start_register: 0,
       num_registers: 1,
       is_used: false,
-      data_type: 'Integer',
+      data_type: 'int32',
+      function_code: 3,
+      byte_order: 'big_endian',
     },
   };
   expandedChannels: { [key: number]: boolean } = {
@@ -96,7 +116,10 @@ export class ScalesComponent implements OnInit, OnDestroy {
   dataScale: any = {
     name: '',
     model: '',
+    direction: 'IMPORT',
     location_id: null,
+    manufacturer_id: null,
+    protocol_id: null,
     is_active: true,
   };
 
@@ -287,7 +310,10 @@ export class ScalesComponent implements OnInit, OnDestroy {
       if (this.filterData.direction) {
         params.direction = this.filterData.direction;
       }
-      if (this.filterData.isActive !== undefined && this.filterData.isActive !== null) {
+      if (
+        this.filterData.isActive !== undefined &&
+        this.filterData.isActive !== null
+      ) {
         params.isActive = this.filterData.isActive;
       }
       if (this.filterData.sort) {
@@ -337,9 +363,9 @@ export class ScalesComponent implements OnInit, OnDestroy {
       name: scale.name || '',
       model: scale.model || '',
       direction: scale.direction || 'IMPORT',
-      location_id: scale.location_id ?? null,
-      manufacturer_id: scale.manufacturer_id ?? null,
-      protocol_id: scale.protocol_id ?? null,
+      location_id: scale.location_id ?? scale.locationId ?? null,
+      manufacturer_id: scale.manufacturer_id ?? scale.manufacturerId ?? null,
+      protocol_id: scale.protocol_id ?? scale.protocolId ?? null,
       is_active: scale.is_active !== undefined ? scale.is_active : true,
     };
   }
@@ -414,24 +440,71 @@ export class ScalesComponent implements OnInit, OnDestroy {
 
   onProtocolChange(protocolId: number | null): void {
     if (!protocolId) {
-      this.clearConnectionConfig();
+      this.dataScale.protocol_id = null;
       return;
     }
 
     const protocol = this.protocols.find((p) => p.id === protocolId);
     if (protocol) {
-      this.clearConnectionConfig();
+      this.dataScale.protocol_id = protocolId;
+      // Update scaleConfig protocol to match
+      this.scaleConfig.protocol = protocol.code || protocol.type;
+
       // Set defaults for the selected protocol type
-      if (protocol.type === ProtocolType.MODBUS_TCP) {
-        this.dataScale.modbusTcpPort = 502;
-      } else if (protocol.type === ProtocolType.MODBUS_RTU) {
-        this.dataScale.modbusRtuBaudRate = 9600;
-        this.dataScale.modbusRtuDataBits = 8;
-        this.dataScale.modbusRtuStopBits = 1;
-        this.dataScale.modbusRtuParity = 'NONE';
+      if (
+        protocol.type === ProtocolType.MODBUS_TCP ||
+        protocol.code === 'MODBUS_TCP'
+      ) {
+        this.scaleConfig.conn_params = {
+          ...this.scaleConfig.conn_params,
+          ip: '',
+          port: 502,
+        };
+      } else if (
+        protocol.type === ProtocolType.MODBUS_RTU ||
+        protocol.code === 'MODBUS_RTU'
+      ) {
+        this.scaleConfig.conn_params = {
+          ...this.scaleConfig.conn_params,
+          com_port: '',
+          baud_rate: 9600,
+          data_bits: 8,
+          stop_bits: 1,
+          parity: 'even',
+          unit_id: 1,
+        };
       }
     } else {
-      this.clearConnectionConfig();
+      this.dataScale.protocol_id = null;
+    }
+  }
+
+  onProtocolConfigChange(protocolCode: string): void {
+    this.scaleConfig.protocol = protocolCode;
+
+    // Update protocol_id if protocol code matches
+    const protocol = this.protocols.find((p) => p.code === protocolCode);
+    if (protocol) {
+      this.dataScale.protocol_id = protocol.id;
+    }
+
+    // Set defaults for the selected protocol type
+    if (protocolCode === 'MODBUS_TCP') {
+      this.scaleConfig.conn_params = {
+        ...this.scaleConfig.conn_params,
+        ip: '',
+        port: 502,
+      };
+    } else if (protocolCode === 'MODBUS_RTU') {
+      this.scaleConfig.conn_params = {
+        ...this.scaleConfig.conn_params,
+        com_port: '',
+        baud_rate: 9600,
+        data_bits: 8,
+        stop_bits: 1,
+        parity: 'even',
+        unit_id: 1,
+      };
     }
   }
 
@@ -508,23 +581,44 @@ export class ScalesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.scaleConfig.poll_interval || this.scaleConfig.poll_interval < 100) {
+    if (
+      !this.scaleConfig.poll_interval ||
+      this.scaleConfig.poll_interval < 100
+    ) {
       this.toastr.warning('Chu kỳ Poll phải tối thiểu 100ms');
       return;
     }
 
     // Validate connection params based on protocol
-    const protocol = this.protocols.find((p) => p.code === this.scaleConfig.protocol);
+    const protocol = this.protocols.find(
+      (p) => p.code === this.scaleConfig.protocol
+    );
     if (protocol) {
       const connectionType = protocol.connection_type || protocol.type;
-      if (connectionType === 'TCP' || this.scaleConfig.protocol === 'MODBUS_TCP') {
-        if (!this.scaleConfig.conn_params?.ip || !this.scaleConfig.conn_params?.port) {
-          this.toastr.warning('Vui lòng nhập đầy đủ thông tin kết nối (IP và Port)');
+      if (
+        connectionType === 'TCP' ||
+        this.scaleConfig.protocol === 'MODBUS_TCP'
+      ) {
+        if (
+          !this.scaleConfig.conn_params?.ip ||
+          !this.scaleConfig.conn_params?.port
+        ) {
+          this.toastr.warning(
+            'Vui lòng nhập đầy đủ thông tin kết nối (IP và Port)'
+          );
           return;
         }
-      } else if (connectionType === 'RTU' || this.scaleConfig.protocol === 'MODBUS_RTU') {
-        if (!this.scaleConfig.conn_params?.com_port || !this.scaleConfig.conn_params?.baud_rate) {
-          this.toastr.warning('Vui lòng nhập đầy đủ thông tin kết nối (COM Port và Baud Rate)');
+      } else if (
+        connectionType === 'RTU' ||
+        this.scaleConfig.protocol === 'MODBUS_RTU'
+      ) {
+        if (
+          !this.scaleConfig.conn_params?.com_port ||
+          !this.scaleConfig.conn_params?.baud_rate
+        ) {
+          this.toastr.warning(
+            'Vui lòng nhập đầy đủ thông tin kết nối (COM Port và Baud Rate)'
+          );
           return;
         }
       }
@@ -538,13 +632,45 @@ export class ScalesComponent implements OnInit, OnDestroy {
         model: this.dataScale.model || undefined,
         direction: this.dataScale.direction || 'IMPORT',
         location_id: this.dataScale.location_id,
-        manufacturer_id: this.dataScale.manufacturer_id || undefined,
-        protocol_id: this.dataScale.protocol_id || undefined,
+        manufacturer_id: this.dataScale.manufacturer_id,
+        protocol_id: this.dataScale.protocol_id,
         protocol: this.scaleConfig.protocol,
-        is_active: this.dataScale.is_active !== undefined ? this.dataScale.is_active : true,
+        is_active:
+          this.dataScale.is_active !== undefined
+            ? this.dataScale.is_active
+            : true,
         poll_interval: this.scaleConfig.poll_interval,
-        conn_params: this.scaleConfig.conn_params || {},
       };
+
+      // Build conn_params based on protocol type
+      const protocol = this.protocols.find(
+        (p) => p.code === this.scaleConfig.protocol
+      );
+      const connectionType = protocol?.connection_type || protocol?.type;
+
+      if (
+        connectionType === 'TCP' ||
+        this.scaleConfig.protocol === 'MODBUS_TCP'
+      ) {
+        data.conn_params = {
+          ip: this.scaleConfig.conn_params.ip,
+          port: this.scaleConfig.conn_params.port,
+        };
+      } else if (
+        connectionType === 'RTU' ||
+        this.scaleConfig.protocol === 'MODBUS_RTU'
+      ) {
+        data.conn_params = {
+          com_port: this.scaleConfig.conn_params.com_port,
+          baud_rate: this.scaleConfig.conn_params.baud_rate,
+          data_bits: this.scaleConfig.conn_params.data_bits,
+          stop_bits: this.scaleConfig.conn_params.stop_bits,
+          parity: this.scaleConfig.conn_params.parity,
+          unit_id: this.scaleConfig.conn_params.unit_id,
+        };
+      } else {
+        data.conn_params = this.scaleConfig.conn_params || {};
+      }
 
       // Add data channels
       for (let i = 1; i <= 5; i++) {
@@ -552,9 +678,10 @@ export class ScalesComponent implements OnInit, OnDestroy {
         if (channel && channel.is_used) {
           data[`data_${i}`] = {
             name: channel.name || '',
-            start_register: channel.start_registers || channel.start_register || 0,
+            start_register:
+              channel.start_register || channel.start_registers || 0,
             num_registers: channel.num_registers || 1,
-            data_type: channel.data_type || 'Integer',
+            data_type: channel.data_type || 'int32',
             function_code: channel.function_code || 3,
             byte_order: channel.byte_order || 'big_endian',
             is_used: true,
@@ -642,52 +769,80 @@ export class ScalesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Build conn_params with defaults for both TCP and RTU
+    const defaultConnParams = {
+      ip: '',
+      port: 502,
+      com_port: '',
+      baud_rate: 9600,
+      data_bits: 8,
+      stop_bits: 1,
+      parity: 'even',
+      unit_id: 1,
+      ...scaleConfig.conn_params,
+    };
+
     this.scaleConfig = {
       protocol: scaleConfig.protocol || 'MODBUS_TCP',
       poll_interval: scaleConfig.poll_interval || 1000,
-      conn_params: scaleConfig.conn_params || { ip: '', port: 502 },
+      conn_params: defaultConnParams,
       data_1: scaleConfig.data_1 || {
         name: '',
-        start_registers: scaleConfig.data_1?.start_register || scaleConfig.data_1?.start_registers || 0,
+        start_register:
+          scaleConfig.data_1?.start_register ||
+          scaleConfig.data_1?.start_registers ||
+          0,
         num_registers: scaleConfig.data_1?.num_registers || 1,
         is_used: scaleConfig.data_1?.is_used || false,
-        data_type: scaleConfig.data_1?.data_type || 'Integer',
+        data_type: scaleConfig.data_1?.data_type || 'int32',
         function_code: scaleConfig.data_1?.function_code || 3,
         byte_order: scaleConfig.data_1?.byte_order || 'big_endian',
       },
       data_2: scaleConfig.data_2 || {
         name: '',
-        start_registers: scaleConfig.data_2?.start_register || scaleConfig.data_2?.start_registers || 0,
+        start_register:
+          scaleConfig.data_2?.start_register ||
+          scaleConfig.data_2?.start_registers ||
+          0,
         num_registers: scaleConfig.data_2?.num_registers || 1,
         is_used: scaleConfig.data_2?.is_used || false,
-        data_type: scaleConfig.data_2?.data_type || 'Integer',
+        data_type: scaleConfig.data_2?.data_type || 'int32',
         function_code: scaleConfig.data_2?.function_code || 3,
         byte_order: scaleConfig.data_2?.byte_order || 'big_endian',
       },
       data_3: scaleConfig.data_3 || {
         name: '',
-        start_registers: scaleConfig.data_3?.start_register || scaleConfig.data_3?.start_registers || 0,
+        start_register:
+          scaleConfig.data_3?.start_register ||
+          scaleConfig.data_3?.start_registers ||
+          0,
         num_registers: scaleConfig.data_3?.num_registers || 1,
         is_used: scaleConfig.data_3?.is_used || false,
-        data_type: scaleConfig.data_3?.data_type || 'Integer',
+        data_type: scaleConfig.data_3?.data_type || 'int32',
         function_code: scaleConfig.data_3?.function_code || 3,
         byte_order: scaleConfig.data_3?.byte_order || 'big_endian',
       },
       data_4: scaleConfig.data_4 || {
         name: '',
-        start_registers: scaleConfig.data_4?.start_register || scaleConfig.data_4?.start_registers || 0,
+        start_register:
+          scaleConfig.data_4?.start_register ||
+          scaleConfig.data_4?.start_registers ||
+          0,
         num_registers: scaleConfig.data_4?.num_registers || 1,
         is_used: scaleConfig.data_4?.is_used || false,
-        data_type: scaleConfig.data_4?.data_type || 'Integer',
+        data_type: scaleConfig.data_4?.data_type || 'int32',
         function_code: scaleConfig.data_4?.function_code || 3,
         byte_order: scaleConfig.data_4?.byte_order || 'big_endian',
       },
       data_5: scaleConfig.data_5 || {
         name: '',
-        start_registers: scaleConfig.data_5?.start_register || scaleConfig.data_5?.start_registers || 0,
+        start_register:
+          scaleConfig.data_5?.start_register ||
+          scaleConfig.data_5?.start_registers ||
+          0,
         num_registers: scaleConfig.data_5?.num_registers || 1,
         is_used: scaleConfig.data_5?.is_used || false,
-        data_type: scaleConfig.data_5?.data_type || 'Integer',
+        data_type: scaleConfig.data_5?.data_type || 'int32',
         function_code: scaleConfig.data_5?.function_code || 3,
         byte_order: scaleConfig.data_5?.byte_order || 'big_endian',
       },
@@ -716,44 +871,82 @@ export class ScalesComponent implements OnInit, OnDestroy {
       }
 
       if (configData) {
+        // Build conn_params with defaults for both TCP and RTU
+        const defaultConnParams = {
+          ip: '',
+          port: 502,
+          com_port: '',
+          baud_rate: 9600,
+          data_bits: 8,
+          stop_bits: 1,
+          parity: 'even',
+          unit_id: 1,
+          ...configData.conn_params,
+        };
+
         this.scaleConfig = {
           protocol: configData.protocol || 'MODBUS_TCP',
           poll_interval: configData.poll_interval || 1000,
-          conn_params: configData.conn_params || { ip: '', port: 502 },
+          conn_params: defaultConnParams,
           data_1: configData.data_1 || {
             name: '',
-            start_registers: 0,
-            num_registers: 1,
-            is_used: false,
-            data_type: 'Integer',
+            start_register:
+              configData.data_1?.start_register ||
+              configData.data_1?.start_registers ||
+              0,
+            num_registers: configData.data_1?.num_registers || 1,
+            is_used: configData.data_1?.is_used || false,
+            data_type: configData.data_1?.data_type || 'int32',
+            function_code: configData.data_1?.function_code || 3,
+            byte_order: configData.data_1?.byte_order || 'big_endian',
           },
           data_2: configData.data_2 || {
             name: '',
-            start_registers: 0,
-            num_registers: 1,
-            is_used: false,
-            data_type: 'Integer',
+            start_register:
+              configData.data_2?.start_register ||
+              configData.data_2?.start_registers ||
+              0,
+            num_registers: configData.data_2?.num_registers || 1,
+            is_used: configData.data_2?.is_used || false,
+            data_type: configData.data_2?.data_type || 'int32',
+            function_code: configData.data_2?.function_code || 3,
+            byte_order: configData.data_2?.byte_order || 'big_endian',
           },
           data_3: configData.data_3 || {
             name: '',
-            start_registers: 0,
-            num_registers: 1,
-            is_used: false,
-            data_type: 'Integer',
+            start_register:
+              configData.data_3?.start_register ||
+              configData.data_3?.start_registers ||
+              0,
+            num_registers: configData.data_3?.num_registers || 1,
+            is_used: configData.data_3?.is_used || false,
+            data_type: configData.data_3?.data_type || 'int32',
+            function_code: configData.data_3?.function_code || 3,
+            byte_order: configData.data_3?.byte_order || 'big_endian',
           },
           data_4: configData.data_4 || {
             name: '',
-            start_registers: 0,
-            num_registers: 1,
-            is_used: false,
-            data_type: 'Integer',
+            start_register:
+              configData.data_4?.start_register ||
+              configData.data_4?.start_registers ||
+              0,
+            num_registers: configData.data_4?.num_registers || 1,
+            is_used: configData.data_4?.is_used || false,
+            data_type: configData.data_4?.data_type || 'int32',
+            function_code: configData.data_4?.function_code || 3,
+            byte_order: configData.data_4?.byte_order || 'big_endian',
           },
           data_5: configData.data_5 || {
             name: '',
-            start_registers: 0,
-            num_registers: 1,
-            is_used: false,
-            data_type: 'Integer',
+            start_register:
+              configData.data_5?.start_register ||
+              configData.data_5?.start_registers ||
+              0,
+            num_registers: configData.data_5?.num_registers || 1,
+            is_used: configData.data_5?.is_used || false,
+            data_type: configData.data_5?.data_type || 'int32',
+            function_code: configData.data_5?.function_code || 3,
+            byte_order: configData.data_5?.byte_order || 'big_endian',
           },
         };
 
@@ -785,44 +978,67 @@ export class ScalesComponent implements OnInit, OnDestroy {
       const config = await this.scaleService.getScaleConfig(scale.id);
       if (config && config.success === true && config.data) {
         const configData = config.data;
+        // Build conn_params with defaults for both TCP and RTU
+        const defaultConnParams = {
+          ip: '',
+          port: 502,
+          com_port: '',
+          baud_rate: 9600,
+          data_bits: 8,
+          stop_bits: 1,
+          parity: 'even',
+          unit_id: 1,
+          ...configData.conn_params,
+        };
+
         this.scaleConfig = {
           protocol: configData.protocol || 'MODBUS_TCP',
           poll_interval: configData.poll_interval || 1000,
-          conn_params: configData.conn_params || { ip: '', port: 502 },
+          conn_params: defaultConnParams,
           data_1: configData.data_1 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_2: configData.data_2 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_3: configData.data_3 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_4: configData.data_4 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_5: configData.data_5 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
         };
 
@@ -834,44 +1050,67 @@ export class ScalesComponent implements OnInit, OnDestroy {
         }
       } else if (config) {
         const configData = config;
+        // Build conn_params with defaults for both TCP and RTU
+        const defaultConnParams = {
+          ip: '',
+          port: 502,
+          com_port: '',
+          baud_rate: 9600,
+          data_bits: 8,
+          stop_bits: 1,
+          parity: 'even',
+          unit_id: 1,
+          ...configData.conn_params,
+        };
+
         this.scaleConfig = {
           protocol: configData.protocol || 'MODBUS_TCP',
           poll_interval: configData.poll_interval || 1000,
-          conn_params: configData.conn_params || { ip: '', port: 502 },
+          conn_params: defaultConnParams,
           data_1: configData.data_1 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_2: configData.data_2 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_3: configData.data_3 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_4: configData.data_4 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
           data_5: configData.data_5 || {
             name: '',
-            start_registers: 0,
+            start_register: 0,
             num_registers: 1,
             is_used: false,
-            data_type: 'Integer',
+            data_type: 'int32',
+            function_code: 3,
+            byte_order: 'big_endian',
           },
         };
 
@@ -971,10 +1210,13 @@ export class ScalesComponent implements OnInit, OnDestroy {
         const channel = this.scaleConfig[`data_${i}`];
         if (channel && channel.is_used) {
           configData[`data_${i}`] = {
-            name: channel.name,
-            start_registers: channel.start_registers,
-            num_registers: channel.num_registers,
-            data_type: channel.data_type || 'Integer',
+            name: channel.name || '',
+            start_register:
+              channel.start_register || channel.start_registers || 0,
+            num_registers: channel.num_registers || 1,
+            data_type: channel.data_type || 'int32',
+            function_code: channel.function_code || 3,
+            byte_order: channel.byte_order || 'big_endian',
             is_used: true,
           };
         } else {
@@ -997,5 +1239,31 @@ export class ScalesComponent implements OnInit, OnDestroy {
       return `${channelLabel}: ${channel.name}`;
     }
     return `${channelLabel}: ${this.translate.instant('scales.notConfigured')}`;
+  }
+
+  isModbusTcp(): boolean {
+    if (this.scaleConfig.protocol === 'MODBUS_TCP') {
+      return true;
+    }
+    const protocol = this.protocols.find(
+      (p) => p.code === this.scaleConfig.protocol
+    );
+    return (
+      protocol?.type === 'MODBUS_TCP' ||
+      protocol?.type === ProtocolType.MODBUS_TCP
+    );
+  }
+
+  isModbusRtu(): boolean {
+    if (this.scaleConfig.protocol === 'MODBUS_RTU') {
+      return true;
+    }
+    const protocol = this.protocols.find(
+      (p) => p.code === this.scaleConfig.protocol
+    );
+    return (
+      protocol?.type === 'MODBUS_RTU' ||
+      protocol?.type === ProtocolType.MODBUS_RTU
+    );
   }
 }

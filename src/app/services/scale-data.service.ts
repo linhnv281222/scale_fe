@@ -51,27 +51,123 @@ export class ScaleDataService {
   }
 
   async getScaleHistory(params: {
-    scaleId: number;
-    startTime: string;
-    endTime: string;
+    scaleId?: number;
+    scaleCode?: string;
+    direction?: string;
+    locationId?: number;
+    protocolId?: number;
+    startTime?: string;
+    endTime?: string;
+    search?: string;
     page?: number;
     size?: number;
-  }): Promise<any> {
-    const queryParams: any = {
-      scaleId: params.scaleId,
-      startTime: params.startTime,
-      endTime: params.endTime,
-    };
+    sort?: string;
+  }): Promise<{
+    content: any[];
+    total_elements: number;
+    page: number;
+    size: number;
+    total_pages: number;
+    is_first: boolean;
+    is_last: boolean;
+    has_next: boolean;
+    has_previous: boolean;
+  } | null> {
+    const queryParams: any = {};
+    
+    // Build query params according to API documentation
     if (params.page !== undefined) {
       queryParams.page = params.page;
     }
     if (params.size !== undefined) {
       queryParams.size = params.size;
     }
-    const res = await this.baseService.getData('scales/history', queryParams);
-    if (res && res.success === true && res.data) {
-      return res.data || null;
+    if (params.sort) {
+      queryParams.sort = params.sort;
     }
+    if (params.search) {
+      queryParams.search = params.search;
+    }
+    if (params.scaleId !== undefined) {
+      queryParams.scaleId = params.scaleId;
+    }
+    if (params.scaleCode) {
+      queryParams.scaleCode = params.scaleCode;
+    }
+    if (params.direction) {
+      queryParams.direction = params.direction;
+    }
+    if (params.locationId !== undefined) {
+      queryParams.locationId = params.locationId;
+    }
+    if (params.protocolId !== undefined) {
+      queryParams.protocolId = params.protocolId;
+    }
+    if (params.startTime) {
+      queryParams.startTime = params.startTime;
+    }
+    if (params.endTime) {
+      queryParams.endTime = params.endTime;
+    }
+
+    const res = await this.baseService.getData('weighing-history', queryParams);
+    
+    // Handle different response formats
+    let responseData: any = null;
+    
+    if (res) {
+      // Check if response has success wrapper
+      if (res.success === true && res.data) {
+        responseData = res.data;
+      } else if (res.content || res.total_elements !== undefined) {
+        // Direct paginated response (no success wrapper)
+        responseData = res;
+      } else if (Array.isArray(res)) {
+        // Direct array response
+        return {
+          content: res,
+          total_elements: res.length,
+          page: 0,
+          size: res.length,
+          total_pages: 1,
+          is_first: true,
+          is_last: true,
+          has_next: false,
+          has_previous: false,
+        };
+      }
+    }
+    
+    if (responseData) {
+      // Check if response has content array (paginated response)
+      if (responseData.content) {
+        return {
+          content: responseData.content,
+          total_elements: responseData.total_elements ?? 0,
+          page: responseData.page ?? 0,
+          size: responseData.size ?? 20,
+          total_pages: responseData.total_pages ?? 0,
+          is_first: responseData.is_first ?? true,
+          is_last: responseData.is_last ?? false,
+          has_next: responseData.has_next ?? false,
+          has_previous: responseData.has_previous ?? false,
+        };
+      } else if (Array.isArray(responseData)) {
+        // Flat array response
+        return {
+          content: responseData,
+          total_elements: responseData.length,
+          page: 0,
+          size: responseData.length,
+          total_pages: 1,
+          is_first: true,
+          is_last: true,
+          has_next: false,
+          has_previous: false,
+        };
+      }
+    }
+    
     return null;
   }
 }

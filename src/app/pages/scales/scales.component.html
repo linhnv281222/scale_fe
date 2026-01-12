@@ -282,74 +282,173 @@
             {{ "scales.scaleInformation" | translate }}
           </h3>
           <form nz-form>
-            <!-- Scale Name -->
-            <div class="mb-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                {{ "scales.name" | translate
-                }}<span class="ml-1 text-red-500">*</span>
-              </label>
-              <nz-input-group>
-                <input
-                  type="text"
-                  nz-input
-                  nzSize="small"
-                  [(ngModel)]="dataScale.name"
-                  [placeholder]="'scales.enterName' | translate"
+            <!-- Row 1: Tên cân, Model -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <!-- Scale Name -->
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.name" | translate
+                  }}<span class="ml-1 text-red-500">*</span>
+                </label>
+                <nz-input-group>
+                  <input
+                    type="text"
+                    nz-input
+                    nzSize="small"
+                    [(ngModel)]="dataScale.name"
+                    [placeholder]="'scales.enterName' | translate"
+                    class="w-full"
+                    [disabled]="isViewMode"
+                    required
+                    name="name"
+                  />
+                </nz-input-group>
+              </div>
+
+              <!-- Model -->
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.model" | translate }}
+                </label>
+                <nz-input-group>
+                  <input
+                    type="text"
+                    nz-input
+                    nzSize="small"
+                    [(ngModel)]="dataScale.model"
+                    [placeholder]="'scales.enterModel' | translate"
+                    class="w-full"
+                    [disabled]="isViewMode"
+                    name="model"
+                  />
+                </nz-input-group>
+              </div>
+            </div>
+
+            <!-- Row 2: Hướng, Vị trí -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <!-- Direction -->
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.direction" | translate
+                  }}<span class="ml-1 text-red-500">*</span>
+                </label>
+                <nz-select
+                  [(ngModel)]="dataScale.direction"
+                  [nzPlaceHolder]="'scales.selectDirection' | translate"
+                  [nzDropdownMatchSelectWidth]="false"
+                  [nzPlacement]="'bottomLeft'"
+                  [nzShowSearch]="true"
+                  [nzAllowClear]="true"
                   class="w-full"
-                  [disabled]="isViewMode"
+                  [nzDisabled]="isViewMode"
                   required
-                  name="name"
-                />
-              </nz-input-group>
-            </div>
+                  name="direction"
+                >
+                  <nz-option
+                    [nzValue]="'IMPORT'"
+                    [nzLabel]="'scales.import' | translate"
+                  ></nz-option>
+                  <nz-option
+                    [nzValue]="'EXPORT'"
+                    [nzLabel]="'scales.export' | translate"
+                  ></nz-option>
+                </nz-select>
+              </div>
 
-            <!-- Model -->
-            <div class="mb-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                {{ "scales.model" | translate }}
-              </label>
-              <nz-input-group>
-                <input
-                  type="text"
-                  nz-input
-                  nzSize="small"
-                  [(ngModel)]="dataScale.model"
-                  [placeholder]="'scales.enterModel' | translate"
+              <!-- Location -->
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.location" | translate
+                  }}<span class="ml-1 text-red-500">*</span>
+                </label>
+                <nz-select
+                  [(ngModel)]="dataScale.location_id"
+                  [nzPlaceHolder]="'scales.selectLocation' | translate"
+                  [nzDropdownMatchSelectWidth]="false"
+                  [nzPlacement]="'bottomLeft'"
+                  [nzShowSearch]="true"
+                  [nzAllowClear]="true"
                   class="w-full"
-                  [disabled]="isViewMode"
-                  name="model"
-                />
-              </nz-input-group>
+                  [nzDisabled]="isViewMode"
+                  required
+                  name="location_id"
+                >
+                  <nz-option
+                    *ngFor="let location of locations"
+                    [nzValue]="location.id"
+                    [nzLabel]="location.name"
+                  ></nz-option>
+                </nz-select>
+              </div>
             </div>
 
-            <!-- Location -->
-            <div class="mb-2">
-              <label
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                {{ "scales.location" | translate
-                }}<span class="ml-1 text-red-500">*</span>
-              </label>
-              <nz-select
-                [(ngModel)]="dataScale.location_id"
-                [nzPlaceHolder]="'scales.selectLocation' | translate"
-                [nzDropdownMatchSelectWidth]="false"
-                [nzPlacement]="'bottomLeft'"
-                class="w-full"
-                [nzDisabled]="isViewMode"
-                required
-                name="location_id"
-              >
-                <nz-option
-                  *ngFor="let location of locations"
-                  [nzValue]="location.id"
-                  [nzLabel]="location.name"
-                ></nz-option>
-              </nz-select>
+            <!-- Row 3: Hãng cân, Giao thức -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <!-- Manufacturer -->
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.manufacturer" | translate
+                  }}<span class="ml-1 text-red-500">*</span>
+                </label>
+                <nz-select
+                  [(ngModel)]="dataScale.manufacturer_id"
+                  [nzPlaceHolder]="'scales.selectManufacturer' | translate"
+                  [nzDropdownMatchSelectWidth]="false"
+                  [nzPlacement]="'bottomLeft'"
+                  [nzShowSearch]="true"
+                  [nzAllowClear]="true"
+                  class="w-full"
+                  [nzDisabled]="isViewMode"
+                  required
+                  name="manufacturer_id"
+                >
+                  <nz-option
+                    *ngFor="let manufacturer of manufacturers"
+                    [nzValue]="manufacturer.id"
+                    [nzLabel]="manufacturer.name"
+                  ></nz-option>
+                </nz-select>
+              </div>
+
+              <!-- Protocol -->
+              <div>
+                <label
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ "scales.protocol" | translate
+                  }}<span class="ml-1 text-red-500">*</span>
+                </label>
+                <nz-select
+                  [(ngModel)]="dataScale.protocol_id"
+                  (ngModelChange)="onProtocolChange($event)"
+                  [nzPlaceHolder]="'scales.selectProtocol' | translate"
+                  [nzDropdownMatchSelectWidth]="false"
+                  [nzPlacement]="'bottomLeft'"
+                  [nzShowSearch]="true"
+                  [nzAllowClear]="true"
+                  class="w-full"
+                  [nzDisabled]="isViewMode"
+                  required
+                  name="protocol_id"
+                >
+                  <nz-option
+                    *ngFor="let protocol of protocols"
+                    [nzValue]="protocol.id"
+                    [nzLabel]="protocol.name"
+                  ></nz-option>
+                </nz-select>
+              </div>
             </div>
 
             <!-- Active Status -->
@@ -393,8 +492,11 @@
                 </label>
                 <nz-select
                   [(ngModel)]="scaleConfig.protocol"
+                  (ngModelChange)="onProtocolConfigChange($event)"
                   class="w-full"
                   [nzDropdownMatchSelectWidth]="false"
+                  [nzShowSearch]="true"
+                  [nzAllowClear]="true"
                   [nzDisabled]="isViewMode"
                 >
                   <nz-option
@@ -442,7 +544,9 @@
               >
                 {{ "scales.connectionParameters" | translate }}
               </h4>
-              <div class="grid grid-cols-2 gap-2">
+
+              <!-- MODBUS_TCP Connection Params -->
+              <div *ngIf="isModbusTcp()" class="grid grid-cols-2 gap-2">
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -476,6 +580,130 @@
                       nzSize="small"
                       [(ngModel)]="scaleConfig.conn_params.port"
                       placeholder="502"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
+              <!-- MODBUS_RTU Connection Params -->
+              <div *ngIf="isModbusRtu()" class="grid grid-cols-2 gap-2">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.comPort" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.com_port"
+                      placeholder="COM3"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.baudRate" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.baud_rate"
+                      placeholder="9600"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.dataBits" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.data_bits"
+                      placeholder="8"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.stopBits" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.stop_bits"
+                      placeholder="1"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.parity" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig.conn_params.parity"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzShowSearch]="true"
+                    [nzAllowClear]="true"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option
+                      nzValue="none"
+                      [nzLabel]="'scales.parityNone' | translate"
+                    ></nz-option>
+                    <nz-option
+                      nzValue="even"
+                      [nzLabel]="'scales.parityEven' | translate"
+                    ></nz-option>
+                    <nz-option
+                      nzValue="odd"
+                      [nzLabel]="'scales.parityOdd' | translate"
+                    ></nz-option>
+                  </nz-select>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.unitId" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.unit_id"
+                      placeholder="1"
                       class="w-full"
                       [disabled]="isViewMode"
                     />
@@ -562,6 +790,8 @@
                     class="w-full"
                     [nzDropdownMatchSelectWidth]="false"
                     [nzPlaceHolder]="'scales.selectDataType' | translate"
+                    [nzShowSearch]="true"
+                    [nzAllowClear]="true"
                     [nzDisabled]="isViewMode"
                   >
                     <nz-option

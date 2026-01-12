@@ -37,11 +37,13 @@ export interface IntervalReportResponse {
 
 export interface ScaleHistoryItem {
   scaleId: number;
+  scaleCode?: string;
   scaleName: string;
+  locationName?: string;
   createdAt: string;
   lastTime: string;
-  data1: string;
-  data2: string;
+  data1?: string; // Legacy field
+  data2?: string; // Legacy field
   dataValues: {
     data_1?: DataValue;
     data_2?: DataValue;

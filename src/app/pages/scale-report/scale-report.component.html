@@ -196,10 +196,22 @@
         [nzShowPagination]="false"
         [nzNoResult]="noResultTemplate"
         [nzScroll]="{
+          x: 'auto',
           y:
-            isChartExpanded && chartData.length > 0
-              ? 'calc(100vh - 600px)'
-              : 'calc(100vh - 340px)'
+            isHistoryExpanded &&
+            selectedRow &&
+            isChartExpanded &&
+            chartData.length > 0
+              ? 'calc(100vh - 790px)'
+              : isHistoryExpanded &&
+                selectedRow &&
+                !(isChartExpanded && chartData.length > 0)
+              ? 'calc(100vh - 550px)'
+              : !(isHistoryExpanded && selectedRow) &&
+                isChartExpanded &&
+                chartData.length > 0
+              ? 'calc(100vh - 385px)'
+              : 'calc(100vh - 130px)'
         }"
         class="w-full"
       >
@@ -242,8 +254,15 @@
         <tbody>
           <tr
             *ngFor="let row of reportRows; let i = index"
-            (click)="onRowClick(row)"
-            class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+            (click)="onRowClick(row, i)"
+            [ngClass]="{
+              'bg-blue-50': selectedRowIndex === i,
+              'dark:bg-blue-900/20': selectedRowIndex === i,
+              'transition-colors': true,
+              'cursor-pointer': true,
+              'hover:bg-gray-50': true,
+              'dark:hover:bg-gray-700': true
+            }"
           >
             <td class="px-2 !py-1 whitespace-nowrap text-center">
               <span class="text-xs text-gray-900 dark:text-white">{{
@@ -286,87 +305,125 @@
         <nz-empty></nz-empty>
       </ng-template>
     </div>
+
+    <!-- History Section - Displayed below main table -->
+    <div
+      *ngIf="selectedRow && isHistoryExpanded"
+      class="flex-shrink-0 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+    >
+      <!-- History Header -->
+      <div
+        class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+      >
+        <h4
+          class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+        >
+          <span>{{ "reports.history" | translate }}</span>
+          <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+            ({{ selectedRow.scale.name }} -
+            {{ selectedRow.period | date : "dd/MM/yyyy" }})
+          </span>
+        </h4>
+        <button
+          nz-button
+          nzType="text"
+          nzSize="small"
+          (click)="closeHistorySection()"
+          class="flex items-center gap-1"
+        >
+          <span nz-icon nzType="close" nzTheme="outline"></span>
+        </button>
+      </div>
+
+      <!-- History Table -->
+      <div class="overflow-auto max-h-96">
+        <nz-table
+          #historyTable
+          [nzData]="historyData"
+          [nzLoading]="historyLoading"
+          [nzShowPagination]="false"
+          [nzNoResult]="noHistoryResultTemplate"
+          class="w-full"
+        >
+          <thead>
+            <tr class="bg-gray-50 dark:bg-gray-800">
+              <th
+                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+                style="width: 50px"
+              >
+                STT
+              </th>
+              <th
+                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              >
+                {{ "scales.name" | translate }}
+              </th>
+              <th
+                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              >
+                {{ "reports.lastTime" | translate }}
+              </th>
+              <th
+                *ngFor="let col of dataColumns"
+                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+              >
+                {{ col.name }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let item of historyData; let i = index"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <td class="px-2 !py-1 whitespace-nowrap text-center">
+                <span class="text-xs text-gray-900 dark:text-white">{{
+                  (historyPageIndex - 1) * historyPageSize + i + 1
+                }}</span>
+              </td>
+              <td class="px-2 !py-1 whitespace-nowrap">
+                <span class="text-xs font-medium text-gray-900 dark:text-white">
+                  {{ item.scaleName }}
+                </span>
+              </td>
+              <td class="px-2 !py-1 whitespace-nowrap">
+                <span class="text-xs font-medium text-gray-900 dark:text-white">
+                  {{ item.lastTime | date : "dd/MM/yyyy HH:mm:ss" }}
+                </span>
+              </td>
+              <td
+                *ngFor="let col of dataColumns"
+                class="px-2 !py-1 whitespace-nowrap text-center"
+              >
+                <span class="text-xs font-medium text-gray-900 dark:text-white">
+                  {{ item.formattedData[col.key] | number : "0.0-2" }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+
+        <ng-template #noHistoryResultTemplate>
+          <nz-empty></nz-empty>
+        </ng-template>
+      </div>
+
+      <!-- History Pagination -->
+      <div
+        *ngIf="historyData.length > 0"
+        class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+      >
+        <app-pagination
+          [total]="historyTotal"
+          [currentPage]="historyPageIndex"
+          [currentSize]="historyPageSize"
+          (emitPage)="onHistoryPaginationChange($event)"
+          (goToChange)="onHistoryPaginationChange($event)"
+        ></app-pagination>
+      </div>
+    </div>
   </main>
 </div>
-
-<!-- History Modal -->
-<nz-modal
-  [(nzVisible)]="isHistoryModalVisible"
-  [nzTitle]="'reports.history' | translate"
-  [nzWidth]="1200"
-  (nzOnCancel)="closeHistoryModal()"
-  [nzFooter]="null"
->
-  <div *nzModalContent>
-    <nz-table
-      #historyTable
-      [nzData]="historyData"
-      [nzLoading]="historyLoading"
-      [nzShowPagination]="true"
-      [nzPageIndex]="historyPageIndex"
-      [nzPageSize]="historyPageSize"
-      [nzTotal]="historyTotal"
-      (nzPageIndexChange)="
-        onHistoryPaginationChange({ page: $event, size: historyPageSize })
-      "
-      (nzPageSizeChange)="
-        onHistoryPaginationChange({ page: historyPageIndex, size: $event })
-      "
-      [nzNoResult]="noHistoryResultTemplate"
-      class="w-full"
-    >
-      <thead>
-        <tr class="bg-gray-50 dark:bg-gray-800">
-          <th
-            class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-          >
-            {{ "scales.name" | translate }}
-          </th>
-          <th
-            class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-          >
-            {{ "reports.lastTime" | translate }}
-          </th>
-          <th
-            *ngFor="let col of dataColumns"
-            class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-          >
-            {{ col.name }}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          *ngFor="let item of historyData"
-          class="hover:bg-gray-50 dark:hover:bg-gray-700"
-        >
-          <td class="px-2 !py-1 whitespace-nowrap">
-            <span class="text-xs font-medium text-gray-900 dark:text-white">
-              {{ item.scaleName }}
-            </span>
-          </td>
-          <td class="px-2 !py-1 whitespace-nowrap">
-            <span class="text-xs font-medium text-gray-900 dark:text-white">
-              {{ item.lastTime | date : "dd/MM/yyyy HH:mm:ss" }}
-            </span>
-          </td>
-          <td
-            *ngFor="let col of dataColumns"
-            class="px-2 !py-1 whitespace-nowrap text-center"
-          >
-            <span class="text-xs font-medium text-gray-900 dark:text-white">
-              {{ item.formattedData[col.key] | number : "0.0-2" }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </nz-table>
-
-    <ng-template #noHistoryResultTemplate>
-      <nz-empty></nz-empty>
-    </ng-template>
-  </div>
-</nz-modal>
 
 <!-- Template Selection Modal -->
 <nz-modal
@@ -427,12 +484,12 @@
           </td>
           <td class="px-3 !py-2 whitespace-nowrap">
             <span class="text-sm font-medium text-gray-900 dark:text-white">{{
-              template.originalFilename || template.templateCode || '-'
+              template.originalFilename || template.templateCode || "-"
             }}</span>
           </td>
           <td class="px-3 !py-2 whitespace-nowrap">
             <span class="text-sm text-gray-900 dark:text-white">{{
-              template.templateCode || '-'
+              template.templateCode || "-"
             }}</span>
           </td>
           <td class="px-3 !py-2 whitespace-nowrap">

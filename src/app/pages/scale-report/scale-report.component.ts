@@ -61,14 +61,15 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   chartOptions: any = {};
   isChartExpanded = false; // Default collapsed
 
-  // History modal
-  isHistoryModalVisible = false;
-  selectedRow: IntervalReportRow | null = null;
+  // History section (displayed below main table)
+  selectedRow: FormattedIntervalReportRow | null = null;
+  selectedRowIndex: number | null = null;
   historyData: FormattedScaleHistoryItem[] = [];
   historyLoading = false;
   historyPageIndex = 1;
   historyPageSize = 10;
   historyTotal = 0;
+  isHistoryExpanded = false;
 
   // Aggregation options
   aggregationOptions = [
@@ -617,15 +618,28 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     this.updateScaleOptions();
   }
 
-  onRowClick(row: IntervalReportRow): void {
-    this.selectedRow = row;
-    this.isHistoryModalVisible = true;
-    this.historyPageIndex = 1;
-    this.loadHistoryData();
+  onRowClick(row: FormattedIntervalReportRow, index: number): void {
+    // If clicking the same row, toggle history visibility
+    if (this.selectedRowIndex === index) {
+      this.isHistoryExpanded = !this.isHistoryExpanded;
+      if (!this.isHistoryExpanded) {
+        // Collapse: clear selection
+        this.selectedRow = null;
+        this.selectedRowIndex = null;
+        this.historyData = [];
+      }
+    } else {
+      // Select new row
+      this.selectedRow = row;
+      this.selectedRowIndex = index;
+      this.isHistoryExpanded = true;
+      this.historyPageIndex = 1;
+      this.loadHistoryData();
+    }
   }
 
   async loadHistoryData(): Promise<void> {
-    if (!this.selectedRow || !this.selectedRow.scale.id) {
+    if (!this.selectedRow || !this.selectedRow.scale?.id) {
       return;
     }
 
@@ -681,7 +695,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
             return formattedItem;
           }
         );
-        this.historyTotal = data.totalElements ?? 0;
+        this.historyTotal = data.total_elements ?? 0;
       } else {
         this.historyData = [];
         this.historyTotal = 0;
@@ -700,9 +714,10 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     this.loadHistoryData();
   }
 
-  closeHistoryModal(): void {
-    this.isHistoryModalVisible = false;
+  closeHistorySection(): void {
+    this.isHistoryExpanded = false;
     this.selectedRow = null;
+    this.selectedRowIndex = null;
     this.historyData = [];
   }
 
