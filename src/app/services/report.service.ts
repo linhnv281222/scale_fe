@@ -40,12 +40,14 @@ export class ReportService {
     aggregationByField: {
       [key: string]: AggregationType;
     };
-  }): Promise<IntervalReportResponse | null> {
+    page?: number;
+    size?: number;
+  }): Promise<any> {
     const res = await this.baseService.postData('reports/interval', data);
     if (res && res.success === true && res.data) {
-      return res.data || null;
+      return res.data;
     }
-    return null;
+    return res ?? null;
   }
 
   async aggregateDailyData(): Promise<string | null> {

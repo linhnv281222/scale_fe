@@ -99,11 +99,11 @@ export class ScaleManufacturersComponent implements OnInit {
         params.sort = this.filterData.sort;
       }
 
-      const data = await this.scaleManufacturerService.getScaleManufacturers(
+      const result = await this.scaleManufacturerService.getScaleManufacturers(
         params
       );
-      this.manufacturers = data.data;
-      this.total = data.total;
+      this.manufacturers = result.data || [];
+      this.total = result.total || 0;
     } catch (error) {
       this.manufacturers = [];
       this.total = 0;

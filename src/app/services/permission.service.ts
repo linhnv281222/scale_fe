@@ -8,12 +8,42 @@ import { BaseService } from './base.service';
 export class PermissionService {
   constructor(private baseService: BaseService) {}
 
-  async getPermissions(): Promise<Permission[]> {
-    const res = await this.baseService.getData('permissions');
-    if (res && res.success === true && res.data) {
-      return res.data ?? [];
+  async getPermissions(params?: any): Promise<{
+    data: Permission[];
+    total: number;
+    content?: Permission[];
+    total_elements?: number;
+    page?: number;
+    size?: number;
+    total_pages?: number;
+  }> {
+    const res = await this.baseService.getData('permissions', params);
+    if (!res) return { data: [], total: 0 };
+
+    const payload = res.success === true ? res.data : res;
+
+    // New format: { data: { data: [...], page, size, total_elements, ... } }
+    if (payload?.data && Array.isArray(payload.data)) {
+      const data = payload.data;
+      const total =
+        payload.total_elements ?? payload.totalElements ?? data.length;
+      return {
+        data,
+        total,
+        content: data,
+        total_elements: total,
+        page: payload.page ?? 0,
+        size: payload.size ?? data.length,
+        total_pages: payload.total_pages ?? payload.totalPages ?? 1,
+      };
     }
-    return [];
+
+    // Old format: direct array
+    if (Array.isArray(payload)) {
+      return { data: payload, total: payload.length };
+    }
+
+    return { data: [], total: 0 };
   }
 
   async getPermissionById(id: number): Promise<Permission | null> {

@@ -20,7 +20,6 @@ import { ToastrService } from 'ngx-toastr';
           (ngModelChange)="changeSize()"
           class="w-32"
           [nzDropdownMatchSelectWidth]="false"
-          [nzPlacement]="'bottomLeft'"
         >
           <nz-option
             [nzValue]="10"

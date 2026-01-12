@@ -43,6 +43,9 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   reportData: IntervalReportResponse | null = null;
   reportRows: FormattedIntervalReportRow[] = [];
   loading = false;
+  pageIndex = 1;
+  pageSize = 20;
+  total = 0;
 
   // Data columns (dynamic based on API response)
   dataColumns: { key: string; name: string }[] = [];
@@ -194,11 +197,10 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       // If no scales selected, use first scale as default to get data fields
       if (this.scales.length > 0 && this.scales[0].id) {
         try {
-          const config = await this.scaleService.getScaleConfig(
-            this.scales[0].id
-          );
-          if (config && config.data) {
-            this.initializeAggregationFields(config.data);
+          const scale = await this.scaleService.getScaleById(this.scales[0].id);
+          const config = scale?.scale_config;
+          if (config) {
+            this.initializeAggregationFields(config);
           }
         } catch (error) {
           // Ignore error
@@ -208,9 +210,10 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       // Load config for first selected scale
       const firstScaleId = selectedScaleIds[0];
       try {
-        const config = await this.scaleService.getScaleConfig(firstScaleId);
-        if (config && config.data) {
-          this.initializeAggregationFields(config.data);
+        const scale = await this.scaleService.getScaleById(firstScaleId);
+        const config = scale?.scale_config;
+        if (config) {
+          this.initializeAggregationFields(config);
         }
       } catch (error) {
         // Ignore error
@@ -264,7 +267,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       const fromTime = moment(dateRange[0]).toISOString();
       const toTime = moment(dateRange[1]).endOf('day').toISOString();
 
-      const data = await this.reportService.getIntervalReport({
+      const apiData: any = await this.reportService.getIntervalReport({
         scaleIds: this.filterData.scaleIds ?? [],
         fromDate,
         toDate,
@@ -272,17 +275,41 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         toTime,
         interval: this.filterData.interval ?? 'HOUR',
         aggregationByField: this.filterData.aggregationByField ?? {},
+        page: this.pageIndex - 1,
+        size: this.pageSize,
       });
 
-      if (data) {
-        this.reportData = data;
-        const rawRows = data.rows ?? [];
+      if (apiData) {
+        // Support both old and new response shapes
+        const rawRows: IntervalReportRow[] = Array.isArray(apiData)
+          ? apiData
+          : Array.isArray(apiData?.rows)
+          ? apiData.rows!
+          : Array.isArray(apiData?.data)
+          ? apiData.data
+          : [];
+
+        // Derive dataFieldNames from response or data_values
+        let dataFieldNames = apiData?.dataFieldNames || {};
+        if (
+          (!dataFieldNames || Object.keys(dataFieldNames).length === 0) &&
+          rawRows.length > 0
+        ) {
+          const firstRow = rawRows[0];
+          const firstDataValues: any = firstRow.data_values || {};
+          const keys = Object.keys(firstDataValues);
+          dataFieldNames = keys.reduce((acc: any, key: string) => {
+            const dv = firstDataValues[key];
+            if (dv?.name) acc[key] = dv.name;
+            return acc;
+          }, {});
+        }
 
         // Update data columns from API response first (for display names)
-        if (data.dataFieldNames) {
-          const apiColumns = Object.keys(data.dataFieldNames).map((key) => ({
+        if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
+          const apiColumns = Object.keys(dataFieldNames).map((key) => ({
             key,
-            name: data.dataFieldNames![key],
+            name: dataFieldNames![key],
           }));
           // Merge with existing columns, update names if key matches
           if (this.dataColumns.length > 0) {
@@ -294,6 +321,14 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
             // If no columns from config, use API columns
             this.dataColumns = apiColumns;
           }
+        } else if (this.dataColumns.length === 0 && rawRows.length > 0) {
+          // Fallback: build columns from keys in data_values
+          const firstRow = rawRows[0];
+          const firstDataValues: any = firstRow.data_values || {};
+          this.dataColumns = Object.keys(firstDataValues).map((key) => ({
+            key,
+            name: key,
+          }));
         }
 
         // Format data for each row (after dataColumns is updated)
@@ -304,9 +339,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           };
           // Format each data column
           this.dataColumns.forEach((col) => {
-            const dataValue = row.data_values?.[
-              col.key as keyof typeof row.data_values
-            ] as any;
+            const rowDataValues: any = row.data_values || {};
+            const dataValue = rowDataValues[col.key];
             if (
               dataValue &&
               dataValue.used &&
@@ -323,6 +357,28 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           });
           return formattedRow;
         });
+
+        // Store simplified reportData + pagination for downstream use (chart label)
+        this.reportData = {
+          interval: this.filterData.interval ?? 'HOUR',
+          fromDate,
+          toDate,
+          dataFieldNames,
+          aggregationByField: this.filterData.aggregationByField ?? {},
+          rows: rawRows,
+        };
+
+        // Update pagination
+        this.total =
+          apiData.total_elements ??
+          apiData.totalElements ??
+          apiData.total ??
+          rawRows.length ??
+          0;
+        this.pageIndex =
+          (apiData.page ?? apiData.pageNumber ?? this.pageIndex - 1) + 1;
+        this.pageSize =
+          apiData.size ?? apiData.pageSize ?? this.pageSize ?? rawRows.length;
 
         this.prepareChartData();
       } else {
@@ -347,7 +403,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     }
 
     // Get data_1 (Weight) for chart
-    const weightData = this.reportRows
+    const weightData: any[] = this.reportRows
       .map((row, index) => {
         const data1 = row.data_values?.data_1;
         if (data1 && data1.used && data1.value) {
@@ -359,7 +415,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         }
         return null;
       })
-      .filter((item) => item !== null) as any[];
+      .filter((item) => item !== null);
 
     this.chartData = weightData;
 
@@ -615,7 +671,16 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     this.dataColumns = [];
     this.chartData = [];
     this.chartOptions = {};
+    this.pageIndex = 1;
+    this.pageSize = 20;
+    this.total = 0;
     this.updateScaleOptions();
+  }
+
+  onPaginationChange(event: { page: number; size: number }): void {
+    this.pageIndex = event.page;
+    this.pageSize = event.size;
+    this.loadReportData();
   }
 
   onRowClick(row: FormattedIntervalReportRow, index: number): void {
@@ -659,7 +724,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       const startTime = moment(dateRange[0]).toISOString();
       const endTime = moment(dateRange[1]).endOf('day').toISOString();
 
-      const data = await this.scaleDataService.getScaleHistory({
+      const data: any = await this.scaleDataService.getScaleHistory({
         scaleId: this.selectedRow.scale.id,
         startTime,
         endTime,
@@ -668,7 +733,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       });
 
       if (data) {
-        const rawHistoryData = data.content ?? [];
+        const rawHistoryData = data.data ?? [];
         // Format history data
         this.historyData = rawHistoryData.map(
           (item: ScaleHistoryItem): FormattedScaleHistoryItem => {
@@ -678,9 +743,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
             };
             // Format each data column
             this.dataColumns.forEach((col) => {
-              const dataValue = item.dataValues?.[
-                col.key as keyof typeof item.dataValues
-              ] as any;
+              const historyDataValues: any = item.dataValues || {};
+              const dataValue = historyDataValues[col.key];
               if (
                 dataValue &&
                 dataValue.used &&
@@ -698,7 +762,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
             return formattedItem;
           }
         );
-        this.historyTotal = data.total_elements ?? 0;
+        this.historyTotal = data.total_elements ?? rawHistoryData.length ?? 0;
       } else {
         this.historyData = [];
         this.historyTotal = 0;

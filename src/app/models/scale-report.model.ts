@@ -23,16 +23,18 @@ export interface IntervalReportRow {
 }
 
 export interface IntervalReportResponse {
-  interval: IntervalType;
-  fromDate: string;
-  toDate: string;
-  dataFieldNames: {
+  interval?: IntervalType;
+  fromDate?: string;
+  toDate?: string;
+  dataFieldNames?: {
     [key: string]: string;
   };
-  aggregationByField: {
+  aggregationByField?: {
     [key: string]: AggregationType;
   };
-  rows: IntervalReportRow[];
+  rows?: IntervalReportRow[];
+  // New response shape: data is array of IntervalReportRow
+  data?: IntervalReportRow[];
 }
 
 export interface ScaleHistoryItem {
@@ -42,8 +44,8 @@ export interface ScaleHistoryItem {
   locationName?: string;
   createdAt: string;
   lastTime: string;
-  data1?: string; // Legacy field
-  data2?: string; // Legacy field
+  data1?: string;
+  data2?: string;
   dataValues: {
     data_1?: DataValue;
     data_2?: DataValue;
@@ -55,30 +57,13 @@ export interface ScaleHistoryItem {
 
 export interface ScaleHistoryResponse {
   content: ScaleHistoryItem[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    sort: {
-      empty: boolean;
-      sorted: boolean;
-      unsorted: boolean;
-    };
-    offset: number;
-    paged: boolean;
-    unpaged: boolean;
-  };
-  last: boolean;
-  totalPages: number;
-  totalElements: number;
+  page: number;
   size: number;
-  number: number;
-  sort: {
-    empty: boolean;
-    sorted: boolean;
-    unsorted: boolean;
-  };
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
+  total_elements: number;
+  total_pages: number;
+  is_first: boolean;
+  is_last: boolean;
+  has_next: boolean;
+  has_previous: boolean;
 }
 

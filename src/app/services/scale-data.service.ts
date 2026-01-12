@@ -63,7 +63,7 @@ export class ScaleDataService {
     size?: number;
     sort?: string;
   }): Promise<{
-    content: any[];
+    data: any[];
     total_elements: number;
     page: number;
     size: number;
@@ -111,63 +111,40 @@ export class ScaleDataService {
     }
 
     const res = await this.baseService.getData('weighing-history', queryParams);
-    
-    // Handle different response formats
-    let responseData: any = null;
-    
-    if (res) {
-      // Check if response has success wrapper
-      if (res.success === true && res.data) {
-        responseData = res.data;
-      } else if (res.content || res.total_elements !== undefined) {
-        // Direct paginated response (no success wrapper)
-        responseData = res;
-      } else if (Array.isArray(res)) {
-        // Direct array response
-        return {
-          content: res,
-          total_elements: res.length,
-          page: 0,
-          size: res.length,
-          total_pages: 1,
-          is_first: true,
-          is_last: true,
-          has_next: false,
-          has_previous: false,
-        };
-      }
+
+    if (!res) return null;
+
+    // New format: { data: [...], page, size, total_elements, ... }
+    const payload = res.success === true ? res.data ?? res : res;
+
+    if (Array.isArray(payload)) {
+      return {
+        data: payload,
+        total_elements: payload.length,
+        page: 0,
+        size: payload.length,
+        total_pages: 1,
+        is_first: true,
+        is_last: true,
+        has_next: false,
+        has_previous: false,
+      };
     }
-    
-    if (responseData) {
-      // Check if response has content array (paginated response)
-      if (responseData.content) {
-        return {
-          content: responseData.content,
-          total_elements: responseData.total_elements ?? 0,
-          page: responseData.page ?? 0,
-          size: responseData.size ?? 20,
-          total_pages: responseData.total_pages ?? 0,
-          is_first: responseData.is_first ?? true,
-          is_last: responseData.is_last ?? false,
-          has_next: responseData.has_next ?? false,
-          has_previous: responseData.has_previous ?? false,
-        };
-      } else if (Array.isArray(responseData)) {
-        // Flat array response
-        return {
-          content: responseData,
-          total_elements: responseData.length,
-          page: 0,
-          size: responseData.length,
-          total_pages: 1,
-          is_first: true,
-          is_last: true,
-          has_next: false,
-          has_previous: false,
-        };
-      }
+
+    if (payload?.data && Array.isArray(payload.data)) {
+      return {
+        data: payload.data,
+        total_elements: payload.total_elements ?? payload.totalElements ?? payload.data.length ?? 0,
+        page: payload.page ?? payload.pageNumber ?? 0,
+        size: payload.size ?? payload.pageSize ?? payload.data.length ?? 0,
+        total_pages: payload.total_pages ?? payload.totalPages ?? 1,
+        is_first: payload.is_first ?? payload.isFirst ?? payload.page === 0 ?? true,
+        is_last: payload.is_last ?? payload.isLast ?? false,
+        has_next: payload.has_next ?? payload.hasNext ?? false,
+        has_previous: payload.has_previous ?? payload.hasPrevious ?? false,
+      };
     }
-    
+
     return null;
   }
 }

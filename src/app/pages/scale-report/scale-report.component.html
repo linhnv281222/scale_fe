@@ -202,16 +202,16 @@
             selectedRow &&
             isChartExpanded &&
             chartData.length > 0
-              ? 'calc(100vh - 790px)'
+              ? 'calc(100vh - 680px)'
               : isHistoryExpanded &&
                 selectedRow &&
                 !(isChartExpanded && chartData.length > 0)
-              ? 'calc(100vh - 550px)'
+              ? 'calc(100vh - 420px)'
               : !(isHistoryExpanded && selectedRow) &&
                 isChartExpanded &&
                 chartData.length > 0
-              ? 'calc(100vh - 385px)'
-              : 'calc(100vh - 130px)'
+              ? 'calc(100vh - 415px)'
+              : 'calc(100vh - 170px)'
         }"
         class="w-full"
       >
@@ -219,7 +219,7 @@
           <tr class="bg-gray-50 dark:bg-gray-800">
             <th
               class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-              style="width: 50px"
+              nzWidth="30px"
             >
               STT
             </th>
@@ -310,6 +310,15 @@
         </tbody>
       </nz-table>
 
+      <div class="border-t border-gray-200 dark:border-gray-700">
+        <app-pagination
+          [currentPage]="pageIndex"
+          [currentSize]="pageSize"
+          [total]="total"
+          (emitPage)="onPaginationChange($event)"
+        ></app-pagination>
+      </div>
+
       <ng-template #noResultTemplate>
         <nz-empty></nz-empty>
       </ng-template>
@@ -353,12 +362,13 @@
           [nzShowPagination]="false"
           [nzNoResult]="noHistoryResultTemplate"
           class="w-full"
+          [nzScroll]="{ x: 'auto', y: '150px' }"
         >
           <thead>
             <tr class="bg-gray-50 dark:bg-gray-800">
               <th
                 class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-                style="width: 50px"
+                nzWidth="30px"
               >
                 STT
               </th>
@@ -454,7 +464,7 @@
         <tr class="bg-blue-600 dark:bg-blue-700">
           <th
             class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-            style="width: 50px"
+            nzWidth="30px"
           >
             STT
           </th>

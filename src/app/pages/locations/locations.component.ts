@@ -131,26 +131,22 @@ export class LocationsComponent implements OnInit, OnDestroy {
       const response = await this.locationService.getLocations(params);
 
       if (response && response.data) {
+        // Check if it's tree structure (has children property)
         if (
           response.data.length > 0 &&
           response.data[0].children !== undefined
         ) {
+          // Tree structure (no pagination)
           this.locations = response.data;
           this.total = this.countAllNodes(response.data);
-        } else if (response.content) {
-          const allItems = response.content;
-          const rootItems = allItems.filter(
-            (item) => !item.parent_id && !item.parentId
-          );
-          this.locations = this.buildTreeFromFlat(allItems, rootItems);
-          this.total = response.total_elements ?? 0;
         } else {
+          // Flat array - build tree from flat list
           const allItems = response.data;
           const rootItems = allItems.filter(
             (item) => !item.parent_id && !item.parentId
           );
           this.locations = this.buildTreeFromFlat(allItems, rootItems);
-          this.total = response.total ?? 0;
+          this.total = response.total ?? response.total_elements ?? allItems.length;
         }
       } else {
         this.locations = [];

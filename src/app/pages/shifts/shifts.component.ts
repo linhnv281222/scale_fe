@@ -16,6 +16,9 @@ export class ShiftsComponent implements OnInit {
   shifts: Shift[] = [];
   filteredShifts: Shift[] = [];
   loading = false;
+  pageIndex = 1;
+  pageSize = 20;
+  total = 0;
   isModalVisible = false;
   isEditMode = false;
   isViewMode = false;
@@ -86,51 +89,50 @@ export class ShiftsComponent implements OnInit {
   async loadShifts(): Promise<void> {
     this.loading = true;
     try {
-      // API doesn't support pagination or query params, load all shifts
-      this.shifts = await this.shiftService.getShifts();
-      this.applyFilters();
+      // Build query params with pagination
+      const params: any = {
+        page: this.pageIndex - 1, // API uses 0-indexed
+        size: this.pageSize,
+      };
+
+      // Add filter params
+      if (this.filterData.name) {
+        params.name = this.filterData.name;
+      }
+      if (this.filterData.is_active !== undefined && this.filterData.is_active !== null && this.filterData.is_active !== '') {
+        params.isActive = this.filterData.is_active;
+      }
+
+      const result = await this.shiftService.getShifts(params);
+      this.shifts = result.data || [];
+      this.total = result.total || 0;
+      this.filteredShifts = this.shifts; // No client-side filtering needed
     } catch (error) {
       console.error('Error loading shifts:', error);
       this.shifts = [];
       this.filteredShifts = [];
+      this.total = 0;
     } finally {
       this.loading = false;
     }
   }
 
-  private applyFilters(): void {
-    let filtered = [...this.shifts];
-
-    // Filter by name
-    if (this.filterData.name) {
-      const nameFilter = this.filterData.name.toLowerCase().trim();
-      filtered = filtered.filter((shift) =>
-        shift.name?.toLowerCase().includes(nameFilter)
-      );
-    }
-
-    // Filter by is_active
-    if (
-      this.filterData.is_active !== undefined &&
-      this.filterData.is_active !== null &&
-      this.filterData.is_active !== ''
-    ) {
-      filtered = filtered.filter(
-        (shift) => shift.is_active === this.filterData.is_active
-      );
-    }
-
-    this.filteredShifts = filtered;
-  }
-
   onSearch(filters: any): void {
     this.filterData = filters;
-    this.applyFilters();
+    this.pageIndex = 1;
+    this.loadShifts();
   }
 
   onReset(): void {
     this.filterData = {};
-    this.applyFilters();
+    this.pageIndex = 1;
+    this.loadShifts();
+  }
+
+  onPaginationChange(event: { page: number; size: number }): void {
+    this.pageIndex = event.page;
+    this.pageSize = event.size;
+    this.loadShifts();
   }
 
   openAddModal(): void {

@@ -114,9 +114,9 @@ export class ProtocolsComponent implements OnInit {
         params.sort = this.filterData.sort;
       }
 
-      const data = await this.protocolService.getProtocols(params);
-      this.protocols = data.data;
-      this.total = data.total;
+      const result = await this.protocolService.getProtocols(params);
+      this.protocols = result.data || [];
+      this.total = result.total || 0;
     } catch (error) {
       this.protocols = [];
       this.total = 0;

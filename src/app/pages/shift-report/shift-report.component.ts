@@ -129,11 +129,12 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       // If no scales selected, use first scale as default to get data fields
       if (this.scales.length > 0 && this.scales[0].id) {
         try {
-          const config = await this.scaleService.getScaleConfig(
+          const scale = await this.scaleService.getScaleById(
             this.scales[0].id
           );
-          if (config && config.data) {
-            this.initializeAggregationFields(config.data);
+          const config = scale?.scale_config;
+          if (config) {
+            this.initializeAggregationFields(config);
           }
         } catch (error) {
           // Ignore error
@@ -143,9 +144,10 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       // Load config for first selected scale
       const firstScaleId = selectedScaleIds[0];
       try {
-        const config = await this.scaleService.getScaleConfig(firstScaleId);
-        if (config && config.data) {
-          this.initializeAggregationFields(config.data);
+        const scale = await this.scaleService.getScaleById(firstScaleId);
+        const config = scale?.scale_config;
+        if (config) {
+          this.initializeAggregationFields(config);
         }
       } catch (error) {
         // Ignore error
@@ -211,7 +213,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
       if (data) {
         this.reportData = data;
-        const rawRows = data.rows ?? [];
+        const rawRows: any[] = data.rows ?? [];
 
         // Update data columns from API response first (for display names)
         if (data.dataFieldNames) {
@@ -232,16 +234,15 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         }
 
         // Format data for each row (after dataColumns is updated)
-        this.reportRows = rawRows.map((row): FormattedIntervalReportRow => {
+        this.reportRows = rawRows.map((row: any): FormattedIntervalReportRow => {
           const formattedRow: FormattedIntervalReportRow = {
             ...row,
             formattedData: {},
           };
           // Format each data column
           this.dataColumns.forEach((col) => {
-            const dataValue = row.data_values?.[
-              col.key as keyof typeof row.data_values
-            ] as any;
+            const rowDataValues: any = row.data_values || {};
+            const dataValue = rowDataValues[col.key];
             if (
               dataValue &&
               dataValue.used &&
@@ -282,7 +283,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     }
 
     // Get data_1 (Weight) for chart
-    const weightData = this.reportRows
+    const weightData: any[] = this.reportRows
       .map((row, index) => {
         const data1 = row.data_values?.data_1;
         if (data1 && data1.used && data1.value) {
@@ -294,7 +295,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         }
         return null;
       })
-      .filter((item) => item !== null) as any[];
+      .filter((item) => item !== null);
 
     this.chartData = weightData;
 

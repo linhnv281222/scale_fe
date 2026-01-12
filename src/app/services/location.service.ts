@@ -16,22 +16,46 @@ export class LocationService {
     return [];
   }
 
-  async getLocations(params?: any): Promise<{ data: Location[]; total: number; content?: Location[]; total_elements?: number }> {
+  async getLocations(params?: any): Promise<{ data: Location[]; total: number; content?: Location[]; total_elements?: number; page?: number; size?: number; total_pages?: number }> {
     const res = await this.baseService.getData('locations', params);
-    if (res && res.success === true && res.data) {
-      // If response is paginated (has content array)
-      if (Array.isArray(res.data) && res.data.length > 0 && res.data[0].children !== undefined) {
+    if (!res) return { data: [], total: 0 };
+
+    const payload = res.success === true ? res.data : res;
+
+    // Check if payload has nested data object (new format with pagination)
+    if (payload?.data && Array.isArray(payload.data)) {
+      const data = payload.data;
+      // Check if it's tree structure (has children property)
+      if (data.length > 0 && data[0].children !== undefined) {
         // Tree structure (no pagination)
-        const data = res.data;
         const total = this.countAllNodes(data);
         return { data, total };
       } else {
-        // Flat array
-        const data = Array.isArray(res.data) ? res.data : [];
-        const total = data.length;
-        return { data, total };
+        // Flat array with pagination
+        const total = payload.total_elements ?? payload.totalElements ?? data.length;
+        return {
+          data,
+          total,
+          content: data,
+          total_elements: total,
+          page: payload.page ?? 0,
+          size: payload.size ?? data.length,
+          total_pages: payload.total_pages ?? payload.totalPages ?? 1,
+        };
       }
     }
+
+    // Old format: direct array or content array
+    if (Array.isArray(payload)) {
+      // Check if it's tree structure
+      if (payload.length > 0 && payload[0].children !== undefined) {
+        const total = this.countAllNodes(payload);
+        return { data: payload, total };
+      } else {
+        return { data: payload, total: payload.length };
+      }
+    }
+
     return { data: [], total: 0 };
   }
 

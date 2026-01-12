@@ -76,7 +76,8 @@ export class UsersComponent implements OnInit {
 
   async loadRoles(): Promise<void> {
     try {
-      this.roles = await this.roleService.getRoles();
+      const result = await this.roleService.getRoles();
+      this.roles = result.data || [];
     } catch (error) {
       this.roles = [];
     }
@@ -85,7 +86,24 @@ export class UsersComponent implements OnInit {
   async loadUsers(): Promise<void> {
     this.loading = true;
     try {
-      const result = await this.userService.getUsers(this.filterData);
+      // Build query params with pagination
+      const params: any = {
+        page: this.pageIndex - 1, // API uses 0-indexed
+        size: this.pageSize,
+      };
+
+      // Add filter params
+      if (this.filterData.username) {
+        params.username = this.filterData.username;
+      }
+      if (this.filterData.fullName) {
+        params.fullName = this.filterData.fullName;
+      }
+      if (this.filterData.status !== undefined && this.filterData.status !== null && this.filterData.status !== '') {
+        params.status = this.filterData.status;
+      }
+
+      const result = await this.userService.getUsers(params);
       this.users = result.data || [];
       this.total = result.total || 0;
     } catch (error) {

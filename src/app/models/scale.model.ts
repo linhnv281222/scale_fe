@@ -40,10 +40,12 @@ export interface ScaleConnectionConfig {
 
 export interface ScaleConfigDataChannel {
   name?: string;
-  start_registers?: number;
+  start_register?: number;
   num_registers?: number;
   is_used: boolean;
   data_type?: string;
+  function_code?: number;
+  byte_order?: string;
 }
 
 export interface ScaleConfig {
@@ -53,6 +55,13 @@ export interface ScaleConfig {
   conn_params: {
     ip?: string;
     port?: number;
+    // MODBUS_RTU
+    com_port?: string;
+    baud_rate?: number;
+    data_bits?: number;
+    stop_bits?: number;
+    parity?: string;
+    unit_id?: number;
   };
   data_1?: ScaleConfigDataChannel;
   data_2?: ScaleConfigDataChannel;

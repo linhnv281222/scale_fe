@@ -9,19 +9,64 @@ import { BaseService } from './base.service';
 export class ShiftService {
   constructor(private baseService: BaseService) {}
 
-  async getShifts(): Promise<Shift[]> {
+  async getShifts(params?: any): Promise<{
+    data: Shift[];
+    total: number;
+    content?: Shift[];
+    total_elements?: number;
+    page?: number;
+    size?: number;
+    total_pages?: number;
+  }> {
     try {
-      // API endpoint is 'shift' (not 'shifts') and doesn't support pagination or query params
-      const res = await this.baseService.getData('shifts');
-      if (res && res.success === true && res.data) {
-        const shifts = Array.isArray(res.data) ? res.data : [];
-        // Map API response to Shift model
-        return shifts.map((shift: any) => this.mapApiToShift(shift));
+      const res = await this.baseService.getData('shifts', params);
+      if (!res) return { data: [], total: 0 };
+
+      const payload = res.success === true ? res.data : res;
+
+      // New format: { data: { data: [...], page, size, total_elements, ... } }
+      if (payload?.data && Array.isArray(payload.data)) {
+        const data = payload.data.map((shift: any) =>
+          this.mapApiToShift(shift)
+        );
+        const total =
+          payload.total_elements ?? payload.totalElements ?? data.length;
+        return {
+          data,
+          total,
+          content: data,
+          total_elements: total,
+          page: payload.page ?? 0,
+          size: payload.size ?? data.length,
+          total_pages: payload.total_pages ?? payload.totalPages ?? 1,
+        };
       }
-      return [];
+
+      // Old format: direct array
+      let shifts: any[] = [];
+      if (Array.isArray(payload)) {
+        shifts = payload;
+      }
+
+      if (shifts.length > 0) {
+        const data = shifts.map((shift: any) => this.mapApiToShift(shift));
+        const total =
+          payload?.total_elements ?? payload?.totalElements ?? data.length;
+        return {
+          data,
+          total,
+          content: data,
+          total_elements: total,
+          page: payload?.page ?? 0,
+          size: payload?.size ?? data.length,
+          total_pages: payload?.total_pages ?? payload?.totalPages ?? 1,
+        };
+      }
+
+      return { data: [], total: 0 };
     } catch (error) {
       console.error('Error getting shifts:', error);
-      return [];
+      return { data: [], total: 0 };
     }
   }
 
@@ -46,7 +91,12 @@ export class ShiftService {
         name: data.name,
         start_time: data.start_time || data.startTime || '',
         end_time: data.end_time || data.endTime || '',
-        is_active: data.is_active !== undefined ? data.is_active : (data.isActive !== undefined ? data.isActive : true),
+        is_active:
+          data.is_active !== undefined
+            ? data.is_active
+            : data.isActive !== undefined
+            ? data.isActive
+            : true,
       };
       const res = await this.baseService.postData('shifts', payload);
       if (res && res.success === true && res.data) {
@@ -65,7 +115,8 @@ export class ShiftService {
       const payload: any = {};
       if (data.name !== undefined) payload.name = data.name;
       if (data.start_time !== undefined) payload.start_time = data.start_time;
-      else if (data.startTime !== undefined) payload.start_time = data.startTime;
+      else if (data.startTime !== undefined)
+        payload.start_time = data.startTime;
       if (data.end_time !== undefined) payload.end_time = data.end_time;
       else if (data.endTime !== undefined) payload.end_time = data.endTime;
       if (data.is_active !== undefined) payload.is_active = data.is_active;
@@ -106,8 +157,12 @@ export class ShiftService {
       updated_at: apiData.updated_at,
       updated_by: apiData.updated_by,
       // For backward compatibility
-      startTime: apiData.start_time ? moment(apiData.start_time, 'HH:mm:ss').format('HH:mm') : undefined, // HH:mm
-      endTime: apiData.end_time ? moment(apiData.end_time, 'HH:mm:ss').format('HH:mm') : undefined, // HH:mm
+      startTime: apiData.start_time
+        ? moment(apiData.start_time, 'HH:mm:ss').format('HH:mm')
+        : undefined, // HH:mm
+      endTime: apiData.end_time
+        ? moment(apiData.end_time, 'HH:mm:ss').format('HH:mm')
+        : undefined, // HH:mm
       isActive: apiData.is_active,
       status: apiData.is_active ? 'active' : 'inactive',
       createdAt: apiData.created_at ? new Date(apiData.created_at) : undefined,

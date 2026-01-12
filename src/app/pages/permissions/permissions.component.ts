@@ -62,9 +62,26 @@ export class PermissionsComponent implements OnInit {
   async loadPermissions(): Promise<void> {
     this.loading = true;
     try {
-      const permissions = await this.permissionService.getPermissions();
-      this.permissions = permissions || [];
-      this.total = this.permissions.length;
+      // Build query params with pagination
+      const params: any = {
+        page: this.pageIndex - 1, // API uses 0-indexed
+        size: this.pageSize,
+      };
+
+      // Add filter params
+      if (this.filterData.name) {
+        params.name = this.filterData.name;
+      }
+      if (this.filterData.resource) {
+        params.resource = this.filterData.resource;
+      }
+      if (this.filterData.action) {
+        params.action = this.filterData.action;
+      }
+
+      const result = await this.permissionService.getPermissions(params);
+      this.permissions = result.data || [];
+      this.total = result.total || 0;
     } catch (error) {
       this.permissions = [];
       this.total = 0;

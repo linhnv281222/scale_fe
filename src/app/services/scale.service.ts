@@ -8,25 +8,53 @@ import { BaseService } from './base.service';
 export class ScaleService {
   constructor(private baseService: BaseService) {}
 
-  async getScales(params?: any): Promise<{ data: Scale[]; total: number; content?: Scale[]; total_elements?: number }> {
+  async getScales(
+    params?: any
+  ): Promise<{
+    data: Scale[];
+    total: number;
+    content?: Scale[];
+    total_elements?: number;
+    page?: number;
+    size?: number;
+    total_pages?: number;
+  }> {
     const res = await this.baseService.getData('scales', params);
-    if (res && res.success === true && res.data) {
-      // Check if response has content array (paginated)
-    if (Array.isArray(res.data)) {
-        // Flat array
-        const data = res.data;
-        return { data, total: data.length };
-      }
+    if (!res) return { data: [], total: 0 };
+
+    // New format: { success: true, data: { data: [...], page, size, total_elements, ... } }
+    const payload = res.success === true ? res.data : res;
+
+    // Check if payload has nested data object (new format)
+    if (payload?.data && Array.isArray(payload.data)) {
+      const data = payload.data;
+      const total = payload.total_elements ?? payload.totalElements ?? data.length;
+      return {
+        data,
+        total,
+        content: data,
+        total_elements: total,
+        page: payload.page ?? 0,
+        size: payload.size ?? data.length,
+        total_pages: payload.total_pages ?? payload.totalPages ?? 1,
+      };
     }
+
+    // Old format: flat array response
+    if (Array.isArray(payload)) {
+      const data = payload;
+      return { data, total: data.length };
+    }
+
     return { data: [], total: 0 };
   }
 
   async getScaleById(id: number): Promise<Scale | null> {
     const res = await this.baseService.getData(`scales/${id}`);
-    if (res && res.success === true && res.data) {
-      return res.data || null;
+    if (res?.success === true && res?.data) {
+      return res.data;
     }
-    return null;
+    return res || null;
   }
 
   async createScale(data: any): Promise<Scale | null> {
@@ -59,49 +87,4 @@ export class ScaleService {
       return false;
     }
   }
-
-  async getScaleConfig(id: number): Promise<any | null> {
-    const res = await this.baseService.getData(`scales/${id}/config`);
-    if (res && res.success === true && res.data) {
-      return res.data || null;
-    }
-    return null;
-  }
-
-  async updateScaleConfig(id: number, data: {
-    protocol: string;
-    poll_interval: number;
-    conn_params: {
-      ip: string;
-      port: number;
-    };
-    data_1?: {
-      name?: string;
-      start_registers?: number;
-      num_registers?: number;
-      is_used: boolean;
-    };
-    data_2?: {
-      name?: string;
-      start_registers?: number;
-      num_registers?: number;
-      is_used: boolean;
-    };
-    data_3?: {
-      is_used: boolean;
-    };
-    data_4?: {
-      is_used: boolean;
-    };
-    data_5?: {
-      is_used: boolean;
-    };
-  }): Promise<any | null> {
-    const res = await this.baseService.putData(`scales/${id}/config`, data);
-    if (res && res.success === true && res.data) {
-      return res.data || null;
-    }
-    return null;
-  }
 }
-

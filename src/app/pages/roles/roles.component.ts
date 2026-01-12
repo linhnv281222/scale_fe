@@ -64,9 +64,23 @@ export class RolesComponent implements OnInit {
   async loadRoles(): Promise<void> {
     this.loading = true;
     try {
-      const roles = await this.roleService.getRoles();
-      this.roles = roles || [];
-      this.total = this.roles.length;
+      // Build query params with pagination
+      const params: any = {
+        page: this.pageIndex - 1, // API uses 0-indexed
+        size: this.pageSize,
+      };
+
+      // Add filter params
+      if (this.filterData.name) {
+        params.name = this.filterData.name;
+      }
+      if (this.filterData.code) {
+        params.code = this.filterData.code;
+      }
+
+      const result = await this.roleService.getRoles(params);
+      this.roles = result.data || [];
+      this.total = result.total || 0;
     } catch (error) {
       this.roles = [];
       this.total = 0;
@@ -77,7 +91,8 @@ export class RolesComponent implements OnInit {
 
   async loadPermissions(): Promise<void> {
     try {
-      this.permissions = await this.permissionService.getPermissions();
+      const result = await this.permissionService.getPermissions();
+      this.permissions = result.data || [];
     } catch (error) {
       this.permissions = [];
     }
