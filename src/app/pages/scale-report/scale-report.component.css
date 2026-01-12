@@ -1,2 +1,35 @@
 /* Scale Report Component Styles */
 
+/* Default row hover */
+tbody tr:hover td {
+  background-color: #f9fafb; /* hover:bg-gray-50 */
+}
+
+.dark tbody tr:hover td,
+[data-theme="dark"] tbody tr:hover td {
+  background-color: #374151; /* dark:hover:bg-gray-700 */
+}
+
+/* Selected row - apply to all td cells */
+tbody tr td.selected-row {
+  background-color: #dbeafe !important; /* bg-blue-50 */
+}
+
+tbody tr:hover td.selected-row {
+  background-color: #dbeafe !important; /* Slightly darker blue on hover */
+}
+
+.dark tbody tr td.selected-row,
+[data-theme="dark"] tbody tr td.selected-row {
+  background-color: rgba(30, 58, 138, 0.2) !important; /* dark:bg-blue-900/20 */
+}
+
+.dark tbody tr:hover td.selected-row,
+[data-theme="dark"] tbody tr:hover td.selected-row {
+  background-color: rgba(
+    30,
+    58,
+    138,
+    0.3
+  ) !important; /* Slightly darker on hover */
+}

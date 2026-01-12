@@ -255,42 +255,51 @@
           <tr
             *ngFor="let row of reportRows; let i = index"
             (click)="onRowClick(row, i)"
-            [ngClass]="{
-              'bg-blue-50': selectedRowIndex === i,
-              'dark:bg-blue-900/20': selectedRowIndex === i,
-              'transition-colors': true,
-              'cursor-pointer': true,
-              'hover:bg-gray-50': true,
-              'dark:hover:bg-gray-700': true
-            }"
+            class="transition-colors cursor-pointer"
           >
-            <td class="px-2 !py-1 whitespace-nowrap text-center">
+            <td
+              [class.selected-row]="selectedRowIndex === i"
+              class="px-2 !py-1 whitespace-nowrap text-center"
+            >
               <span class="text-xs text-gray-900 dark:text-white">{{
                 i + 1
               }}</span>
             </td>
-            <td class="px-2 !py-1 whitespace-nowrap">
+            <td
+              [class.selected-row]="selectedRowIndex === i"
+              class="px-2 !py-1 whitespace-nowrap"
+            >
               <span class="text-xs font-medium text-gray-900 dark:text-white">
                 {{ row.scale.name }}
               </span>
             </td>
-            <td class="px-2 !py-1 whitespace-nowrap">
+            <td
+              [class.selected-row]="selectedRowIndex === i"
+              class="px-2 !py-1 whitespace-nowrap"
+            >
               <span class="text-xs font-medium text-gray-900 dark:text-white">
                 {{ row.scale.model }}
               </span>
             </td>
-            <td class="px-2 !py-1 whitespace-nowrap">
+            <td
+              [class.selected-row]="selectedRowIndex === i"
+              class="px-2 !py-1 whitespace-nowrap"
+            >
               <span class="text-xs font-medium text-gray-900 dark:text-white">
                 {{ row.scale.location?.name }}
               </span>
             </td>
-            <td class="px-2 !py-1 whitespace-nowrap">
+            <td
+              [class.selected-row]="selectedRowIndex === i"
+              class="px-2 !py-1 whitespace-nowrap"
+            >
               <span class="text-xs font-medium text-gray-900 dark:text-white">
                 {{ row.period | date : "dd/MM/yyyy" }}
               </span>
             </td>
             <td
               *ngFor="let col of dataColumns"
+              [class.selected-row]="selectedRowIndex === i"
               class="px-2 !py-1 whitespace-nowrap text-center"
             >
               <span class="text-xs font-medium text-gray-900 dark:text-white">

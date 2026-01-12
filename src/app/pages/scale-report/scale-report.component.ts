@@ -627,6 +627,9 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         this.selectedRow = null;
         this.selectedRowIndex = null;
         this.historyData = [];
+      } else {
+        // Keep selectedRowIndex when expanding
+        this.selectedRowIndex = index;
       }
     } else {
       // Select new row
