@@ -56,12 +56,7 @@ export class ProtocolService {
   ): Promise<{ data: Protocol[]; total: number; content?: Protocol[]; total_elements?: number }> {
     const res = await this.baseService.getData('protocols', params);
     if (res && res.success === true && res.data) {
-      if (res.data.content) {
-        // Paginated response
-        const content = res.data.content;
-        const total = res.data.total_elements;
-        return { data: content, total, content: content, total_elements: total };
-      } else if (Array.isArray(res.data)) {
+      if (Array.isArray(res.data)) {
         // Array response
         const data = res.data;
         return { data, total: data.length };

@@ -25,11 +25,6 @@ export class LocationService {
         const data = res.data;
         const total = this.countAllNodes(data);
         return { data, total };
-      } else if (res.data.content) {
-        // Paginated structure
-        const content = res.data.content;
-        const total = res.data.total_elements;
-        return { data: content, total, content: content, total_elements: total };
       } else {
         // Flat array
         const data = Array.isArray(res.data) ? res.data : [];

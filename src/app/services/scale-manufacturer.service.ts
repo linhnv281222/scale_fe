@@ -57,12 +57,7 @@ export class ScaleManufacturerService {
   ): Promise<{ data: ScaleManufacturer[]; total: number; content?: ScaleManufacturer[]; total_elements?: number }> {
     const res = await this.baseService.getData('manufacturers', params);
     if (res && res.success === true && res.data) {
-      if (res.data.content) {
-        // Paginated response
-        const content = res.data.content;
-        const total = res.data.total_elements;
-        return { data: content, total, content: content, total_elements: total };
-      } else if (Array.isArray(res.data)) {
+      if (Array.isArray(res.data)) {
         // Array response
         const data = res.data;
         return { data, total: data.length };

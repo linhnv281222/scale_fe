@@ -12,11 +12,7 @@ export class ScaleService {
     const res = await this.baseService.getData('scales', params);
     if (res && res.success === true && res.data) {
       // Check if response has content array (paginated)
-      if (res.data.content) {
-        const content = res.data.content;
-        const total = res.data.total_elements;
-        return { data: content, total, content: content, total_elements: total };
-      } else if (Array.isArray(res.data)) {
+    if (Array.isArray(res.data)) {
         // Flat array
         const data = res.data;
         return { data, total: data.length };
