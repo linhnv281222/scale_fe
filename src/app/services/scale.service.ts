@@ -18,17 +18,63 @@ export class ScaleService {
     page?: number;
     size?: number;
     total_pages?: number;
+    total_scales?: number;
+    active_scales?: number;
+    inactive_scales?: number;
   }> {
-    const res = await this.baseService.getData('scales', params);
+    // Use v2 API which returns summary statistics and paginated list
+    const res = await this.baseService.getData('scales/v2', params);
     if (!res) return { data: [], total: 0 };
 
-    // New format: { success: true, data: { data: [...], page, size, total_elements, ... } }
     const payload = res.success === true ? res.data : res;
 
-    // Check if payload has nested data object (new format)
+    // New v2 format: res.data.data.data (3 layers nested)
+    // { success: true, data: { data: { data: [...], page, size, total_elements, ... }, total_scales, active_scales, inactive_scales } }
+    if (payload?.data?.data?.data && Array.isArray(payload.data.data.data)) {
+      const pageData = payload.data.data;
+      const data: Scale[] = pageData.data;
+      const total =
+        pageData.total_elements ?? pageData.totalElements ?? data.length;
+      return {
+        data,
+        total,
+        content: data,
+        total_elements: total,
+        page: pageData.page ?? 0,
+        size: pageData.size ?? data.length,
+        total_pages: pageData.total_pages ?? pageData.totalPages ?? 1,
+        total_scales: payload.data.total_scales,
+        active_scales: payload.data.active_scales,
+        inactive_scales: payload.data.inactive_scales,
+      };
+    }
+    
+    // Fallback: try 2-layer nested format
+    const container = payload?.data ?? payload;
+    if (container?.data && Array.isArray(container.data)) {
+      const pageData = container;
+      const data: Scale[] = pageData.data;
+      const total =
+        pageData.total_elements ?? pageData.totalElements ?? data.length;
+      return {
+        data,
+        total,
+        content: data,
+        total_elements: total,
+        page: pageData.page ?? 0,
+        size: pageData.size ?? data.length,
+        total_pages: pageData.total_pages ?? pageData.totalPages ?? 1,
+        total_scales: container.total_scales,
+        active_scales: container.active_scales,
+        inactive_scales: container.inactive_scales,
+      };
+    }
+
+    // Fallback: previous paginated format { data: [...], page, size, total_elements, ... }
     if (payload?.data && Array.isArray(payload.data)) {
-      const data = payload.data;
-      const total = payload.total_elements ?? payload.totalElements ?? data.length;
+      const data: Scale[] = payload.data;
+      const total =
+        payload.total_elements ?? payload.totalElements ?? data.length;
       return {
         data,
         total,

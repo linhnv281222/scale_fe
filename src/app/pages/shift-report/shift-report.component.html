@@ -11,27 +11,46 @@
       </h3>
     </div>
 
-    <!-- Export Button -->
+    <!-- Scale Checkbox List -->
     <div
-      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+      class="flex-shrink-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
+      style="max-height: 40%"
     >
-      <button
-        nz-button
-        nzType="primary"
-        (click)="exportReport()"
-        [nzLoading]="exporting"
-        class="flex items-center justify-center w-full gap-2 rounded-md"
+      <label
+        nz-checkbox
+        [(ngModel)]="allScalesChecked"
+        (ngModelChange)="updateAllScalesChecked()"
+        [nzIndeterminate]="indeterminate"
+        class="mb-2"
       >
-        <span nz-icon nzType="download" nzTheme="outline"></span>
-        <span>{{ "reports.export" | translate }}</span>
-      </button>
+        {{ "reports.selectAllScales" | translate }}
+      </label>
+
+      <nz-divider />
+
+      <div class="space-y-2">
+        <label
+          *ngFor="let option of scaleCheckboxOptions"
+          nz-checkbox
+          [(ngModel)]="option.checked"
+          (ngModelChange)="updateSingleScaleChecked()"
+          class="block"
+        >
+          {{ option.label }}
+        </label>
+      </div>
     </div>
 
-    <!-- Scrollable Content with Fixed Search Button -->
-    <div class="flex flex-col flex-1 min-h-0">
+    <!-- Detailed Filter: 100% remaining height, scroll body, search button fixed -->
+    <div class="detailed-filter-container">
+      <h3
+        class="px-3 pt-3 mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+      >
+        {{ "filter.title" | translate }}
+      </h3>
       <!-- Scrollable Filter Fields -->
-      <div class="flex-1 min-h-0 overflow-y-auto">
-        <div class="p-3">
+      <div class="detailed-filter-scroll">
+        <div class="px-3 pb-3">
           <!-- Filter Fields (without search button) -->
           <div class="space-y-3">
             <div *ngFor="let field of filterFields" class="space-y-2">
@@ -103,7 +122,7 @@
                 ]"
                 [nzFormat]="field.format || 'dd/MM/yyyy'"
                 [nzShowTime]="field.showTime || false"
-                class="w-full"
+                class="w-full !mt-0"
               ></nz-range-picker>
             </div>
 
@@ -143,7 +162,9 @@
       </div>
 
       <!-- Fixed Search Button at Bottom -->
-      <div class="flex-shrink-0 p-3 border-gray-200 dark:border-gray-700">
+      <div
+        class="flex-shrink-0 p-3 border-t border-gray-200 dark:border-gray-700"
+      >
         <button
           nz-button
           nzType="primary"
@@ -159,6 +180,28 @@
 
   <!-- Main Content -->
   <main class="flex flex-col flex-1 overflow-hidden">
+    <!-- Header with Export Button -->
+    <div
+      class="flex-shrink-0 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+    >
+      <div class="flex items-center justify-between px-4 py-2">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
+          {{ "reports.shiftReport" | translate }}
+        </h2>
+        <!-- Export Button -->
+        <button
+          nz-button
+          nzType="primary"
+          (click)="exportReport()"
+          [nzLoading]="exporting"
+          class="flex items-center gap-2 rounded-md"
+        >
+          <span nz-icon nzType="download" nzTheme="outline"></span>
+          <span>{{ "reports.export" | translate }}</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Chart Section -->
     <div
       *ngIf="chartData.length > 0"
@@ -199,8 +242,8 @@
           x: 'auto',
           y:
             isChartExpanded && chartData.length > 0
-              ? 'calc(100vh - 415px)'
-              : 'calc(100vh - 170px)'
+              ? 'calc(100vh - 460px)'
+              : 'calc(100vh - 220px)'
         }"
         class="w-full"
       >

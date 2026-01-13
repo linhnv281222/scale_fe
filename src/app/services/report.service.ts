@@ -3,9 +3,8 @@ import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environment/environment';
 import {
-  AggregationType,
-  IntervalReportResponse,
-  IntervalType,
+    AggregationType,
+    IntervalType
 } from '../models/scale-report.model';
 import { BaseService } from './base.service';
 
@@ -31,19 +30,23 @@ export class ReportService {
   }
 
   async getIntervalReport(data: {
-    scaleIds: number[];
-    fromDate: string;
-    toDate: string;
+    scaleIds?: number[];
+    manufacturerIds?: number[];
+    locationIds?: number[];
+    direction?: string;
+    fromDate?: string;
+    toDate?: string;
     fromTime: string;
     toTime: string;
     interval: IntervalType;
     aggregationByField: {
       [key: string]: AggregationType;
     };
+    ratioFormula?: string;
     page?: number;
     size?: number;
   }): Promise<any> {
-    const res = await this.baseService.postData('reports/interval', data);
+    const res = await this.baseService.postData('reports/interval/v2', data);
     if (res && res.success === true && res.data) {
       return res.data;
     }

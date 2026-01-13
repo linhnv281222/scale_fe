@@ -1,15 +1,16 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
+import { NzFormatEmitEvent, NzTreeNodeOptions } from 'ng-zorro-antd/tree';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
-    Location,
-    Protocol,
-    ProtocolType,
-    Scale,
-    ScaleConnectionConfig,
-    ScaleType,
+  Location,
+  Protocol,
+  ProtocolType,
+  Scale,
+  ScaleConnectionConfig,
+  ScaleType,
 } from '../../models';
 import { LocationService } from '../../services/location.service';
 import { PageActionService } from '../../services/page-action.service';
@@ -30,6 +31,13 @@ export class ScalesComponent implements OnInit, OnDestroy {
   pageIndex = 1;
   pageSize = 20;
   total = 0;
+  totalScales = 0;
+  activeScales = 0;
+  inactiveScales = 0;
+  openTree = true;
+  nodes: NzTreeNodeOptions[] = [];
+  searchValue = '';
+  expandKeys: string[] = [];
   isModalVisible = false;
   isEditMode = false;
   isViewMode = false;
@@ -45,7 +53,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
     conn_params: {
       ip: '',
       port: 502,
-      // MODBUS_RTU params
       com_port: '',
       baud_rate: 9600,
       data_bits: 8,
@@ -107,12 +114,10 @@ export class ScalesComponent implements OnInit, OnDestroy {
     5: false,
   };
 
-  // Data for dropdowns
   protocols: Protocol[] = [];
   locations: Location[] = [];
   manufacturers: any[] = [];
 
-  // Form data object
   dataScale: any = {
     name: '',
     model: '',
@@ -143,14 +148,14 @@ export class ScalesComponent implements OnInit, OnDestroy {
     {
       key: 'manufacturerId',
       label: 'scales.manufacturer',
-      type: 'select',
+      type: 'multiselect',
       placeholder: 'scales.selectManufacturer',
       options: [],
     },
     {
       key: 'protocolId',
       label: 'scales.protocol',
-      type: 'select',
+      type: 'multiselect',
       placeholder: 'scales.selectProtocol',
       options: [],
     },
@@ -207,7 +212,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.loadManufacturers();
     this.loadScales();
 
-    // Subscribe to add new action
     this.pageActionService.addNew$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -224,19 +228,103 @@ export class ScalesComponent implements OnInit, OnDestroy {
     try {
       const response = await this.locationService.getLocations();
       this.locations = response.data || [];
-      // Update filter options
       const locationField = this.filterFields.find(
         (f) => f.key === 'locationId'
       );
       if (locationField) {
-        locationField.options = this.locations.map((loc) => ({
-          label: loc.name || '',
-          value: loc.id,
+        locationField.options = this.locations.map((location) => ({
+          label: location.name || '',
+          value: location.id,
         }));
       }
+
+      this.nodes = this.buildLocationTreeNodes(this.locations);
+      this.expandKeys = this.nodes.map((n) => String(n.key));
     } catch (error) {
       this.locations = [];
     }
+  }
+
+  private buildLocationTreeNodes(locations: Location[]): NzTreeNodeOptions[] {
+    const mapLocationToNode = (location: Location): NzTreeNodeOptions => ({
+      key: String(location.id),
+      title: location.name,
+      children: (location.children || []).map((child) =>
+        mapLocationToNode(child)
+      ),
+      isLeaf: !location.children || location.children.length === 0,
+      expanded: true,
+    });
+
+    return locations.map((location) => mapLocationToNode(location));
+  }
+
+  private findAllParentIds(
+    locationId: number,
+    locations: Location[]
+  ): number[] {
+    const parentIds: number[] = [];
+
+    const findLocationAndParent = (
+      targetId: number,
+      locationList: Location[],
+      currentParentId: number | null = null
+    ): boolean => {
+      for (const location of locationList) {
+        if (location.id === targetId) {
+          if (currentParentId !== null) {
+            parentIds.push(currentParentId);
+            findLocationAndParent(currentParentId, this.locations, null);
+          }
+          return true;
+        }
+        if (location.children && location.children.length > 0) {
+          if (findLocationAndParent(targetId, location.children, location.id)) {
+            if (currentParentId !== null) {
+              parentIds.push(currentParentId);
+              findLocationAndParent(currentParentId, this.locations, null);
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    findLocationAndParent(locationId, locations);
+    return parentIds;
+  }
+
+  private findAllChildIds(locationId: number, locations: Location[]): number[] {
+    const childIds: number[] = [];
+
+    const findLocationAndChildren = (
+      targetId: number,
+      locationList: Location[]
+    ): boolean => {
+      for (const location of locationList) {
+        if (location.id === targetId) {
+          if (location.children && location.children.length > 0) {
+            location.children.forEach((child) => {
+              if (child.id !== undefined) {
+                childIds.push(child.id);
+                findLocationAndChildren(child.id, this.locations);
+              }
+            });
+          }
+          return true;
+        }
+        if (location.children && location.children.length > 0) {
+          if (findLocationAndChildren(targetId, location.children)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    findLocationAndChildren(locationId, locations);
+    return childIds;
   }
 
   async loadProtocols(): Promise<void> {
@@ -246,7 +334,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       });
       this.protocols = Array.isArray(data) ? data : data.data;
 
-      // Update filter options
       const protocolField = this.filterFields.find(
         (f) => f.key === 'protocolId'
       );
@@ -268,7 +355,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       });
       this.manufacturers = response.data || [];
 
-      // Update filter options
       const manufacturerField = this.filterFields.find(
         (f) => f.key === 'manufacturerId'
       );
@@ -286,9 +372,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
   async loadScales(): Promise<void> {
     this.loading = true;
     try {
-      // Build query params according to API
       const params: any = {
-        page: this.pageIndex - 1, // API uses 0-indexed
+        page: this.pageIndex - 1,
         size: this.pageSize,
       };
 
@@ -296,13 +381,22 @@ export class ScalesComponent implements OnInit, OnDestroy {
         params.search = this.filterData.search;
       }
       if (this.filterData.locationId) {
-        params.locationId = this.filterData.locationId;
+        const locationId = this.filterData.locationId;
+        params.locationId = Array.isArray(locationId)
+          ? locationId
+          : [locationId];
       }
       if (this.filterData.manufacturerId) {
-        params.manufacturerId = this.filterData.manufacturerId;
+        const manufacturerId = this.filterData.manufacturerId;
+        params.manufacturerId = Array.isArray(manufacturerId)
+          ? manufacturerId
+          : [manufacturerId];
       }
       if (this.filterData.protocolId) {
-        params.protocolId = this.filterData.protocolId;
+        const protocolId = this.filterData.protocolId;
+        params.protocolId = Array.isArray(protocolId)
+          ? protocolId
+          : [protocolId];
       }
       if (this.filterData.model) {
         params.model = this.filterData.model;
@@ -323,6 +417,13 @@ export class ScalesComponent implements OnInit, OnDestroy {
       const result = await this.scaleService.getScales(params);
       this.scales = result.data || [];
       this.total = result.total || 0;
+      this.totalScales = result.total_scales ?? this.total;
+      this.activeScales =
+        result.active_scales ??
+        this.scales.filter((scale) => scale.is_active === true).length;
+      this.inactiveScales =
+        result.inactive_scales ??
+        this.scales.filter((scale) => scale.is_active === false).length;
     } catch (error) {
       this.scales = [];
       this.total = 0;
@@ -342,21 +443,61 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.loadScales();
   }
 
-  /**
-   * Normalize scale data to dataScale format using spread operator
-   * This makes it easier to maintain when Scale model changes
-   */
+  nzEvent(event: NzFormatEmitEvent): void {
+    if (event.eventName !== 'check') {
+      return;
+    }
+
+    const checkedKeys = event.checkedKeys || [];
+    let locationIds: number[] = [];
+
+    if (Array.isArray(checkedKeys)) {
+      const checkedIds = checkedKeys
+        .map((key: any) => {
+          if (typeof key === 'string') {
+            const id = Number(key);
+            return !isNaN(id) ? id : null;
+          }
+          if (key && typeof key === 'object' && key.key) {
+            const id = Number(key.key);
+            return !isNaN(id) ? id : null;
+          }
+          if (typeof key === 'number') {
+            return key;
+          }
+          return null;
+        })
+        .filter((id: number | null) => id !== null && !isNaN(id)) as number[];
+
+      const allIds = new Set<number>();
+
+      checkedIds.forEach((checkedId) => {
+        allIds.add(checkedId);
+        const parentIds = this.findAllParentIds(checkedId, this.locations);
+        parentIds.forEach((parentId) => allIds.add(parentId));
+        const childIds = this.findAllChildIds(checkedId, this.locations);
+        childIds.forEach((childId) => allIds.add(childId));
+      });
+
+      locationIds = Array.from(allIds);
+    }
+
+    this.filterData.locationId = locationIds.length > 0 ? locationIds : null;
+    this.pageIndex = 1;
+    this.loadScales();
+  }
+
   private normalizeScaleToDataScale(scale: Scale | null): any {
     if (!scale) {
       return {
-      name: '',
-      model: '',
+        name: '',
+        model: '',
         direction: 'IMPORT',
-      location_id: null,
+        location_id: null,
         manufacturer_id: null,
         protocol_id: null,
-      is_active: true,
-    };
+        is_active: true,
+      };
     }
 
     return {
@@ -384,14 +525,12 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.isEditMode = false;
     this.selectedScale = scale;
 
-    // Load full scale details with config
     if (scale.id) {
       const fullScale = await this.scaleService.getScaleById(scale.id);
       if (fullScale) {
         this.selectedScale = fullScale;
         this.dataScale = this.normalizeScaleToDataScale(fullScale);
 
-        // Load config from scale_config in response
         if (fullScale.scale_config) {
           this.loadConfigFromScaleConfig(fullScale.scale_config);
         } else {
@@ -413,14 +552,12 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.isViewMode = false;
     this.selectedScale = scale;
 
-    // Load full scale details with config
     if (scale.id) {
       const fullScale = await this.scaleService.getScaleById(scale.id);
       if (fullScale) {
         this.selectedScale = fullScale;
         this.dataScale = this.normalizeScaleToDataScale(fullScale);
 
-        // Load config from scale_config in response
         if (fullScale.scale_config) {
           this.loadConfigFromScaleConfig(fullScale.scale_config);
         } else {
@@ -447,10 +584,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
     const protocol = this.protocols.find((p) => p.id === protocolId);
     if (protocol) {
       this.dataScale.protocol_id = protocolId;
-      // Update scaleConfig protocol to match
       this.scaleConfig.protocol = protocol.code || protocol.type;
 
-      // Set defaults for the selected protocol type
       if (
         protocol.type === ProtocolType.MODBUS_TCP ||
         protocol.code === 'MODBUS_TCP'
@@ -482,13 +617,11 @@ export class ScalesComponent implements OnInit, OnDestroy {
   onProtocolConfigChange(protocolCode: string): void {
     this.scaleConfig.protocol = protocolCode;
 
-    // Update protocol_id if protocol code matches
     const protocol = this.protocols.find((p) => p.code === protocolCode);
     if (protocol) {
       this.dataScale.protocol_id = protocol.id;
     }
 
-    // Set defaults for the selected protocol type
     if (protocolCode === 'MODBUS_TCP') {
       this.scaleConfig.conn_params = {
         ...this.scaleConfig.conn_params,
@@ -549,7 +682,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.dataScale.sabusConfig = '';
   }
 
-  // Getter for selected protocol type
   get selectedProtocolType(): string | null {
     if (!this.dataScale.protocolId) return null;
     const protocol = this.protocols.find(
@@ -565,7 +697,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
   }
 
   async saveScale(): Promise<void> {
-    // Validation
     if (!this.dataScale.name) {
       this.toastr.warning('Vui lòng nhập tên cân');
       return;
@@ -589,7 +720,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Validate connection params based on protocol
     const protocol = this.protocols.find(
       (p) => p.code === this.scaleConfig.protocol
     );
@@ -626,7 +756,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
 
     this.saving = true;
     try {
-      // Build scale data with config in one request
       const data: any = {
         name: this.dataScale.name,
         model: this.dataScale.model || undefined,
@@ -642,7 +771,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
         poll_interval: this.scaleConfig.poll_interval,
       };
 
-      // Build conn_params based on protocol type
       const protocol = this.protocols.find(
         (p) => p.code === this.scaleConfig.protocol
       );
@@ -672,7 +800,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
         data.conn_params = this.scaleConfig.conn_params || {};
       }
 
-      // Add data channels
       for (let i = 1; i <= 5; i++) {
         const channel = this.scaleConfig[`data_${i}`];
         if (channel && channel.is_used) {
@@ -692,7 +819,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       }
 
       if (this.isEditMode) {
-        // Update scale with config
         const updated = await this.scaleService.updateScale(
           this.selectedScale?.id!,
           data
@@ -706,7 +832,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
           this.toastr.error('Cập nhật cân thất bại');
         }
       } else {
-        // Create scale with config
         const created = await this.scaleService.createScale(data);
         if (created && created.id) {
           this.toastr.success('Tạo cân thành công');
@@ -725,7 +850,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Confirm dialog
   isConfirmVisible = false;
   scaleToDelete: Scale | null = null;
 
@@ -751,7 +875,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.isViewMode = false;
   }
 
-  // Getter for delete message
   get deleteMessage(): string {
     if (!this.scaleToDelete) return '';
     return `Bạn có chắc chắn muốn xóa cân "${this.scaleToDelete.name}"?`;
@@ -769,7 +892,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Build conn_params with defaults for both TCP and RTU
     const defaultConnParams = {
       ip: '',
       port: 502,
@@ -848,7 +970,6 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
     };
 
-    // Expand channels that are in use
     for (let i = 1; i <= 5; i++) {
       const channel = this.scaleConfig[`data_${i}`];
       if (channel && channel.is_used) {

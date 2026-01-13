@@ -129,6 +129,7 @@
   },
   "scales": {
     "title": "Quản lý thông tin Cân",
+    "locationTree": "Cây vị trí",
     "list": "Danh sách Cân",
     "manufacturers": "Hãng Cân",
     "manufacturerName": "Tên hãng",
@@ -330,6 +331,7 @@
     "to": "Đến",
     "selectShift": "Chọn ca",
     "selectScales": "Chọn cân",
+    "selectAllScales": "Chọn tất cả",
     "flowRate": "Lưu lượng",
     "totalAccumulated": "Tổng tích lũy",
     "speed": "Tốc độ",

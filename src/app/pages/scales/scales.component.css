@@ -1,2 +1,23 @@
 /* Scales component styles */
 
+/* Sidebar filter: max 50% height, scrollable content */
+.sidebar-filter {
+  max-height: 50%;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .sidebar-filter,
+[data-theme='dark'] .sidebar-filter {
+  border-top-color: #374151;
+}
+
+.filter-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}

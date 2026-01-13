@@ -1,32 +1,106 @@
 <div class="flex h-full bg-gray-50 dark:bg-gray-900">
-  <!-- Filter Sidebar -->
+  <!-- Left Sidebar: Location Tree + Filter -->
   <aside
-    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+    class="flex flex-col bg-white border-r border-gray-200 w-72 dark:bg-gray-800 dark:border-gray-700"
   >
+    <!-- Location Tree -->
     <div
       class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
     >
       <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-        {{ "filter.title" | translate }}
+        {{ 'scales.locationTree' | translate }}
       </h3>
     </div>
-    <div class="flex-1 min-h-0 p-3">
-      <app-filter-sidebar
-        [fields]="filterFields"
-        (search)="onSearch($event)"
-        (reset)="onReset()"
-      ></app-filter-sidebar>
+    <div
+      class="flex-1 min-h-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
+    >
+      <nz-tree
+        *ngIf="openTree"
+        [nzData]="nodes"
+        [nzSearchValue]="searchValue"
+        nzCheckable
+        nzMultiple
+        nzShowIcon
+        [nzExpandedKeys]="expandKeys"
+        (nzClick)="nzEvent($event)"
+        (nzExpandChange)="nzEvent($event)"
+        (nzCheckBoxChange)="nzEvent($event)"
+      >
+        <ng-template #multiExpandedIconTpl let-node let-origin="origin">
+          @if (!origin.isLeaf) {
+          <span
+            nz-icon
+            [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
+            class="ant-tree-switcher-line-icon"
+          ></span>
+          } @else {
+          <span
+            nz-icon
+            nzType="file"
+            class="ant-tree-switcher-line-icon"
+          ></span>
+          }
+        </ng-template>
+        <ng-template #nzTreeTemplate let-node>
+          <span class="d-flex" style="align-items: baseline">
+            @if (node.icon) {
+            <img
+              style="width: 14px; height: 14px; margin-right: 8px"
+              [src]="node.icon"
+            />
+            }
+
+            <span [innerHTML]="node.title"></span>
+          </span>
+        </ng-template>
+      </nz-tree>
+    </div>
+
+    <!-- Detailed Filter: max 50% height, scroll body, search button fixed in component -->
+    <div class="p-3 sidebar-filter">
+      <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200">
+        {{ "filter.title" | translate }}
+      </h3>
+      <div class="filter-scroll">
+        <app-filter-sidebar
+          [fields]="filterFields"
+          (search)="onSearch($event)"
+          (reset)="onReset()"
+        ></app-filter-sidebar>
+      </div>
     </div>
   </aside>
 
   <!-- Main Content -->
   <main class="flex-1 overflow-y-auto">
     <div class="p-1">
-      <!-- Page Title and Add Button -->
-      <div class="flex items-center justify-between mb-1">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
-          {{ "scales.title" | translate }}
-        </h2>
+      <!-- Page Title, Summary Badges and Add Button -->
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-4">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
+            {{ "scales.title" | translate }}
+          </h2>
+          <div class="flex items-center gap-2">
+            <div
+              class="px-3 py-1 text-xs font-semibold text-gray-800 bg-blue-100 border border-blue-200 rounded-full dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700"
+            >
+              Tổng số cân:
+              <span class="ml-1">{{ totalScales }}</span>
+            </div>
+            <div
+              class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 border border-green-200 rounded-full dark:bg-green-900/40 dark:text-green-100 dark:border-green-700"
+            >
+              Đang hoạt động:
+              <span class="ml-1">{{ activeScales }}</span>
+            </div>
+            <div
+              class="px-3 py-1 text-xs font-semibold text-red-800 bg-red-100 border border-red-200 rounded-full dark:bg-red-900/40 dark:text-red-100 dark:border-red-700"
+            >
+              Không hoạt động:
+              <span class="ml-1">{{ inactiveScales }}</span>
+            </div>
+          </div>
+        </div>
         <button
           nz-button
           nzType="primary"

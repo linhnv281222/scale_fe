@@ -13,6 +13,25 @@ export interface IntervalReportRow {
   scale: Scale;
   period: string;
   recordCount: number;
+  direction?: number; // 0=Unknown, 1=Nhập, 2=Xuất
+  ratio?: {
+    value: string;
+    formula: string;
+  };
+  start_values?: {
+    data_1?: DataValue;
+    data_2?: DataValue;
+    data_3?: DataValue;
+    data_4?: DataValue;
+    data_5?: DataValue;
+  };
+  end_values?: {
+    data_1?: DataValue;
+    data_2?: DataValue;
+    data_3?: DataValue;
+    data_4?: DataValue;
+    data_5?: DataValue;
+  };
   data_values: {
     data_1?: DataValue;
     data_2?: DataValue;
@@ -32,9 +51,27 @@ export interface IntervalReportResponse {
   aggregationByField?: {
     [key: string]: AggregationType;
   };
+  ratioFormula?: string;
+  overview?: {
+    [direction: string]: {
+      [key: string]: {
+        value: string;
+        aggregation: AggregationType;
+        name: string;
+        used: boolean;
+      };
+    };
+  };
   rows?: IntervalReportRow[];
   // New response shape: data is array of IntervalReportRow
   data?: IntervalReportRow[];
+  page?: number;
+  size?: number;
+  total_elements?: number;
+  totalElements?: number;
+  total_pages?: number;
+  totalPages?: number;
+  total?: number;
 }
 
 export interface ScaleHistoryItem {

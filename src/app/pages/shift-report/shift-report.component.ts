@@ -8,15 +8,16 @@ import {
   IntervalReportResponse,
   IntervalReportRow,
   IntervalType,
+  Location,
   ReportTemplateImport,
   Scale,
 } from '../../models';
+import { LocationService } from '../../services/location.service';
 import { ReportService } from '../../services/report.service';
 import { ScaleService } from '../../services/scale.service';
 import { TemplateService } from '../../services/template.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
-// Extended interface with formatted data
 interface FormattedIntervalReportRow extends IntervalReportRow {
   formattedData: { [key: string]: number | string };
 }
@@ -29,8 +30,8 @@ interface FormattedIntervalReportRow extends IntervalReportRow {
 export class ShiftReportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // Data
   scales: Scale[] = [];
+  locations: Location[] = [];
   reportData: IntervalReportResponse | null = null;
   reportRows: FormattedIntervalReportRow[] = [];
   loading = false;
@@ -38,23 +39,32 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   pageSize = 20;
   total = 0;
 
-  // Data columns (dynamic based on API response)
   dataColumns: { key: string; name: string }[] = [];
 
-  // Filter data
+  selectedScaleIds: number[] = [];
+  allScalesChecked = false;
+  indeterminate = false;
+  scaleCheckboxOptions: Array<{
+    label: string;
+    value: number;
+    checked: boolean;
+  }> = [];
+
   filterData: any = {
     dateRange: null,
     scaleIds: [],
+    locationIds: [],
+    manufacturerIds: [],
+    direction: null,
     interval: 'SHIFT' as IntervalType,
     aggregationByField: {} as { [key: string]: AggregationType },
+    ratioFormula: 'data_1/data_3',
   };
 
-  // Chart data
   chartData: any[] = [];
   chartOptions: any = {};
-  isChartExpanded = false; // Default collapsed
+  isChartExpanded = false;
 
-  // Aggregation options
   aggregationOptions = [
     { label: 'ABS', value: 'ABS' },
     { label: 'SUM', value: 'SUM' },
@@ -72,18 +82,29 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       showTime: false,
     },
     {
-      key: 'scaleIds',
-      label: 'reports.selectScales',
+      key: 'locationIds',
+      label: 'locations.name',
       type: 'multiselect',
-      placeholder: 'reports.selectScales',
+      placeholder: 'locations.selectLocations',
       options: [],
+    },
+    {
+      key: 'interval',
+      label: 'reports.interval',
+      type: 'select',
+      placeholder: 'reports.selectInterval',
+      options: [
+        { label: 'reports.hour', value: 'HOUR' },
+        { label: 'reports.day', value: 'DAY' },
+        { label: 'reports.week', value: 'WEEK' },
+        { label: 'reports.month', value: 'MONTH' },
+        { label: 'reports.year', value: 'YEAR' },
+      ],
     },
   ];
 
-  // Export
   exporting = false;
 
-  // Template selection modal
   isTemplateModalVisible = false;
   templates: ReportTemplateImport[] = [];
   templatesLoading = false;
@@ -92,18 +113,18 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   constructor(
     private scaleService: ScaleService,
     private reportService: ReportService,
+    private locationService: LocationService,
     private templateService: TemplateService,
     private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
-    // Set default date range: 7 days ago to today
     const today = moment();
     const sevenDaysAgo = moment().subtract(7, 'days');
     this.filterData.dateRange = [sevenDaysAgo.toDate(), today.toDate()];
 
+    this.loadLocations();
     this.loadScales().then(() => {
-      // Auto load report data after scales are loaded
       this.loadReportData();
     });
   }
@@ -113,12 +134,37 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  async loadLocations(): Promise<void> {
+    try {
+      const response = await this.locationService.getLocations();
+      this.locations = response.data ?? [];
+      this.updateLocationOptions();
+    } catch (error) {
+      this.locations = [];
+    }
+  }
+
+  updateLocationOptions(): void {
+    const locationField = this.filterFields.find(
+      (field) => field.key === 'locationIds'
+    );
+    if (locationField) {
+      locationField.options = this.locations.map((location) => ({
+        label: location.name ?? '',
+        value: location.id,
+      }));
+    }
+  }
+
   async loadScales(): Promise<void> {
     try {
-      const data = await this.scaleService.getScales({});
+      const data = await this.scaleService.getScales();
       this.scales = Array.isArray(data) ? data : data?.data ?? [];
       this.updateScaleOptions();
-      // Load scale configs to get data fields
+      if (this.scales.length > 0 && this.selectedScaleIds.length === 0) {
+        this.allScalesChecked = true;
+        this.updateAllScalesChecked();
+      }
       await this.loadScaleConfigs();
     } catch (error) {
       this.scales = [];
@@ -126,10 +172,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   }
 
   async loadScaleConfigs(): Promise<void> {
-    // Load configs for selected scales to get data field names
-    const selectedScaleIds = this.filterData.scaleIds ?? [];
-    if (selectedScaleIds.length === 0) {
-      // If no scales selected, use first scale as default to get data fields
+    const selectedScaleIdentifiers = this.filterData.scaleIds ?? [];
+    if (selectedScaleIdentifiers.length === 0) {
       if (this.scales.length > 0 && this.scales[0].id) {
         try {
           const scale = await this.scaleService.getScaleById(this.scales[0].id);
@@ -137,27 +181,21 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           if (config) {
             this.initializeAggregationFields(config);
           }
-        } catch (error) {
-          // Ignore error
-        }
+        } catch (error) {}
       }
     } else {
-      // Load config for first selected scale
-      const firstScaleId = selectedScaleIds[0];
+      const firstScaleIdentifier = selectedScaleIdentifiers[0];
       try {
-        const scale = await this.scaleService.getScaleById(firstScaleId);
+        const scale = await this.scaleService.getScaleById(firstScaleIdentifier);
         const config = scale?.scale_config;
         if (config) {
           this.initializeAggregationFields(config);
         }
-      } catch (error) {
-        // Ignore error
-      }
+      } catch (error) {}
     }
   }
 
   initializeAggregationFields(config: any): void {
-    // Initialize aggregationByField for data_1 to data_5
     const aggregation: { [key: string]: AggregationType } = {};
     const columns: { key: string; name: string }[] = [];
 
@@ -166,7 +204,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       if (channel && channel.is_used) {
         const dataKey = `data_${i}`;
         const dataName = channel.name ?? `Data ${i}`;
-        // Default to ABS for all fields
         aggregation[dataKey] = 'ABS';
         columns.push({ key: dataKey, name: dataName });
       }
@@ -177,19 +214,54 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   }
 
   updateScaleOptions(): void {
-    const scaleField = this.filterFields.find((f) => f.key === 'scaleIds');
-    if (scaleField) {
-      scaleField.options = this.scales.map((scale) => ({
+    this.scaleCheckboxOptions = this.scales
+      .filter((scale) => scale.id !== undefined)
+      .map((scale) => ({
         label: scale.name || `Scale ${scale.id}`,
-        value: scale.id,
+        value: scale.id!,
+        checked: this.selectedScaleIds.includes(scale.id!),
+      }));
+  }
+
+  updateAllScalesChecked(): void {
+    this.indeterminate = false;
+    if (this.allScalesChecked) {
+      this.scaleCheckboxOptions = this.scaleCheckboxOptions.map((option) => ({
+        ...option,
+        checked: true,
+      }));
+    } else {
+      this.scaleCheckboxOptions = this.scaleCheckboxOptions.map((option) => ({
+        ...option,
+        checked: false,
       }));
     }
+    this.syncSelectedScaleIdsFromOptions();
+  }
+
+  updateSingleScaleChecked(): void {
+    if (this.scaleCheckboxOptions.every((option) => !option.checked)) {
+      this.allScalesChecked = false;
+      this.indeterminate = false;
+    } else if (this.scaleCheckboxOptions.every((option) => option.checked)) {
+      this.allScalesChecked = true;
+      this.indeterminate = false;
+    } else {
+      this.indeterminate = true;
+    }
+    this.syncSelectedScaleIdsFromOptions();
+  }
+
+  syncSelectedScaleIdsFromOptions(): void {
+    this.selectedScaleIds = this.scaleCheckboxOptions
+      .filter((option) => option.checked)
+      .map((option) => option.value);
+    this.filterData.scaleIds = [...this.selectedScaleIds];
   }
 
   async loadReportData(): Promise<void> {
     this.loading = true;
     try {
-      // Use default date range if not set
       let dateRange = this.filterData.dateRange;
       if (!dateRange || dateRange.length !== 2) {
         const today = moment();
@@ -203,28 +275,48 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       const toTime = moment(dateRange[1]).endOf('day').toISOString();
 
       const apiData: any = await this.reportService.getIntervalReport({
-        scaleIds: this.filterData.scaleIds ?? [],
-        fromDate,
-        toDate,
+        scaleIds: this.filterData.scaleIds?.length
+          ? this.filterData.scaleIds
+          : undefined,
+        manufacturerIds: this.filterData.manufacturerIds?.length
+          ? this.filterData.manufacturerIds
+          : undefined,
+        locationIds: this.filterData.locationIds?.length
+          ? this.filterData.locationIds
+          : undefined,
+        direction: this.filterData.direction || undefined,
         fromTime,
         toTime,
         interval: 'SHIFT' as IntervalType,
         aggregationByField: this.filterData.aggregationByField ?? {},
+        ratioFormula: this.filterData.ratioFormula || 'data_1/data_3',
         page: this.pageIndex - 1,
         size: this.pageSize,
       });
 
       if (apiData) {
-        // Support both old and new response shapes
-        const rawRows: IntervalReportRow[] = Array.isArray(apiData)
-          ? apiData
-          : Array.isArray(apiData?.rows)
-          ? apiData.rows!
-          : Array.isArray(apiData?.data)
-          ? apiData.data
-          : [];
+        let rawRows: IntervalReportRow[] = [];
+        let overviewData: any = null;
 
-        // Derive dataFieldNames from response or data_values
+        if (Array.isArray(apiData.data)) {
+          if (apiData.data.length > 0 && apiData.data[0].rows) {
+            rawRows = apiData.data[0].rows;
+            overviewData = apiData.data[0].overview;
+          } else if (apiData.data.length > 0 && apiData.data[0].data) {
+            rawRows = apiData.data[0].data;
+            overviewData = apiData.data[0].overview;
+          }
+        } else if (apiData.data?.data && Array.isArray(apiData.data.data)) {
+          rawRows = apiData.data.data;
+          overviewData = apiData.data.overview || apiData.overview;
+        } else if (Array.isArray(apiData.rows)) {
+          rawRows = apiData.rows;
+          overviewData = apiData.overview;
+        } else if (Array.isArray(apiData.data)) {
+          rawRows = apiData.data;
+          overviewData = apiData.overview;
+        }
+
         let dataFieldNames = apiData?.dataFieldNames || {};
         if (
           (!dataFieldNames || Object.keys(dataFieldNames).length === 0) &&
@@ -233,31 +325,29 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           const firstRow = rawRows[0];
           const firstDataValues: any = firstRow.data_values || {};
           const keys = Object.keys(firstDataValues);
-          dataFieldNames = keys.reduce((acc: any, key: string) => {
-            const dv = firstDataValues[key];
-            if (dv?.name) acc[key] = dv.name;
-            return acc;
+          dataFieldNames = keys.reduce((accumulator: any, key: string) => {
+            const dataValue = firstDataValues[key];
+            if (dataValue?.name) accumulator[key] = dataValue.name;
+            return accumulator;
           }, {});
         }
 
-        // Update data columns from API response first (for display names)
         if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
-          const apiColumns = Object.keys(dataFieldNames).map((key) => ({
+          const columnsFromApi = Object.keys(dataFieldNames).map((key) => ({
             key,
             name: dataFieldNames![key],
           }));
-          // Merge with existing columns, update names if key matches
           if (this.dataColumns.length > 0) {
-            this.dataColumns = this.dataColumns.map((col) => {
-              const apiCol = apiColumns.find((ac) => ac.key === col.key);
-              return apiCol ? { ...col, name: apiCol.name } : col;
+            this.dataColumns = this.dataColumns.map((column) => {
+              const matchingApiColumn = columnsFromApi.find(
+                (apiColumn) => apiColumn.key === column.key
+              );
+              return matchingApiColumn ? { ...column, name: matchingApiColumn.name } : column;
             });
           } else {
-            // If no columns from config, use API columns
-            this.dataColumns = apiColumns;
+            this.dataColumns = columnsFromApi;
           }
         } else if (this.dataColumns.length === 0 && rawRows.length > 0) {
-          // Fallback: build columns from keys in data_values
           const firstRow = rawRows[0];
           const firstDataValues: any = firstRow.data_values || {};
           this.dataColumns = Object.keys(firstDataValues).map((key) => ({
@@ -266,62 +356,63 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           }));
         }
 
-        // Format data for each row (after dataColumns is updated)
-        this.reportRows = rawRows.map(
-          (row: any): FormattedIntervalReportRow => {
-            const formattedRow: FormattedIntervalReportRow = {
-              ...row,
-              formattedData: {},
-            };
-            // Format each data column
-            this.dataColumns.forEach((col) => {
-              const rowDataValues: any = row.data_values || {};
-              const dataValue = rowDataValues[col.key];
-              if (
-                dataValue &&
-                dataValue.used &&
-                dataValue.value !== null &&
-                dataValue.value !== undefined
-              ) {
-                const numValue = parseFloat(dataValue.value);
-                formattedRow.formattedData[col.key] = !isNaN(numValue)
-                  ? numValue
-                  : '';
-              } else {
-                formattedRow.formattedData[col.key] = '';
-              }
-            });
-            return formattedRow;
-          }
-        );
+        this.reportRows = rawRows.map((row): FormattedIntervalReportRow => {
+          const formattedRow: FormattedIntervalReportRow = {
+            ...row,
+            formattedData: {},
+          };
+          this.dataColumns.forEach((column) => {
+            const rowDataValues: any = row.data_values || {};
+            const dataValue = rowDataValues[column.key];
+            if (
+              dataValue &&
+              dataValue.used &&
+              dataValue.value !== null &&
+              dataValue.value !== undefined
+            ) {
+              const numValue = parseFloat(dataValue.value);
+              formattedRow.formattedData[column.key] = !isNaN(numValue)
+                ? numValue
+                : '';
+            } else {
+              formattedRow.formattedData[column.key] = '';
+            }
+          });
+          return formattedRow;
+        });
 
-        // Store simplified reportData + pagination for downstream use (chart label)
         this.reportData = {
           interval: 'SHIFT' as IntervalType,
           fromDate,
           toDate,
           dataFieldNames,
           aggregationByField: this.filterData.aggregationByField ?? {},
+          ratioFormula: this.filterData.ratioFormula || 'data_1/data_3',
+          overview: overviewData,
           rows: rawRows,
         };
 
-        // Update pagination
+        const paginationData = apiData.data || apiData;
         this.total =
-          apiData.total_elements ??
-          apiData.totalElements ??
-          apiData.total ??
+          paginationData.total_elements ??
+          paginationData.totalElements ??
+          paginationData.total ??
           rawRows.length ??
           0;
         this.pageIndex =
-          (apiData.page ?? apiData.pageNumber ?? this.pageIndex - 1) + 1;
+          (paginationData.page ??
+            paginationData.pageNumber ??
+            this.pageIndex - 1) + 1;
         this.pageSize =
-          apiData.size ?? apiData.pageSize ?? this.pageSize ?? rawRows.length;
+          paginationData.size ??
+          paginationData.pageSize ??
+          this.pageSize ??
+          rawRows.length;
 
         this.prepareChartData();
       } else {
         this.reportData = null;
         this.reportRows = [];
-        // Keep dataColumns for filter display
       }
     } catch (error) {
       this.reportData = null;
@@ -339,7 +430,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Get data_1 (Weight) for chart
     const weightData: any[] = this.reportRows
       .map((row, index) => {
         const data1 = row.data_values?.data_1;
@@ -356,7 +446,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
     this.chartData = weightData;
 
-    // Prepare ECharts options
     this.updateChartOptions();
   }
 
@@ -366,10 +455,9 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const periods = this.chartData.map((d) => d.period);
-    const values = this.chartData.map((d) => d.value);
+    const periods = this.chartData.map((dataItem) => dataItem.period);
+    const values = this.chartData.map((dataItem) => dataItem.value);
 
-    // Detect dark theme
     const isDark = document.documentElement.classList.contains('dark');
     const textColor = isDark ? '#e5e7eb' : '#374151';
     const lineColor = isDark ? '#4b5563' : '#e5e7eb';
@@ -377,9 +465,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
     const data1Name = this.reportData?.dataFieldNames?.['data_1'] ?? '';
 
-    // Format large numbers (divide by 1000 and add 'k' suffix, or use compact notation)
     const formatLargeNumber = (value: number): string => {
-      // Check for NaN, null, or undefined
       if (value === null || value === undefined || isNaN(value)) {
         return '-';
       }
@@ -391,9 +477,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       return value.toFixed(1);
     };
 
-    // Format number with thousand separators
     const formatNumber = (value: number): string => {
-      // Check for NaN, null, or undefined
       if (value === null || value === undefined || isNaN(value)) {
         return '-';
       }
@@ -416,9 +500,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           color: textColor,
         },
         formatter: (params: any) => {
-          const param = params[0];
-          const tooltipValue = param.value;
-          // Check for NaN, null, or undefined
+          const tooltipParameter = params[0];
+          const tooltipValue = tooltipParameter.value;
           if (
             tooltipValue === null ||
             tooltipValue === undefined ||
@@ -426,15 +509,15 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           ) {
             return `
               <div>
-                <div><strong>${param.axisValue}</strong></div>
-                <div>${param.seriesName}: -</div>
+                <div><strong>${tooltipParameter.axisValue}</strong></div>
+                <div>${tooltipParameter.seriesName}: -</div>
               </div>
             `;
           }
           return `
             <div>
-              <div><strong>${param.axisValue}</strong></div>
-              <div>${param.seriesName}: ${formatNumber(tooltipValue)}</div>
+              <div><strong>${tooltipParameter.axisValue}</strong></div>
+              <div>${tooltipParameter.seriesName}: ${formatNumber(tooltipValue)}</div>
             </div>
           `;
         },
@@ -506,10 +589,12 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       } else {
         this.filterData.dateRange = null;
       }
-      if (filters.scaleIds !== undefined) {
-        this.filterData.scaleIds = filters.scaleIds;
-        // Reload scale configs when scales change to update data columns
-        await this.loadScaleConfigs();
+      if (filters.locationIds !== undefined) {
+        this.filterData.locationIds = filters.locationIds;
+        this.updateScaleOptions();
+      }
+      if (filters.interval !== undefined) {
+        this.filterData.interval = filters.interval;
       }
     }
     this.loadReportData();
@@ -519,6 +604,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.filterData = {
       dateRange: null,
       scaleIds: [],
+      locationIds: [],
       interval: 'SHIFT' as IntervalType,
       aggregationByField: {} as { [key: string]: AggregationType },
     };
@@ -530,6 +616,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.pageIndex = 1;
     this.pageSize = 20;
     this.total = 0;
+    this.updateScaleOptions();
   }
 
   onPaginationChange(event: { page: number; size: number }): void {
@@ -563,7 +650,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   }
 
   async exportReport(): Promise<void> {
-    // Open template selection modal
     await this.loadTemplates();
     this.isTemplateModalVisible = true;
   }
@@ -571,7 +657,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   async loadTemplates(): Promise<void> {
     this.templatesLoading = true;
     try {
-      // Load templates for "Báo cáo ca"
       this.templates = await this.templateService.getTemplateImports(
         'Báo cáo ca'
       );
@@ -589,7 +674,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Use default date range if not set
     let dateRange = this.filterData.dateRange;
     if (!dateRange || dateRange.length !== 2) {
       const today = moment();
@@ -599,16 +683,39 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
     this.exportingWithTemplate = true;
     try {
-      const scaleIds = this.filterData.scaleIds ?? [];
+      let scaleIdentifiers = this.filterData.scaleIds ?? [];
+      if (
+        this.filterData.locationIds &&
+        this.filterData.locationIds.length > 0
+      ) {
+        const filteredScales = this.scales.filter((scale) => {
+          const locationIdentifier = scale.location_id ?? scale.locationId;
+          return (
+            locationIdentifier &&
+            this.filterData.locationIds.includes(locationIdentifier)
+          );
+        });
+        scaleIdentifiers = filteredScales
+          .map((scale) => scale.id)
+          .filter((identifier) => identifier !== undefined) as number[];
+        if (
+          this.filterData.scaleIds &&
+          this.filterData.scaleIds.length > 0
+        ) {
+          scaleIdentifiers = scaleIdentifiers.filter((identifier: number) =>
+            this.filterData.scaleIds.includes(identifier)
+          );
+        }
+      }
+
       const startTime = moment(dateRange[0]).toISOString();
       const endTime = moment(dateRange[1]).endOf('day').toISOString();
 
-      // Get dataFields from dataColumns
-      const dataFields = this.dataColumns.map((col) => col.key);
+      const dataFields = this.dataColumns.map((column) => column.key);
 
       const payload = {
         type: 'WORD',
-        scaleIds,
+        scaleIds: scaleIdentifiers,
         startTime,
         endTime,
         dataFields:
@@ -619,26 +726,24 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         aggregationByField: this.filterData.aggregationByField ?? {},
         intervalReport: true,
         timeInterval: 'SHIFT' as IntervalType,
+        locationIds: this.filterData.locationIds ?? [],
         activeOnly: true,
         reportTitle: 'Báo cáo ca',
         reportCode: 'BCSL',
         preparedBy: 'System',
       };
 
-      // Use new API with importId
       const blob = await this.reportService.exportReportWithTemplate(
         template.id,
         payload
       );
 
-      // Generate filename
       const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
       const toDate = moment(dateRange[1]).format('YYYY-MM-DD');
       const fileName = `${
         template.templateCode || 'Bao_cao'
       }_${fromDate}_${toDate}.docx`;
 
-      // Download file
       saveAs(blob, fileName);
       this.toastr.success('Xuất báo cáo thành công', 'Thành công');
       this.isTemplateModalVisible = false;

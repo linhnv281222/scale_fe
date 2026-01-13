@@ -20,7 +20,6 @@ import { ScaleService } from '../../services/scale.service';
 import { TemplateService } from '../../services/template.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
-// Extended interfaces with formatted data
 interface FormattedIntervalReportRow extends IntervalReportRow {
   formattedData: { [key: string]: number | string };
 }
@@ -37,7 +36,6 @@ interface FormattedScaleHistoryItem extends ScaleHistoryItem {
 export class ScaleReportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // Data
   scales: Scale[] = [];
   locations: Location[] = [];
   reportData: IntervalReportResponse | null = null;
@@ -47,24 +45,32 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   pageSize = 20;
   total = 0;
 
-  // Data columns (dynamic based on API response)
   dataColumns: { key: string; name: string }[] = [];
 
-  // Filter data
+  selectedScaleIds: number[] = [];
+  allScalesChecked = false;
+  indeterminate = false;
+  scaleCheckboxOptions: Array<{
+    label: string;
+    value: number;
+    checked: boolean;
+  }> = [];
+
   filterData: any = {
     dateRange: null,
     scaleIds: [],
     locationIds: [],
+    manufacturerIds: [],
+    direction: null,
     interval: 'HOUR' as IntervalType,
     aggregationByField: {} as { [key: string]: AggregationType },
+    ratioFormula: 'data_1/data_3',
   };
 
-  // Chart data
   chartData: any[] = [];
   chartOptions: any = {};
-  isChartExpanded = false; // Default collapsed
+  isChartExpanded = false;
 
-  // History section (displayed below main table)
   selectedRow: FormattedIntervalReportRow | null = null;
   selectedRowIndex: number | null = null;
   historyData: FormattedScaleHistoryItem[] = [];
@@ -74,7 +80,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   historyTotal = 0;
   isHistoryExpanded = false;
 
-  // Aggregation options
   aggregationOptions = [
     { label: 'ABS', value: 'ABS' },
     { label: 'SUM', value: 'SUM' },
@@ -99,13 +104,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       options: [],
     },
     {
-      key: 'scaleIds',
-      label: 'reports.selectScales',
-      type: 'multiselect',
-      placeholder: 'reports.selectScales',
-      options: [],
-    },
-    {
       key: 'interval',
       label: 'reports.interval',
       type: 'select',
@@ -120,10 +118,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     },
   ];
 
-  // Export
   exporting = false;
 
-  // Template selection modal
   isTemplateModalVisible = false;
   templates: ReportTemplateImport[] = [];
   templatesLoading = false;
@@ -139,14 +135,12 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Set default date range: 7 days ago to today
     const today = moment();
     const sevenDaysAgo = moment().subtract(7, 'days');
     this.filterData.dateRange = [sevenDaysAgo.toDate(), today.toDate()];
 
     this.loadLocations();
     this.loadScales().then(() => {
-      // Auto load report data after scales and configs are loaded
       this.loadReportData();
     });
   }
@@ -168,7 +162,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
   updateLocationOptions(): void {
     const locationField = this.filterFields.find(
-      (f) => f.key === 'locationIds'
+      (field) => field.key === 'locationIds'
     );
     if (locationField) {
       locationField.options = this.locations.map((location) => ({
@@ -180,10 +174,17 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
   async loadScales(): Promise<void> {
     try {
-      const data = await this.scaleService.getScales({});
+      const data = await this.scaleService.getScales();
       this.scales = Array.isArray(data) ? data : data?.data ?? [];
+      if (this.scales.length > 0 && this.selectedScaleIds.length === 0) {
+        this.selectedScaleIds = this.scales
+          .filter((scale) => scale.id !== undefined)
+          .map((scale) => scale.id!);
+        this.allScalesChecked = true;
+        this.indeterminate = false;
+        this.filterData.scaleIds = [...this.selectedScaleIds];
+      }
       this.updateScaleOptions();
-      // Load scale configs to get data fields
       await this.loadScaleConfigs();
     } catch (error) {
       this.scales = [];
@@ -191,10 +192,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   }
 
   async loadScaleConfigs(): Promise<void> {
-    // Load configs for selected scales to get data field names
     const selectedScaleIds = this.filterData.scaleIds ?? [];
     if (selectedScaleIds.length === 0) {
-      // If no scales selected, use first scale as default to get data fields
       if (this.scales.length > 0 && this.scales[0].id) {
         try {
           const scale = await this.scaleService.getScaleById(this.scales[0].id);
@@ -202,12 +201,9 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           if (config) {
             this.initializeAggregationFields(config);
           }
-        } catch (error) {
-          // Ignore error
-        }
+        } catch (error) {}
       }
     } else {
-      // Load config for first selected scale
       const firstScaleId = selectedScaleIds[0];
       try {
         const scale = await this.scaleService.getScaleById(firstScaleId);
@@ -215,14 +211,11 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         if (config) {
           this.initializeAggregationFields(config);
         }
-      } catch (error) {
-        // Ignore error
-      }
+      } catch (error) {}
     }
   }
 
   initializeAggregationFields(config: any): void {
-    // Initialize aggregationByField for data_1 to data_5
     const aggregation: { [key: string]: AggregationType } = {};
     const columns: { key: string; name: string }[] = [];
 
@@ -231,7 +224,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       if (channel && channel.is_used) {
         const dataKey = `data_${i}`;
         const dataName = channel.name ?? `Data ${i}`;
-        // Default to ABS for all fields
         aggregation[dataKey] = 'ABS';
         columns.push({ key: dataKey, name: dataName });
       }
@@ -242,19 +234,54 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   }
 
   updateScaleOptions(): void {
-    const scaleField = this.filterFields.find((f) => f.key === 'scaleIds');
-    if (scaleField) {
-      scaleField.options = this.scales.map((scale) => ({
+    this.scaleCheckboxOptions = this.scales
+      .filter((scale) => scale.id !== undefined)
+      .map((scale) => ({
         label: scale.name || `Scale ${scale.id}`,
-        value: scale.id,
+        value: scale.id!,
+        checked: this.selectedScaleIds.includes(scale.id!),
+      }));
+  }
+
+  updateAllScalesChecked(): void {
+    this.indeterminate = false;
+    if (this.allScalesChecked) {
+      this.scaleCheckboxOptions = this.scaleCheckboxOptions.map((option) => ({
+        ...option,
+        checked: true,
+      }));
+    } else {
+      this.scaleCheckboxOptions = this.scaleCheckboxOptions.map((option) => ({
+        ...option,
+        checked: false,
       }));
     }
+    this.syncSelectedScaleIdsFromOptions();
+  }
+
+  updateSingleScaleChecked(): void {
+    if (this.scaleCheckboxOptions.every((option) => !option.checked)) {
+      this.allScalesChecked = false;
+      this.indeterminate = false;
+    } else if (this.scaleCheckboxOptions.every((option) => option.checked)) {
+      this.allScalesChecked = true;
+      this.indeterminate = false;
+    } else {
+      this.indeterminate = true;
+    }
+    this.syncSelectedScaleIdsFromOptions();
+  }
+
+  syncSelectedScaleIdsFromOptions(): void {
+    this.selectedScaleIds = this.scaleCheckboxOptions
+      .filter((option) => option.checked)
+      .map((option) => option.value);
+    this.filterData.scaleIds = [...this.selectedScaleIds];
   }
 
   async loadReportData(): Promise<void> {
     this.loading = true;
     try {
-      // Use default date range if not set
       let dateRange = this.filterData.dateRange;
       if (!dateRange || dateRange.length !== 2) {
         const today = moment();
@@ -268,28 +295,48 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       const toTime = moment(dateRange[1]).endOf('day').toISOString();
 
       const apiData: any = await this.reportService.getIntervalReport({
-        scaleIds: this.filterData.scaleIds ?? [],
-        fromDate,
-        toDate,
+        scaleIds: this.filterData.scaleIds?.length
+          ? this.filterData.scaleIds
+          : undefined,
+        manufacturerIds: this.filterData.manufacturerIds?.length
+          ? this.filterData.manufacturerIds
+          : undefined,
+        locationIds: this.filterData.locationIds?.length
+          ? this.filterData.locationIds
+          : undefined,
+        direction: this.filterData.direction || undefined,
         fromTime,
         toTime,
         interval: this.filterData.interval ?? 'HOUR',
         aggregationByField: this.filterData.aggregationByField ?? {},
+        ratioFormula: this.filterData.ratioFormula || 'data_1/data_3',
         page: this.pageIndex - 1,
         size: this.pageSize,
       });
 
       if (apiData) {
-        // Support both old and new response shapes
-        const rawRows: IntervalReportRow[] = Array.isArray(apiData)
-          ? apiData
-          : Array.isArray(apiData?.rows)
-          ? apiData.rows!
-          : Array.isArray(apiData?.data)
-          ? apiData.data
-          : [];
+        let rawRows: IntervalReportRow[] = [];
+        let overviewData: any = null;
 
-        // Derive dataFieldNames from response or data_values
+        if (Array.isArray(apiData.data)) {
+          if (apiData.data.length > 0 && apiData.data[0].rows) {
+            rawRows = apiData.data[0].rows;
+            overviewData = apiData.data[0].overview;
+          } else if (apiData.data.length > 0 && apiData.data[0].data) {
+            rawRows = apiData.data[0].data;
+            overviewData = apiData.data[0].overview;
+          }
+        } else if (apiData.data?.data && Array.isArray(apiData.data.data)) {
+          rawRows = apiData.data.data;
+          overviewData = apiData.data.overview || apiData.overview;
+        } else if (Array.isArray(apiData.rows)) {
+          rawRows = apiData.rows;
+          overviewData = apiData.overview;
+        } else if (Array.isArray(apiData.data)) {
+          rawRows = apiData.data;
+          overviewData = apiData.overview;
+        }
+
         let dataFieldNames = apiData?.dataFieldNames || {};
         if (
           (!dataFieldNames || Object.keys(dataFieldNames).length === 0) &&
@@ -298,31 +345,29 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           const firstRow = rawRows[0];
           const firstDataValues: any = firstRow.data_values || {};
           const keys = Object.keys(firstDataValues);
-          dataFieldNames = keys.reduce((acc: any, key: string) => {
-            const dv = firstDataValues[key];
-            if (dv?.name) acc[key] = dv.name;
-            return acc;
+          dataFieldNames = keys.reduce((accumulator: any, key: string) => {
+            const dataValue = firstDataValues[key];
+            if (dataValue?.name) accumulator[key] = dataValue.name;
+            return accumulator;
           }, {});
         }
 
-        // Update data columns from API response first (for display names)
         if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
           const apiColumns = Object.keys(dataFieldNames).map((key) => ({
             key,
             name: dataFieldNames![key],
           }));
-          // Merge with existing columns, update names if key matches
           if (this.dataColumns.length > 0) {
-            this.dataColumns = this.dataColumns.map((col) => {
-              const apiCol = apiColumns.find((ac) => ac.key === col.key);
-              return apiCol ? { ...col, name: apiCol.name } : col;
+            this.dataColumns = this.dataColumns.map((column) => {
+              const apiColumn = apiColumns.find(
+                (apiCol) => apiCol.key === column.key
+              );
+              return apiColumn ? { ...column, name: apiColumn.name } : column;
             });
           } else {
-            // If no columns from config, use API columns
             this.dataColumns = apiColumns;
           }
         } else if (this.dataColumns.length === 0 && rawRows.length > 0) {
-          // Fallback: build columns from keys in data_values
           const firstRow = rawRows[0];
           const firstDataValues: any = firstRow.data_values || {};
           this.dataColumns = Object.keys(firstDataValues).map((key) => ({
@@ -331,16 +376,14 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           }));
         }
 
-        // Format data for each row (after dataColumns is updated)
         this.reportRows = rawRows.map((row): FormattedIntervalReportRow => {
           const formattedRow: FormattedIntervalReportRow = {
             ...row,
             formattedData: {},
           };
-          // Format each data column
-          this.dataColumns.forEach((col) => {
+          this.dataColumns.forEach((column) => {
             const rowDataValues: any = row.data_values || {};
-            const dataValue = rowDataValues[col.key];
+            const dataValue = rowDataValues[column.key];
             if (
               dataValue &&
               dataValue.used &&
@@ -348,43 +391,48 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
               dataValue.value !== undefined
             ) {
               const numValue = parseFloat(dataValue.value);
-              formattedRow.formattedData[col.key] = !isNaN(numValue)
+              formattedRow.formattedData[column.key] = !isNaN(numValue)
                 ? numValue
                 : '';
             } else {
-              formattedRow.formattedData[col.key] = '';
+              formattedRow.formattedData[column.key] = '';
             }
           });
           return formattedRow;
         });
 
-        // Store simplified reportData + pagination for downstream use (chart label)
         this.reportData = {
           interval: this.filterData.interval ?? 'HOUR',
           fromDate,
           toDate,
           dataFieldNames,
           aggregationByField: this.filterData.aggregationByField ?? {},
+          ratioFormula: this.filterData.ratioFormula || 'data_1/data_3',
+          overview: overviewData,
           rows: rawRows,
         };
 
-        // Update pagination
+        const paginationData = apiData.data || apiData;
         this.total =
-          apiData.total_elements ??
-          apiData.totalElements ??
-          apiData.total ??
+          paginationData.total_elements ??
+          paginationData.totalElements ??
+          paginationData.total ??
           rawRows.length ??
           0;
         this.pageIndex =
-          (apiData.page ?? apiData.pageNumber ?? this.pageIndex - 1) + 1;
+          (paginationData.page ??
+            paginationData.pageNumber ??
+            this.pageIndex - 1) + 1;
         this.pageSize =
-          apiData.size ?? apiData.pageSize ?? this.pageSize ?? rawRows.length;
+          paginationData.size ??
+          paginationData.pageSize ??
+          this.pageSize ??
+          rawRows.length;
 
         this.prepareChartData();
       } else {
         this.reportData = null;
         this.reportRows = [];
-        // Keep dataColumns for filter display
       }
     } catch (error) {
       this.reportData = null;
@@ -402,7 +450,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Get data_1 (Weight) for chart
     const weightData: any[] = this.reportRows
       .map((row, index) => {
         const data1 = row.data_values?.data_1;
@@ -419,7 +466,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
     this.chartData = weightData;
 
-    // Prepare ECharts options
     this.updateChartOptions();
   }
 
@@ -429,10 +475,9 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const periods = this.chartData.map((d) => d.period);
-    const values = this.chartData.map((d) => d.value);
+    const periods = this.chartData.map((dataItem) => dataItem.period);
+    const values = this.chartData.map((dataItem) => dataItem.value);
 
-    // Detect dark theme
     const isDark = document.documentElement.classList.contains('dark');
     const textColor = isDark ? '#e5e7eb' : '#374151';
     const lineColor = isDark ? '#4b5563' : '#e5e7eb';
@@ -440,9 +485,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
     const data1Name = this.reportData?.dataFieldNames?.['data_1'] ?? '';
 
-    // Format large numbers (divide by 1000 and add 'k' suffix, or use compact notation)
     const formatLargeNumber = (value: number): string => {
-      // Check for NaN, null, or undefined
       if (value === null || value === undefined || isNaN(value)) {
         return '-';
       }
@@ -454,9 +497,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       return value.toFixed(1);
     };
 
-    // Format number with thousand separators
     const formatNumber = (value: number): string => {
-      // Check for NaN, null, or undefined
       if (value === null || value === undefined || isNaN(value)) {
         return '-';
       }
@@ -476,10 +517,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           color: textColor,
         },
         formatter: (params: any) => {
-          // Handle markPoint tooltip
           if (params.componentType === 'markPoint') {
             const value = params.value;
-            // Check for NaN, null, or undefined
             if (value === null || value === undefined || isNaN(value)) {
               return `
                 <div>
@@ -498,10 +537,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
               </div>
             `;
           }
-          // Handle line series tooltip
           const period = params.axisValue || periods[params.dataIndex] || '';
           const tooltipValue = params.value;
-          // Check for NaN, null, or undefined
           if (
             tooltipValue === null ||
             tooltipValue === undefined ||
@@ -602,7 +639,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           markPoint: {
             data: values
               .map((value, index) => {
-                // Skip NaN, null, or undefined values
                 if (value === null || value === undefined || isNaN(value)) {
                   return null;
                 }
@@ -643,12 +679,10 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       }
       if (filters.locationIds !== undefined) {
         this.filterData.locationIds = filters.locationIds;
-        // Update scale options based on selected locations
         this.updateScaleOptions();
       }
       if (filters.scaleIds !== undefined) {
         this.filterData.scaleIds = filters.scaleIds;
-        // Reload scale configs when scales change to update data columns
         await this.loadScaleConfigs();
       }
       if (filters.interval !== undefined) {
@@ -684,20 +718,16 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   }
 
   onRowClick(row: FormattedIntervalReportRow, index: number): void {
-    // If clicking the same row, toggle history visibility
     if (this.selectedRowIndex === index) {
       this.isHistoryExpanded = !this.isHistoryExpanded;
       if (!this.isHistoryExpanded) {
-        // Collapse: clear selection
         this.selectedRow = null;
         this.selectedRowIndex = null;
         this.historyData = [];
       } else {
-        // Keep selectedRowIndex when expanding
         this.selectedRowIndex = index;
       }
     } else {
-      // Select new row
       this.selectedRow = row;
       this.selectedRowIndex = index;
       this.isHistoryExpanded = true;
@@ -713,7 +743,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
     this.historyLoading = true;
     try {
-      // Use default date range if not set
       let dateRange = this.filterData.dateRange;
       if (!dateRange || dateRange.length !== 2) {
         const today = moment();
@@ -728,23 +757,21 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         scaleId: this.selectedRow.scale.id,
         startTime,
         endTime,
-        page: this.historyPageIndex - 1, // API uses 0-based index
+        page: this.historyPageIndex - 1,
         size: this.historyPageSize,
       });
 
       if (data) {
         const rawHistoryData = data.data ?? [];
-        // Format history data
         this.historyData = rawHistoryData.map(
           (item: ScaleHistoryItem): FormattedScaleHistoryItem => {
             const formattedItem: FormattedScaleHistoryItem = {
               ...item,
               formattedData: {},
             };
-            // Format each data column
-            this.dataColumns.forEach((col) => {
+            this.dataColumns.forEach((column) => {
               const historyDataValues: any = item.dataValues || {};
-              const dataValue = historyDataValues[col.key];
+              const dataValue = historyDataValues[column.key];
               if (
                 dataValue &&
                 dataValue.used &&
@@ -752,11 +779,11 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
                 dataValue.value !== undefined
               ) {
                 const numValue = parseFloat(dataValue.value);
-                formattedItem.formattedData[col.key] = !isNaN(numValue)
+                formattedItem.formattedData[column.key] = !isNaN(numValue)
                   ? numValue
                   : '';
               } else {
-                formattedItem.formattedData[col.key] = '';
+                formattedItem.formattedData[column.key] = '';
               }
             });
             return formattedItem;
@@ -793,7 +820,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   }
 
   async exportReport(): Promise<void> {
-    // Open template selection modal
     await this.loadTemplates();
     this.isTemplateModalVisible = true;
   }
@@ -801,7 +827,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   async loadTemplates(): Promise<void> {
     this.templatesLoading = true;
     try {
-      // Load templates for "Báo cáo cân"
       this.templates = await this.templateService.getTemplateImports(
         'Báo cáo cân'
       );
@@ -819,7 +844,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Use default date range if not set
     let dateRange = this.filterData.dateRange;
     if (!dateRange || dateRange.length !== 2) {
       const today = moment();
@@ -829,7 +853,6 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
     this.exportingWithTemplate = true;
     try {
-      // Filter scales by locationIds if selected
       let scaleIds = this.filterData.scaleIds ?? [];
       if (
         this.filterData.locationIds &&
@@ -840,11 +863,11 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           return locationId && this.filterData.locationIds.includes(locationId);
         });
         scaleIds = filteredScales
-          .map((s) => s.id)
-          .filter((id) => id !== undefined) as number[];
+          .map((scale) => scale.id)
+          .filter((identifier) => identifier !== undefined) as number[];
         if (this.filterData.scaleIds && this.filterData.scaleIds.length > 0) {
-          scaleIds = scaleIds.filter((id: number) =>
-            this.filterData.scaleIds.includes(id)
+          scaleIds = scaleIds.filter((identifier: number) =>
+            this.filterData.scaleIds.includes(identifier)
           );
         }
       }
@@ -852,8 +875,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       const startTime = moment(dateRange[0]).toISOString();
       const endTime = moment(dateRange[1]).endOf('day').toISOString();
 
-      // Get dataFields from dataColumns
-      const dataFields = this.dataColumns.map((col) => col.key);
+      const dataFields = this.dataColumns.map((column) => column.key);
 
       const payload = {
         type: 'WORD',
@@ -875,20 +897,17 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         preparedBy: 'System',
       };
 
-      // Use new API with importId
       const blob = await this.reportService.exportReportWithTemplate(
         template.id,
         payload
       );
 
-      // Generate filename
       const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
       const toDate = moment(dateRange[1]).format('YYYY-MM-DD');
       const fileName = `${
         template.templateCode || 'Bao_cao'
       }_${fromDate}_${toDate}.docx`;
 
-      // Download file
       saveAs(blob, fileName);
       this.toastr.success('Xuất báo cáo thành công', 'Thành công');
       this.isTemplateModalVisible = false;
@@ -915,5 +934,48 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
   closeTemplateModal(): void {
     this.isTemplateModalVisible = false;
+  }
+
+  getOverviewDirectionKeys(): string[] {
+    if (!this.reportData?.overview) return [];
+    return Object.keys(this.reportData.overview);
+  }
+
+  getDirectionLabel(directionKey: string): string {
+    const directionMap: { [key: string]: string } = {
+      '0': 'Unknown',
+      '1': 'Nhập',
+      '2': 'Xuất',
+    };
+    return directionMap[directionKey] || directionKey;
+  }
+
+  getOverviewDataKeys(directionKey: string): string[] {
+    if (!this.reportData?.overview?.[directionKey]) return [];
+    return Object.keys(this.reportData.overview[directionKey]);
+  }
+
+  getOverviewValue(directionKey: string, dataKey: string): string {
+    if (!this.reportData?.overview?.[directionKey]?.[dataKey]) return '';
+    const item = this.reportData.overview[directionKey][dataKey];
+    const value = parseFloat(item.value || '0');
+    const name = item.name || dataKey;
+    return `${value.toFixed(2)} ${name}`;
+  }
+
+  getOverviewDataLabel(dataKey: string): string {
+    return dataKey.toUpperCase().replace('_', ' ');
+  }
+
+  getOverviewBadgeClass(directionKey: string): string {
+    const baseClass = 'px-3 py-1 text-xs font-semibold rounded-full border';
+    if (directionKey === '0') {
+      return `${baseClass} text-gray-800 bg-gray-100 border-gray-200 dark:bg-gray-900/40 dark:text-gray-100 dark:border-gray-700`;
+    } else if (directionKey === '1') {
+      return `${baseClass} text-green-800 bg-green-100 border-green-200 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700`;
+    } else if (directionKey === '2') {
+      return `${baseClass} text-blue-800 bg-blue-100 border-blue-200 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700`;
+    }
+    return baseClass;
   }
 }
