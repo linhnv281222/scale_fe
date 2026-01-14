@@ -79,6 +79,21 @@ export class UploadFileComponent implements OnInit {
   }
 
   async downloadFile(file: any) {
+    // Trường hợp file từ BE nhưng chỉ có base64 (ví dụ logo hệ thống)
+    if (file.resourcePath && typeof file.resourcePath === 'string') {
+      try {
+        const link = document.createElement('a');
+        link.href = file.resourcePath;
+        link.download = file.fileName || file.name || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        this.toastr.error('Không thể tải file', 'Lỗi');
+      }
+      return;
+    }
+
     if (!file.path) {
       this.toastr.error('Không tìm thấy đường dẫn file', 'Lỗi');
       return;
@@ -118,8 +133,36 @@ export class UploadFileComponent implements OnInit {
 
   previewFile(file: any) {
     if (file.id) {
-      const fileExtension = this.getFileExtension(file.fileName);
+      const fileExtension = this.getFileExtension(file.fileName || '');
       this.fileType = fileExtension;
+
+      // Nếu file từ BE có resourcePath (base64 hoặc URL đầy đủ), ưu tiên dùng trực tiếp
+      if (file.resourcePath && typeof file.resourcePath === 'string') {
+        const src = file.resourcePath;
+        this.currentFileName = file.fileName || file.name || '';
+
+        if (
+          src.startsWith('data:image') ||
+          fileExtension === 'jpg' ||
+          fileExtension === 'jpeg' ||
+          fileExtension === 'png' ||
+          fileExtension === 'svg'
+        ) {
+          this.iframeContentImage = this.sanitizer.bypassSecurityTrustHtml(
+            `<html><body style="margin: 0;"><img src="${src}" style="width: 100%;"></body></html>`
+          );
+          this.visible = true;
+          return;
+        }
+
+        // Các loại khác (pdf, v.v.) nhúng trực tiếp vào iframe
+        this.currentFilePath =
+          this.sanitizer.bypassSecurityTrustResourceUrl(src);
+        this.visible = true;
+        return;
+      }
+
+      // Trường hợp cũ: có path để gọi API preview
       switch (fileExtension) {
         case 'pdf':
           this.currentFileName = file.fileName;
@@ -144,9 +187,6 @@ export class UploadFileComponent implements OnInit {
           break;
         default:
           this.downloadFile(file);
-          // this.notificationMessage.notificationError(
-          //   `Chức năng này chỉ hỗ trợ các file có định dạng .jpg, .jpeng, .png, .heic, .pdf, .txt,`
-          // );
           break;
       }
     } else {

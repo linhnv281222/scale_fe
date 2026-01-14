@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { TranslateService } from '@ngx-translate/core';
 import { ToastrService } from 'ngx-toastr';
-import { environment } from 'src/environment/environment';
 import { OrganizationSettings } from '../../models/organization-settings.model';
 import { OrganizationSettingsService } from '../../services/organization-settings.service';
 
@@ -48,19 +47,18 @@ export class WebsiteSettingsComponent implements OnInit {
         this.settings = data;
         this.hasExistingSettings = !!data.id;
 
-        // Set logo files from backend
+        // Set logo files from backend - CHỈ dùng logoBase64 cho preview/download
         this.logoFilesFromBE = [];
-        if (data.logoUrl || data.logoBase64) {
-          const logoUrl = data.logoUrl
-            ? `${environment.api_end_point}/${data.logoUrl}`
-            : `data:image/png;base64,${data.logoBase64}`;
+        if (data.logoBase64) {
+          const logoPreviewUrl = `data:image/png;base64,${data.logoBase64}`;
 
           this.logoFilesFromBE = [
             {
               id: data.id,
               fileName: 'logo.png',
-              path: data.logoUrl || '',
-              resourcePath: data.logoUrl || '',
+              // Không sử dụng logoUrl ở FE để tránh gọi API /files/...
+              path: '',
+              resourcePath: logoPreviewUrl,
               size: 0,
               createdAt: data.updatedAt || data.createdAt,
             },
@@ -86,11 +84,9 @@ export class WebsiteSettingsComponent implements OnInit {
     this.logoFiles = files;
   }
 
-  onLogoFilesFromBEChanged(event: any): void {
-    // Handle delete from backend if needed
-    if (event.type === 'delete') {
-      this.logoFilesFromBE = [];
-    }
+  onLogoFilesFromBEChanged(filesFromBE: any[]): void {
+    // upload-file.component luôn emit mảng filesFromBE mới
+    this.logoFilesFromBE = filesFromBE || [];
   }
 
   async saveSettings(): Promise<void> {
@@ -140,16 +136,17 @@ export class WebsiteSettingsComponent implements OnInit {
         this.settings = result;
         this.hasExistingSettings = true;
 
-        // Update logo files from backend
+        // Update logo files from backend (chỉ dùng base64 cho preview/download)
         this.logoFiles = [];
         this.logoFilesFromBE = [];
-        if (result.logoUrl || result.logoBase64) {
+        if (result.logoBase64) {
+          const logoPreviewUrl = `data:image/png;base64,${result.logoBase64}`;
           this.logoFilesFromBE = [
             {
               id: result.id,
               fileName: 'logo.png',
-              path: result.logoUrl || '',
-              resourcePath: result.logoUrl || '',
+              path: '',
+              resourcePath: logoPreviewUrl,
               size: 0,
               createdAt: result.updatedAt || result.createdAt,
             },

@@ -107,6 +107,14 @@ tbody tr:hover td.selected-row {
   padding: 4px 0;
 }
 
+/* Disable hover scale/shadow for overview chips, override global bg-*-100:hover */
+:host ::ng-deep .overview-chip.bg-blue-100:hover,
+:host ::ng-deep .overview-chip.bg-green-100:hover,
+:host ::ng-deep .overview-chip.bg-red-100:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* Fixed columns styling */
 table thead th[style*="position: sticky"] {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);

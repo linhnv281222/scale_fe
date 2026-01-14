@@ -39,7 +39,7 @@ export class OrganizationSettingsService {
   ): Promise<OrganizationSettings | null> {
     try {
       const formData = new FormData();
-      
+
       // Append text fields
       formData.append('companyName', data.companyName);
       if (data.companyNameEn) {
@@ -96,11 +96,12 @@ export class OrganizationSettingsService {
       taxCode?: string;
       watermarkText?: string;
     },
-    logoFile?: File
+    logoFile?: File,
+    removeLogo?: boolean
   ): Promise<OrganizationSettings | null> {
     try {
       const formData = new FormData();
-      
+
       // Append text fields
       formData.append('companyName', data.companyName);
       if (data.companyNameEn) {
@@ -146,4 +147,3 @@ export class OrganizationSettingsService {
     }
   }
 }
-

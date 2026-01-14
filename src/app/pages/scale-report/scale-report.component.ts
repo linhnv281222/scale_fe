@@ -85,6 +85,12 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   historyTotal = 0;
   isHistoryExpanded = false;
   ratioStatisticHeader = '';
+  overviewDisplay: {
+    directionKey: string;
+    directionLabel: string;
+    badgeClass: string;
+    items: { key: string; label: string; value: number | null; unit: string }[];
+  }[] = [];
 
   private getDataFieldDisplayName(
     dataKey: string,
@@ -397,7 +403,14 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           overviewData = apiData.overview;
         }
 
-        let dataFieldNames = apiData?.dataFieldNames || {};
+        // Ưu tiên lấy dataFieldNames đúng theo các cấu trúc response khác nhau
+        let dataFieldNames =
+          apiData?.dataFieldNames ||
+          apiData?.data?.dataFieldNames ||
+          (Array.isArray(apiData?.data) && apiData.data[0]
+            ? apiData.data[0].dataFieldNames
+            : {}) ||
+          {};
         if (
           (!dataFieldNames || Object.keys(dataFieldNames).length === 0) &&
           rawRows.length > 0
@@ -546,6 +559,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           this.pageSize ??
           rawRows.length;
 
+        this.prepareOverviewDisplay();
         this.prepareChartData();
       } else {
         this.reportData = null;
@@ -584,6 +598,88 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     this.chartData = weightData;
 
     this.updateChartOptions();
+  }
+
+  private prepareOverviewDisplay(): void {
+    this.overviewDisplay = [];
+
+    if (!this.reportData?.overview) {
+      return;
+    }
+
+    const overview = this.reportData.overview as any;
+
+    const directionLabelMap: { [key: string]: string } = {
+      '0': 'Unknown',
+      '1': 'Nhập',
+      '2': 'Xuất',
+    };
+
+    const getBadgeClass = (directionKey: string): string => {
+      const baseClass =
+        'px-3 py-1 text-xs font-semibold rounded-full border flex-shrink-0';
+      if (directionKey === '0') {
+        return (
+          baseClass +
+          ' text-gray-800 bg-gray-100 border-gray-200 dark:bg-gray-900/40 dark:text-gray-100 dark:border-gray-700'
+        );
+      }
+      if (directionKey === '1') {
+        return (
+          baseClass +
+          ' text-green-800 bg-green-100 border-green-200 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700'
+        );
+      }
+      if (directionKey === '2') {
+        return (
+          baseClass +
+          ' text-blue-800 bg-blue-100 border-blue-200 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700'
+        );
+      }
+      return baseClass;
+    };
+
+    const getItemLabel = (dataKey: string): string => {
+      return dataKey.toUpperCase().replace('_', ' ');
+    };
+
+    Object.keys(overview).forEach((directionKey) => {
+      const directionOverview = overview[directionKey] || {};
+
+      const items = Object.keys(directionOverview).map((dataKey) => {
+        const item = directionOverview[dataKey] || {};
+        const rawValue =
+          item && typeof item.value === 'string'
+            ? parseFloat(item.value)
+            : Number(item?.value);
+        const value =
+          rawValue === null || isNaN(rawValue as number)
+            ? null
+            : (rawValue as number);
+
+        const label =
+          item && item.name && String(item.name).trim()
+            ? String(item.name).trim()
+            : getItemLabel(dataKey);
+
+        const unit =
+          item && typeof item.unit === 'string' ? String(item.unit).trim() : '';
+
+        return {
+          key: dataKey,
+          label,
+          value,
+          unit,
+        };
+      });
+
+      this.overviewDisplay.push({
+        directionKey,
+        directionLabel: directionLabelMap[directionKey] || directionKey,
+        badgeClass: getBadgeClass(directionKey),
+        items,
+      });
+    });
   }
 
   updateChartOptions(): void {
@@ -1053,48 +1149,5 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
   closeTemplateModal(): void {
     this.isTemplateModalVisible = false;
-  }
-
-  getOverviewDirectionKeys(): string[] {
-    if (!this.reportData?.overview) return [];
-    return Object.keys(this.reportData.overview);
-  }
-
-  getDirectionLabel(directionKey: string): string {
-    const directionMap: { [key: string]: string } = {
-      '0': 'Unknown',
-      '1': 'Nhập',
-      '2': 'Xuất',
-    };
-    return directionMap[directionKey] || directionKey;
-  }
-
-  getOverviewDataKeys(directionKey: string): string[] {
-    if (!this.reportData?.overview?.[directionKey]) return [];
-    return Object.keys(this.reportData.overview[directionKey]);
-  }
-
-  getOverviewValue(directionKey: string, dataKey: string): string {
-    if (!this.reportData?.overview?.[directionKey]?.[dataKey]) return '';
-    const item = this.reportData.overview[directionKey][dataKey];
-    const value = parseFloat(item.value || '0');
-    const name = item.name || dataKey;
-    return `${value.toFixed(2)} ${name}`;
-  }
-
-  getOverviewDataLabel(dataKey: string): string {
-    return dataKey.toUpperCase().replace('_', ' ');
-  }
-
-  getOverviewBadgeClass(directionKey: string): string {
-    const baseClass = 'px-3 py-1 text-xs font-semibold rounded-full border';
-    if (directionKey === '0') {
-      return `${baseClass} text-gray-800 bg-gray-100 border-gray-200 dark:bg-gray-900/40 dark:text-gray-100 dark:border-gray-700`;
-    } else if (directionKey === '1') {
-      return `${baseClass} text-green-800 bg-green-100 border-green-200 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700`;
-    } else if (directionKey === '2') {
-      return `${baseClass} text-blue-800 bg-blue-100 border-blue-200 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700`;
-    }
-    return baseClass;
   }
 }
