@@ -203,6 +203,7 @@
     "dataChannels": "Kênh Dữ liệu",
     "channelName": "Tên kênh",
     "channelNamePlaceholder": "Ví dụ: Weight",
+    "unit": "Đơn vị",
     "dataType": "Kiểu dữ liệu",
     "selectDataType": "Chọn kiểu dữ liệu",
     "startRegister": "Thanh ghi bắt đầu",
@@ -394,7 +395,16 @@
     "period": "Thời gian",
     "lastTime": "Thời gian dữ liệu gần nhất",
     "history": "Lịch sử",
-    "export": "Xuất báo cáo"
+    "export": "Xuất báo cáo",
+    "startValue": "Giá trị đầu",
+    "endValue": "Giá trị kết thúc",
+    "statisticValue": "Kết quả thống kê",
+    "direction": {
+      "title": "Loại",
+      "unknown": "Unknown",
+      "in": "Nhập",
+      "out": "Xuất"
+    }
   },
   "templates": {
     "title": "Quản lý Biểu mẫu",

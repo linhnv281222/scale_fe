@@ -202,6 +202,7 @@
     "dataChannels": "Data Channels",
     "channelName": "Channel Name",
     "channelNamePlaceholder": "e.g., Weight",
+    "unit": "Unit",
     "dataType": "Data Type",
     "selectDataType": "Select Data Type",
     "startRegister": "Start Register",
@@ -389,7 +390,16 @@
     "period": "Period",
     "lastTime": "Last Data Time",
     "history": "History",
-    "export": "Export Report"
+    "export": "Export Report",
+    "startValue": "Start Value",
+    "endValue": "End Value",
+    "statisticValue": "Statistic Value",
+    "direction": {
+      "title": "Direction",
+      "unknown": "Unknown",
+      "in": "In",
+      "out": "Out"
+    }
   },
   "templates": {
     "title": "Template Management",

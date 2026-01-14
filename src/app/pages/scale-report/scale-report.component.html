@@ -247,16 +247,11 @@
     </div>
 
     <!-- Data Table -->
-    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-800">
-      <nz-table
-        #basicTable
-        [nzData]="reportRows"
-        [nzLoading]="loading"
-        [nzShowPagination]="false"
-        [nzNoResult]="noResultTemplate"
-        [nzScroll]="{
-          x: 'auto',
-          y:
+    <div class="flex flex-col flex-1 bg-white dark:bg-gray-800">
+      <nz-spin [nzSpinning]="loading" class="flex flex-col flex-1 min-h-0">
+        <div
+          class="flex-1 min-h-0 overflow-auto"
+          [style.height]="
             isHistoryExpanded &&
             selectedRow &&
             isChartExpanded &&
@@ -271,113 +266,327 @@
                 chartData.length > 0
               ? 'calc(100vh - 465px)'
               : 'calc(100vh - 220px)'
-        }"
-        class="w-full"
-      >
-        <thead>
-          <tr>
-            <th
-              nzWidth="50px"
-              nzLeft
-              class="px-2 !py-1 !text-center text-xs font-semibold text-white uppercase"
-            >
-              STT
-            </th>
-            <th
-              nzWidth="150px"
-              nzLeft
-              class="px-2 !py-1 !text-center text-xs font-semibold text-white uppercase"
-            >
-              {{ "scales.name" | translate }}
-            </th>
-            <th
-              nzWidth="150px"
-              nzLeft
-              class="px-2 !py-1 !text-center text-xs font-semibold text-white uppercase"
-            >
-              {{ "scales.code" | translate }}
-            </th>
-            <th
-              class="px-2 !py-1 !text-center text-xs font-semibold text-white uppercase"
-            >
-              {{ "locations.name" | translate }}
-            </th>
-            <th
-              class="px-2 !py-1 !text-center text-xs font-semibold text-white uppercase"
-            >
-              {{ "reports.period" | translate }}
-            </th>
-            <th
-              *ngFor="let col of dataColumns"
-              class="px-2 !py-1 !text-center text-xs font-semibold text-white uppercase"
-            >
-              {{ col.name }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            *ngFor="let row of reportRows; let i = index"
-            (click)="onRowClick(row, i)"
-            class="transition-colors cursor-pointer"
-          >
-            <td
-              nzLeft
-              [class.selected-row]="selectedRowIndex === i"
-              class="px-2 !py-1 whitespace-nowrap text-center"
-            >
-              <span class="text-xs text-gray-900 dark:text-white">{{
-                i + 1
-              }}</span>
-            </td>
-            <td
-              nzLeft
-              [class.selected-row]="selectedRowIndex === i"
-              class="px-2 !py-1 whitespace-nowrap"
-            >
-              <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ row.scale.name }}
-              </span>
-            </td>
-            <td
-              nzLeft
-              [class.selected-row]="selectedRowIndex === i"
-              class="px-2 !py-1 whitespace-nowrap"
-            >
-              <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ row.scale.model }}
-              </span>
-            </td>
-            <td
-              [class.selected-row]="selectedRowIndex === i"
-              class="px-2 !py-1 whitespace-nowrap"
-            >
-              <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ row.scale.location?.name }}
-              </span>
-            </td>
-            <td
-              [class.selected-row]="selectedRowIndex === i"
-              class="px-2 !py-1 whitespace-nowrap"
-            >
-              <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ row.period | date : "dd/MM/yyyy" }}
-              </span>
-            </td>
-            <td
-              *ngFor="let col of dataColumns"
-              [class.selected-row]="selectedRowIndex === i"
-              class="px-2 !py-1 whitespace-nowrap text-center"
-            >
-              <span class="text-xs font-medium text-gray-900 dark:text-white">
-                {{ row.formattedData[col.key] | number : "0.0-2" }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </nz-table>
+          "
+        >
+          <table class="w-full border-collapse" style="min-width: 100%">
+            <thead>
+              <tr class="bg-blue-600 dark:bg-blue-700">
+                <th
+                  style="
+                    min-width: 50px;
+                    width: 50px;
+                    position: sticky;
+                    left: 0;
+                    z-index: 99;
+                  "
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                >
+                  STT
+                </th>
+                <th
+                  style="
+                    min-width: 100px;
+                    width: 100px;
+                    position: sticky;
+                    left: 50px;
+                    z-index: 99;
+                  "
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                >
+                  {{ "scales.name" | translate }}
+                </th>
+                <th
+                  style="
+                    min-width: 60px;
+                    width: 60px;
+                    position: sticky;
+                    left: 150px;
+                    z-index: 99;
+                  "
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                >
+                  {{ "scales.code" | translate }}
+                </th>
+                <th
+                  style="
+                    min-width: 90px;
+                    width: 90px;
+                    position: sticky;
+                    left: 225px;
+                    z-index: 99;
+                  "
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                >
+                  {{ "reports.direction.title" | translate }}
+                </th>
+                <th
+                  style="min-width: 120px; width: 120px"
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                >
+                  {{ "locations.name" | translate }}
+                </th>
+                <th
+                  style="min-width: 150px; width: 150px"
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                >
+                  {{ "shifts.startTime" | translate }}
+                </th>
+                <th
+                  style="min-width: 100px; width: 100px"
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                >
+                  {{ "reports.period" | translate }}
+                </th>
+                <th
+                  style="min-width: 150px; width: 150px"
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                >
+                  {{ "shifts.endTime" | translate }}
+                </th>
+                <th
+                  *ngFor="let col of dataColumns"
+                  [attr.colspan]="3"
+                  style="min-width: 450px; width: 450px"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                >
+                  {{ col.name }}
+                </th>
+                <th
+                  style="
+                    min-width: 140px;
+                    width: 140px;
+                    position: sticky;
+                    right: 0;
+                    z-index: 99;
+                  "
+                  rowspan="2"
+                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                >
+                  {{ ratioStatisticHeader }}
+                </th>
+              </tr>
+              <tr class="bg-blue-600 dark:bg-blue-700">
+                <ng-container *ngFor="let col of dataColumns">
+                  <th
+                    style="min-width: 100px; width: 100px"
+                    class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                  >
+                    {{ "reports.startValue" | translate }}
+                  </th>
+                  <th
+                    style="min-width: 150px; width: 150px"
+                    class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                  >
+                    {{ "reports.endValue" | translate }}
+                  </th>
+                  <th
+                    style="min-width: 150px; width: 150px"
+                    class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                  >
+                    {{ "reports.statisticValue" | translate }}
+                  </th>
+                </ng-container>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let row of reportRows; let i = index"
+                (click)="onRowClick(row, i)"
+                class="transition-colors cursor-pointer report-row group hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <td
+                  style="
+                    min-width: 50px;
+                    width: 50px;
+                    position: sticky;
+                    left: 0;
+                    z-index: 5;
+                  "
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="fixed-cell px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                  [ngClass]="
+                    i % 2 === 0
+                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                  "
+                >
+                  <span class="text-gray-900 dark:text-white">{{ i + 1 }}</span>
+                </td>
+                <td
+                  style="
+                    min-width: 100px;
+                    width: 100px;
+                    position: sticky;
+                    left: 50px;
+                    z-index: 5;
+                  "
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="fixed-cell px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                  [ngClass]="
+                    i % 2 === 0
+                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                  "
+                >
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ row.scale.name }}
+                  </span>
+                </td>
+                <td
+                  style="
+                    min-width: 60px;
+                    width: 60px;
+                    position: sticky;
+                    left: 150px;
+                    z-index: 5;
+                  "
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="fixed-cell px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                  [ngClass]="
+                    i % 2 === 0
+                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                  "
+                >
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ row.scale.model }}
+                  </span>
+                </td>
+                <td
+                  style="
+                    min-width: 90px;
+                    width: 90px;
+                    position: sticky;
+                    left: 225px;
+                    z-index: 5;
+                  "
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="fixed-cell px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                  [ngClass]="
+                    i % 2 === 0
+                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                  "
+                >
+                  <span
+                    class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold border"
+                    [ngClass]="row.directionBadgeClass"
+                  >
+                    {{ row.directionLabelKey | translate }}
+                  </span>
+                </td>
+                <td
+                  style="min-width: 120px; width: 120px"
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                >
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ row.scale.location?.name }}
+                  </span>
+                </td>
+                <td
+                  style="min-width: 150px; width: 150px"
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                >
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ row.start_time | date : "dd/MM/yyyy HH:mm" }}
+                  </span>
+                </td>
+                <td
+                  style="min-width: 100px; width: 100px"
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                >
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ row.period | date : "dd/MM/yyyy HH:mm" }}
+                  </span>
+                </td>
+                <td
+                  style="min-width: 150px; width: 150px"
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                >
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ row.end_time | date : "dd/MM/yyyy HH:mm" }}
+                  </span>
+                </td>
+                <ng-container *ngFor="let col of dataColumns">
+                  <td
+                    style="min-width: 100px; width: 100px"
+                    [class.selected-row]="selectedRowIndex === i"
+                    class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                  >
+                    <span class="font-medium text-gray-900 dark:text-white">
+                      {{
+                        row.formattedData[col.key + "_start"] | number : "0.0-2"
+                      }}
+                    </span>
+                  </td>
+                  <td
+                    style="min-width: 150px; width: 150px"
+                    [class.selected-row]="selectedRowIndex === i"
+                    class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                  >
+                    <span class="font-medium text-gray-900 dark:text-white">
+                      {{
+                        row.formattedData[col.key + "_end"] | number : "0.0-2"
+                      }}
+                    </span>
+                  </td>
+                  <td
+                    style="min-width: 150px; width: 150px"
+                    [class.selected-row]="selectedRowIndex === i"
+                    class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                  >
+                    <span class="font-medium text-gray-900 dark:text-white">
+                      {{
+                        row.formattedData[col.key + "_data"] | number : "0.0-2"
+                      }}
+                    </span>
+                  </td>
+                </ng-container>
+                <td
+                  style="
+                    min-width: 140px;
+                    width: 140px;
+                    position: sticky;
+                    right: 0;
+                    z-index: 5;
+                  "
+                  [class.selected-row]="selectedRowIndex === i"
+                  class="fixed-cell px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                  [ngClass]="
+                    i % 2 === 0
+                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                  "
+                >
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ row.ratioDisplayValue | number : "0.0-4" }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div
+          *ngIf="reportRows.length === 0 && !loading"
+          class="p-8 text-center"
+        >
+          <nz-empty></nz-empty>
+        </div>
+      </nz-spin>
 
-      <div class="border-t border-gray-200 dark:border-gray-700">
+      <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
         <app-pagination
           [currentPage]="pageIndex"
           [currentSize]="pageSize"
@@ -605,7 +814,7 @@
                 nzSize="small"
                 (click)="exportWithTemplate(template)"
                 [nzLoading]="exportingWithTemplate"
-                class="flex items-center gap-1"
+                class="flex items-center justify-center gap-1"
               >
                 <span nz-icon nzType="download" nzTheme="outline"></span>
                 <span>{{ "common.download" | translate }}</span>

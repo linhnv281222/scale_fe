@@ -650,6 +650,27 @@
                 {{ "scales.connectionParameters" | translate }}
               </h4>
 
+              <!-- Common Connection Params -->
+              <div class="mb-2">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    ID
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.id"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
               <!-- MODBUS_TCP Connection Params -->
               <div *ngIf="isModbusTcp()" class="grid grid-cols-2 gap-2">
                 <div>
@@ -863,7 +884,7 @@
               *ngIf="expandedChannels[channelNum]"
               class="p-2 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700"
             >
-              <div class="grid grid-cols-4 gap-2">
+              <div class="grid grid-cols-5 gap-2">
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -879,6 +900,23 @@
                       [placeholder]="
                         'scales.channelNamePlaceholder' | translate
                       "
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.unit" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].unit"
                       class="w-full"
                       [disabled]="isViewMode"
                     />
@@ -929,7 +967,7 @@
                       nz-input
                       nzSize="small"
                       [(ngModel)]="
-                        scaleConfig['data_' + channelNum].start_registers
+                        scaleConfig['data_' + channelNum].start_register
                       "
                       [placeholder]="
                         'scales.startRegisterPlaceholder' | translate

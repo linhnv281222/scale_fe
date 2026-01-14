@@ -51,6 +51,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     protocol: 'MODBUS_TCP',
     poll_interval: 1000,
     conn_params: {
+      id: '',
       ip: '',
       port: 502,
       com_port: '',
@@ -62,6 +63,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     },
     data_1: {
       name: '',
+      unit: '',
       start_register: 0,
       num_registers: 1,
       is_used: false,
@@ -71,6 +73,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     },
     data_2: {
       name: '',
+      unit: '',
       start_register: 0,
       num_registers: 1,
       is_used: false,
@@ -80,6 +83,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     },
     data_3: {
       name: '',
+      unit: '',
       start_register: 0,
       num_registers: 1,
       is_used: false,
@@ -89,6 +93,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     },
     data_4: {
       name: '',
+      unit: '',
       start_register: 0,
       num_registers: 1,
       is_used: false,
@@ -98,6 +103,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     },
     data_5: {
       name: '',
+      unit: '',
       start_register: 0,
       num_registers: 1,
       is_used: false,
@@ -815,8 +821,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
         if (channel && channel.is_used) {
           data[`data_${i}`] = {
             name: channel.name || '',
-            start_register:
-              channel.start_register || channel.start_registers || 0,
+            start_register: channel.start_register || 0,
             num_registers: channel.num_registers || 1,
             data_type: channel.data_type || 'int32',
             function_code: channel.function_code || 3,
@@ -903,6 +908,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     }
 
     const defaultConnParams = {
+      id: '',
       ip: '',
       port: 502,
       com_port: '',
@@ -920,10 +926,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
       conn_params: defaultConnParams,
       data_1: scaleConfig.data_1 || {
         name: '',
-        start_register:
-          scaleConfig.data_1?.start_register ||
-          scaleConfig.data_1?.start_registers ||
-          0,
+        unit: scaleConfig.data_1?.unit || '',
+        start_register: scaleConfig.data_1?.start_register || 0,
         num_registers: scaleConfig.data_1?.num_registers || 1,
         is_used: scaleConfig.data_1?.is_used || false,
         data_type: scaleConfig.data_1?.data_type || 'int32',
@@ -932,10 +936,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_2: scaleConfig.data_2 || {
         name: '',
-        start_register:
-          scaleConfig.data_2?.start_register ||
-          scaleConfig.data_2?.start_registers ||
-          0,
+        unit: scaleConfig.data_2?.unit || '',
+        start_register: scaleConfig.data_2?.start_register || 0,
         num_registers: scaleConfig.data_2?.num_registers || 1,
         is_used: scaleConfig.data_2?.is_used || false,
         data_type: scaleConfig.data_2?.data_type || 'int32',
@@ -944,10 +946,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_3: scaleConfig.data_3 || {
         name: '',
-        start_register:
-          scaleConfig.data_3?.start_register ||
-          scaleConfig.data_3?.start_registers ||
-          0,
+        unit: scaleConfig.data_3?.unit || '',
+        start_register: scaleConfig.data_3?.start_register || 0,
         num_registers: scaleConfig.data_3?.num_registers || 1,
         is_used: scaleConfig.data_3?.is_used || false,
         data_type: scaleConfig.data_3?.data_type || 'int32',
@@ -956,10 +956,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_4: scaleConfig.data_4 || {
         name: '',
-        start_register:
-          scaleConfig.data_4?.start_register ||
-          scaleConfig.data_4?.start_registers ||
-          0,
+        unit: scaleConfig.data_4?.unit || '',
+        start_register: scaleConfig.data_4?.start_register || 0,
         num_registers: scaleConfig.data_4?.num_registers || 1,
         is_used: scaleConfig.data_4?.is_used || false,
         data_type: scaleConfig.data_4?.data_type || 'int32',
@@ -968,10 +966,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_5: scaleConfig.data_5 || {
         name: '',
-        start_register:
-          scaleConfig.data_5?.start_register ||
-          scaleConfig.data_5?.start_registers ||
-          0,
+        unit: scaleConfig.data_5?.unit || '',
+        start_register: scaleConfig.data_5?.start_register || 0,
         num_registers: scaleConfig.data_5?.num_registers || 1,
         is_used: scaleConfig.data_5?.is_used || false,
         data_type: scaleConfig.data_5?.data_type || 'int32',
@@ -1009,9 +1005,20 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.scaleConfig = {
       protocol: 'MODBUS_TCP',
       poll_interval: 1000,
-      conn_params: { ip: '', port: 502 },
+      conn_params: {
+        id: '',
+        ip: '',
+        port: 502,
+        com_port: '',
+        baud_rate: 9600,
+        data_bits: 8,
+        stop_bits: 1,
+        parity: 'even',
+        unit_id: 1,
+      },
       data_1: {
         name: '',
+        unit: '',
         start_register: 0,
         num_registers: 1,
         is_used: false,
@@ -1021,6 +1028,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_2: {
         name: '',
+        unit: '',
         start_register: 0,
         num_registers: 1,
         is_used: false,
@@ -1030,6 +1038,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_3: {
         name: '',
+        unit: '',
         start_register: 0,
         num_registers: 1,
         is_used: false,
@@ -1039,6 +1048,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_4: {
         name: '',
+        unit: '',
         start_register: 0,
         num_registers: 1,
         is_used: false,
@@ -1048,6 +1058,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
       },
       data_5: {
         name: '',
+        unit: '',
         start_register: 0,
         num_registers: 1,
         is_used: false,
@@ -1138,8 +1149,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
         if (channel && channel.is_used) {
           data[`data_${i}`] = {
             name: channel.name || '',
-            start_register:
-              channel.start_register || channel.start_registers || 0,
+            start_register: channel.start_register || 0,
             num_registers: channel.num_registers || 1,
             data_type: channel.data_type || 'int32',
             function_code: channel.function_code || 3,

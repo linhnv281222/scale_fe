@@ -108,7 +108,6 @@ export class ReportService {
     }
   }
 
-  // New API: Export report with template
   async exportReportWithTemplate(
     importId: number,
     data: {
@@ -147,6 +146,51 @@ export class ReportService {
         this.http.post(url, data, {
           headers,
           params,
+          responseType: 'blob',
+          observe: 'response',
+        })
+      );
+
+      if (response?.status === 200 && response?.body) {
+        return response.body;
+      }
+      throw new Error('Không thể xuất báo cáo');
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  async exportIntervalReportV2(data: {
+    importId: number;
+    scaleIds?: number[];
+    manufacturerIds?: number[];
+    locationIds?: number[];
+    direction?: string;
+    shiftIds?: number[];
+    fromTime: string;
+    toTime: string;
+    interval: IntervalType;
+    aggregationByField: {
+      [key: string]: AggregationType;
+    };
+    ratioFormula?: string;
+    page?: number;
+    size?: number;
+  }): Promise<Blob> {
+    const url = `${environment.api_end_point}/api/v1/reports/export/v2`;
+    const token = localStorage.getItem('token');
+    const language = localStorage.getItem('language') ?? 'vi_VN';
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept-Language': language,
+      ...(token && { Authorization: `Bearer ${token}` }),
+    });
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post(url, data, {
+          headers,
           responseType: 'blob',
           observe: 'response',
         })

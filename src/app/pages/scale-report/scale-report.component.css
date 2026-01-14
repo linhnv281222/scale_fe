@@ -1,6 +1,6 @@
 /* Scale Report Component Styles */
 
-/* Default row hover */
+/* Default row hover for entire row (used mainly by non-fixed cells) */
 tbody tr:hover td {
   background-color: #f9fafb; /* hover:bg-gray-50 */
 }
@@ -32,6 +32,39 @@ tbody tr:hover td.selected-row {
     138,
     0.3
   ) !important; /* Slightly darker on hover */
+}
+
+/* Zebra rows for middle cells (exclude fixed sticky columns) */
+.report-row:nth-child(odd) td:not(.fixed-cell) {
+  background-color: #ffffff;
+}
+
+.report-row:nth-child(even) td:not(.fixed-cell) {
+  background-color: #f9fafb;
+}
+
+.report-row:hover td:not(.fixed-cell) {
+  background-color: #f0f9ff !important;
+}
+
+/* Dark theme zebra/hover (reliable with Angular view encapsulation) */
+:host-context(.dark) .report-row:nth-child(odd) td:not(.fixed-cell),
+:host-context([data-theme="dark"])
+  .report-row:nth-child(odd)
+  td:not(.fixed-cell) {
+  background-color: #020617 !important;
+}
+
+:host-context(.dark) .report-row:nth-child(even) td:not(.fixed-cell),
+:host-context([data-theme="dark"])
+  .report-row:nth-child(even)
+  td:not(.fixed-cell) {
+  background-color: #0b1120 !important;
+}
+
+:host-context(.dark) .report-row:hover td:not(.fixed-cell),
+:host-context([data-theme="dark"]) .report-row:hover td:not(.fixed-cell) {
+  background-color: #1e3a8a !important;
 }
 
 /* Detailed filter: 100% remaining height, scrollable content, search button fixed */
@@ -72,4 +105,13 @@ tbody tr:hover td.selected-row {
 ::ng-deep .ant-checkbox-group-item {
   display: flex;
   padding: 4px 0;
+}
+
+/* Fixed columns styling */
+table thead th[style*="position: sticky"] {
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+}
+
+table tbody td[style*="position: sticky"] {
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
 }

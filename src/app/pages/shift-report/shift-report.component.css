@@ -1,5 +1,37 @@
 /* Shift Report Component Styles */
 
+.report-row:nth-child(odd) td:not(.fixed-cell) {
+  background-color: #ffffff;
+}
+
+.report-row:nth-child(even) td:not(.fixed-cell) {
+  background-color: #f9fafb;
+}
+
+.report-row:hover td:not(.fixed-cell) {
+  background-color: #f0f9ff !important;
+}
+
+/* Dark theme zebra/hover (reliable with Angular view encapsulation) */
+:host-context(.dark) .report-row:nth-child(odd) td:not(.fixed-cell),
+:host-context([data-theme="dark"])
+  .report-row:nth-child(odd)
+  td:not(.fixed-cell) {
+  background-color: #020617 !important;
+}
+
+:host-context(.dark) .report-row:nth-child(even) td:not(.fixed-cell),
+:host-context([data-theme="dark"])
+  .report-row:nth-child(even)
+  td:not(.fixed-cell) {
+  background-color: #0b1120 !important;
+}
+
+:host-context(.dark) .report-row:hover td:not(.fixed-cell),
+:host-context([data-theme="dark"]) .report-row:hover td:not(.fixed-cell) {
+  background-color: #1e3a8a !important;
+}
+
 .detailed-filter-container {
   flex: 1;
   min-height: 0;

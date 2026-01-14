@@ -22,6 +22,11 @@ import { FilterField } from '../../shared/components/filter-sidebar/filter-sideb
 
 interface FormattedIntervalReportRow extends IntervalReportRow {
   formattedData: { [key: string]: number | string };
+  directionLabelKey: string;
+  directionBadgeClass: string;
+  start_time?: string;
+  end_time?: string;
+  ratioDisplayValue: number | string;
 }
 
 interface FormattedScaleHistoryItem extends ScaleHistoryItem {
@@ -79,6 +84,61 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
   historyPageSize = 10;
   historyTotal = 0;
   isHistoryExpanded = false;
+  ratioStatisticHeader = '';
+
+  private getDataFieldDisplayName(
+    dataKey: string,
+    dataFieldNames: any
+  ): string {
+    const rawValue = dataFieldNames?.[dataKey];
+    if (rawValue && typeof rawValue === 'object') {
+      const name = String(rawValue.name ?? '').trim() || dataKey;
+      const unit = String(rawValue.unit ?? '').trim();
+      return unit ? `${name} (${unit})` : name;
+    }
+    if (typeof rawValue === 'string' && rawValue.trim()) {
+      return rawValue.trim();
+    }
+    return dataKey;
+  }
+
+  private buildRatioStatisticHeader(dataFieldNames: any, rows: any[]): string {
+    const rawFormula =
+      rows?.[0]?.ratio?.formula ||
+      (this.reportData as any)?.ratioFormula ||
+      this.filterData?.ratioFormula ||
+      '';
+    const formula = String(rawFormula || '').trim();
+    const match = formula.match(/(data_\d+)\s*\/\s*(data_\d+)/);
+    if (!match) return 'Thống kê';
+    const numeratorKey = match[1];
+    const denominatorKey = match[2];
+    const numeratorName = this.getDataFieldDisplayName(
+      numeratorKey,
+      dataFieldNames
+    );
+    const denominatorName = this.getDataFieldDisplayName(
+      denominatorKey,
+      dataFieldNames
+    );
+    return `Thống kê (${numeratorName}/${denominatorName})`;
+  }
+
+  private getDirectionLabelKey(direction: number | null | undefined): string {
+    if (direction === 1) return 'reports.direction.in';
+    if (direction === 2) return 'reports.direction.out';
+    return 'reports.direction.unknown';
+  }
+
+  private getDirectionBadgeClass(direction: number | null | undefined): string {
+    if (direction === 1) {
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800';
+    }
+    if (direction === 2) {
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-200 dark:border-blue-800';
+    }
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700';
+  }
 
   aggregationOptions = [
     { label: 'ABS', value: 'ABS' },
@@ -347,7 +407,12 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           const keys = Object.keys(firstDataValues);
           dataFieldNames = keys.reduce((accumulator: any, key: string) => {
             const dataValue = firstDataValues[key];
-            if (dataValue?.name) accumulator[key] = dataValue.name;
+            if (dataValue?.name) {
+              accumulator[key] = {
+                name: dataValue.name,
+                unit: dataValue.unit ?? '',
+              };
+            }
             return accumulator;
           }, {});
         }
@@ -355,7 +420,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
           const apiColumns = Object.keys(dataFieldNames).map((key) => ({
             key,
-            name: dataFieldNames![key],
+            name: this.getDataFieldDisplayName(key, dataFieldNames),
           }));
           if (this.dataColumns.length > 0) {
             this.dataColumns = this.dataColumns.map((column) => {
@@ -372,18 +437,68 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           const firstDataValues: any = firstRow.data_values || {};
           this.dataColumns = Object.keys(firstDataValues).map((key) => ({
             key,
-            name: key,
+            name: this.getDataFieldDisplayName(key, dataFieldNames),
           }));
         }
 
+        this.ratioStatisticHeader = this.buildRatioStatisticHeader(
+          dataFieldNames,
+          rawRows as any[]
+        );
+
         this.reportRows = rawRows.map((row): FormattedIntervalReportRow => {
+          const ratioValueRaw = (row as any)?.ratio?.value;
+          const ratioValueNumber = parseFloat(String(ratioValueRaw ?? ''));
           const formattedRow: FormattedIntervalReportRow = {
             ...row,
             formattedData: {},
+            directionLabelKey: this.getDirectionLabelKey(
+              (row as any)?.direction
+            ),
+            directionBadgeClass: this.getDirectionBadgeClass(
+              (row as any)?.direction
+            ),
+            ratioDisplayValue: !isNaN(ratioValueNumber) ? ratioValueNumber : '',
           };
           this.dataColumns.forEach((column) => {
+            const rowStartValues: any = row.start_values || {};
+            const rowEndValues: any = row.end_values || {};
             const rowDataValues: any = row.data_values || {};
+
+            const startValue = rowStartValues[column.key];
+            const endValue = rowEndValues[column.key];
             const dataValue = rowDataValues[column.key];
+
+            if (
+              startValue &&
+              startValue.used &&
+              startValue.value !== null &&
+              startValue.value !== undefined
+            ) {
+              const numValue = parseFloat(startValue.value);
+              formattedRow.formattedData[`${column.key}_start`] = !isNaN(
+                numValue
+              )
+                ? numValue
+                : '';
+            } else {
+              formattedRow.formattedData[`${column.key}_start`] = '';
+            }
+
+            if (
+              endValue &&
+              endValue.used &&
+              endValue.value !== null &&
+              endValue.value !== undefined
+            ) {
+              const numValue = parseFloat(endValue.value);
+              formattedRow.formattedData[`${column.key}_end`] = !isNaN(numValue)
+                ? numValue
+                : '';
+            } else {
+              formattedRow.formattedData[`${column.key}_end`] = '';
+            }
+
             if (
               dataValue &&
               dataValue.used &&
@@ -391,11 +506,13 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
               dataValue.value !== undefined
             ) {
               const numValue = parseFloat(dataValue.value);
-              formattedRow.formattedData[column.key] = !isNaN(numValue)
+              formattedRow.formattedData[`${column.key}_data`] = !isNaN(
+                numValue
+              )
                 ? numValue
                 : '';
             } else {
-              formattedRow.formattedData[column.key] = '';
+              formattedRow.formattedData[`${column.key}_data`] = '';
             }
           });
           return formattedRow;
@@ -483,7 +600,10 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     const lineColor = isDark ? '#4b5563' : '#e5e7eb';
     const splitLineColor = isDark ? '#374151' : '#f3f4f6';
 
-    const data1Name = this.reportData?.dataFieldNames?.['data_1'] ?? '';
+    const data1Name = this.getDataFieldDisplayName(
+      'data_1',
+      (this.reportData as any)?.dataFieldNames
+    );
 
     const formatLargeNumber = (value: number): string => {
       if (value === null || value === undefined || isNaN(value)) {
@@ -853,7 +973,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
     this.exportingWithTemplate = true;
     try {
-      let scaleIds = this.filterData.scaleIds ?? [];
+      let scaleIdentifiers = this.filterData.scaleIds ?? [];
       if (
         this.filterData.locationIds &&
         this.filterData.locationIds.length > 0
@@ -862,11 +982,11 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           const locationId = scale.location_id ?? scale.locationId;
           return locationId && this.filterData.locationIds.includes(locationId);
         });
-        scaleIds = filteredScales
+        scaleIdentifiers = filteredScales
           .map((scale) => scale.id)
           .filter((identifier) => identifier !== undefined) as number[];
         if (this.filterData.scaleIds && this.filterData.scaleIds.length > 0) {
-          scaleIds = scaleIds.filter((identifier: number) =>
+          scaleIdentifiers = scaleIdentifiers.filter((identifier: number) =>
             this.filterData.scaleIds.includes(identifier)
           );
         }
@@ -875,31 +995,30 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       const startTime = moment(dateRange[0]).toISOString();
       const endTime = moment(dateRange[1]).endOf('day').toISOString();
 
-      const dataFields = this.dataColumns.map((column) => column.key);
+      const fromTime = startTime;
+      const toTime = endTime;
 
-      const payload = {
-        type: 'WORD',
-        scaleIds,
-        startTime,
-        endTime,
-        dataFields:
-          dataFields.length > 0
-            ? dataFields
-            : ['data_1', 'data_2', 'data_3', 'data_4', 'data_5'],
-        aggregationMethod: 'SUM',
+      const exportPayload = {
+        importId: template.id,
+        scaleIds: scaleIdentifiers.length ? scaleIdentifiers : undefined,
+        manufacturerIds: this.filterData.manufacturerIds?.length
+          ? this.filterData.manufacturerIds
+          : undefined,
+        locationIds: this.filterData.locationIds?.length
+          ? this.filterData.locationIds
+          : undefined,
+        direction: this.filterData.direction || undefined,
+        fromTime,
+        toTime,
+        interval: this.filterData.interval ?? ('HOUR' as IntervalType),
         aggregationByField: this.filterData.aggregationByField ?? {},
-        intervalReport: true,
-        timeInterval: this.filterData.interval ?? 'HOUR',
-        locationIds: this.filterData.locationIds ?? [],
-        activeOnly: true,
-        reportTitle: 'Báo cáo kết quả cân',
-        reportCode: 'BCSL',
-        preparedBy: 'System',
+        ratioFormula: this.filterData.ratioFormula || 'data_1/data_3',
+        page: this.pageIndex - 1,
+        size: this.pageSize,
       };
 
-      const blob = await this.reportService.exportReportWithTemplate(
-        template.id,
-        payload
+      const blob = await this.reportService.exportIntervalReportV2(
+        exportPayload
       );
 
       const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
