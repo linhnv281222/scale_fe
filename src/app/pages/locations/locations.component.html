@@ -53,14 +53,10 @@
           class="w-full"
         >
           <thead>
-            <tr class="bg-blue-600 dark:bg-blue-700">
-              <!-- <th
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-                style="width: 50px"
-              >
-                STT
-              </th> -->
+            <tr>
               <th
+                nzWidth="250px"
+                nzLeft
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               >
                 {{ "locations.name" | translate }}
@@ -86,8 +82,9 @@
                 {{ "common.status" | translate }}
               </th>
               <th
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
                 nzWidth="120px"
+                nzRight
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -98,12 +95,10 @@
               *ngFor="let location of flatLocations; let i = index"
               class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
-              <!-- <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  i + 1
-                }}</span>
-              </td> -->
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td
+                nzLeft
+                class="px-3 !py-2 whitespace-nowrap"
+              >
                 <div
                   class="relative flex items-center"
                   [style.padding-left.px]="(location.level || 0) * 24"
@@ -257,7 +252,10 @@
                   >-</span
                 >
               </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td
+                nzRight
+                class="px-3 !py-2 whitespace-nowrap"
+              >
                 <div class="flex items-center justify-center gap-2">
                   <button
                     nz-button

@@ -34,6 +34,7 @@ export class ReportService {
     manufacturerIds?: number[];
     locationIds?: number[];
     direction?: string;
+    shiftIds?: number[];
     fromDate?: string;
     toDate?: string;
     fromTime: string;

@@ -53,14 +53,17 @@
           class="w-full"
         >
           <thead>
-            <tr class="bg-blue-600 dark:bg-blue-700">
+            <tr>
               <th
+                nzWidth="50px"
+                nzLeft
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-                nzWidth="30px"
               >
                 STT
               </th>
               <th
+                nzWidth="120px"
+                nzLeft
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               >
                 {{ "roles.code" | translate }}
@@ -76,8 +79,9 @@
                 {{ "roles.permissions" | translate }}
               </th>
               <th
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
                 nzWidth="120px"
+                nzRight
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -88,10 +92,16 @@
               *ngFor="let role of roles; let i = index"
               class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td
+                nzLeft
+                class="px-3 !py-2 whitespace-nowrap"
+              >
                 <span class="text-sm text-gray-900 dark:text-white">{{ i + 1 }}</span>
               </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td
+                nzLeft
+                class="px-3 !py-2 whitespace-nowrap"
+              >
                 <span
                   class="text-sm font-medium text-gray-900 dark:text-gray-100"
                   >{{ role.code }}</span
@@ -107,7 +117,10 @@
                   {{ role.permissions?.length || 0 }}
                 </span>
               </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td
+                nzRight
+                class="px-3 !py-2 whitespace-nowrap"
+              >
                 <div class="flex items-center gap-2 justify-center">
                   <button
                     nz-button

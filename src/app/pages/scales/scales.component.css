@@ -21,3 +21,8 @@
   overflow-y: auto;
   padding-right: 4px;
 }
+
+/* Location tree styling for dark theme */
+::ng-deep .dark .ant-tree {
+  background: transparent !important;
+}

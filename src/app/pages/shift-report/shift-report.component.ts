@@ -11,10 +11,12 @@ import {
   Location,
   ReportTemplateImport,
   Scale,
+  Shift,
 } from '../../models';
 import { LocationService } from '../../services/location.service';
 import { ReportService } from '../../services/report.service';
 import { ScaleService } from '../../services/scale.service';
+import { ShiftService } from '../../services/shift.service';
 import { TemplateService } from '../../services/template.service';
 import { FilterField } from '../../shared/components/filter-sidebar/filter-sidebar.component';
 
@@ -32,6 +34,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
   scales: Scale[] = [];
   locations: Location[] = [];
+  shifts: Shift[] = [];
   reportData: IntervalReportResponse | null = null;
   reportRows: FormattedIntervalReportRow[] = [];
   loading = false;
@@ -59,6 +62,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     interval: 'SHIFT' as IntervalType,
     aggregationByField: {} as { [key: string]: AggregationType },
     ratioFormula: 'data_1/data_3',
+    shiftIds: [],
   };
 
   chartData: any[] = [];
@@ -88,19 +92,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       placeholder: 'locations.selectLocations',
       options: [],
     },
-    {
-      key: 'interval',
-      label: 'reports.interval',
-      type: 'select',
-      placeholder: 'reports.selectInterval',
-      options: [
-        { label: 'reports.hour', value: 'HOUR' },
-        { label: 'reports.day', value: 'DAY' },
-        { label: 'reports.week', value: 'WEEK' },
-        { label: 'reports.month', value: 'MONTH' },
-        { label: 'reports.year', value: 'YEAR' },
-      ],
-    },
   ];
 
   exporting = false;
@@ -114,6 +105,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     private scaleService: ScaleService,
     private reportService: ReportService,
     private locationService: LocationService,
+    private shiftService: ShiftService,
     private templateService: TemplateService,
     private toastr: ToastrService
   ) {}
@@ -124,6 +116,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.filterData.dateRange = [sevenDaysAgo.toDate(), today.toDate()];
 
     this.loadLocations();
+    this.loadShifts();
     this.loadScales().then(() => {
       this.loadReportData();
     });
@@ -154,6 +147,52 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         value: location.id,
       }));
     }
+  }
+
+  async loadShifts(): Promise<void> {
+    try {
+      const response = await this.shiftService.getShifts();
+      this.shifts = response.data ?? [];
+    } catch (error) {
+      this.shifts = [];
+    }
+  }
+
+  toggleShift(shiftId: number): void {
+    const index = this.filterData.shiftIds.indexOf(shiftId);
+    if (index > -1) {
+      this.filterData.shiftIds.splice(index, 1);
+    } else {
+      this.filterData.shiftIds.push(shiftId);
+    }
+    this.loadReportData();
+  }
+
+  isShiftSelected(shiftId: number): boolean {
+    return this.filterData.shiftIds.includes(shiftId);
+  }
+
+  toggleAllShifts(): void {
+    const allShiftIds = this.shifts
+      .filter((shift) => shift.id !== undefined)
+      .map((shift) => shift.id!);
+    const areAllSelected = this.areAllShiftsSelected();
+    if (areAllSelected) {
+      this.filterData.shiftIds = [];
+    } else {
+      this.filterData.shiftIds = [...allShiftIds];
+    }
+    this.loadReportData();
+  }
+
+  areAllShiftsSelected(): boolean {
+    const allShiftIds = this.shifts
+      .filter((shift) => shift.id !== undefined)
+      .map((shift) => shift.id!);
+    return (
+      allShiftIds.length > 0 &&
+      allShiftIds.every((shiftId) => this.filterData.shiftIds.includes(shiftId))
+    );
   }
 
   async loadScales(): Promise<void> {
@@ -285,6 +324,9 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           ? this.filterData.locationIds
           : undefined,
         direction: this.filterData.direction || undefined,
+        shiftIds: this.filterData.shiftIds?.length
+          ? this.filterData.shiftIds
+          : undefined,
         fromTime,
         toTime,
         interval: 'SHIFT' as IntervalType,
@@ -593,9 +635,6 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         this.filterData.locationIds = filters.locationIds;
         this.updateScaleOptions();
       }
-      if (filters.interval !== undefined) {
-        this.filterData.interval = filters.interval;
-      }
     }
     this.loadReportData();
   }
@@ -607,6 +646,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       locationIds: [],
       interval: 'SHIFT' as IntervalType,
       aggregationByField: {} as { [key: string]: AggregationType },
+      shiftIds: [],
     };
     this.reportData = null;
     this.reportRows = [];

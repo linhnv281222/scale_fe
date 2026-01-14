@@ -8,7 +8,7 @@
       class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
     >
       <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-        {{ 'scales.locationTree' | translate }}
+        {{ "scales.locationTree" | translate }}
       </h3>
     </div>
     <div
@@ -57,7 +57,7 @@
     </div>
 
     <!-- Detailed Filter: max 50% height, scroll body, search button fixed in component -->
-    <div class="p-3 sidebar-filter">
+    <div class="pt-3 pb-3 pl-3 sidebar-filter">
       <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200">
         {{ "filter.title" | translate }}
       </h3>
@@ -127,19 +127,24 @@
           [nzScroll]="{ x: 'auto', y: 'calc(100vh - 175px)' }"
         >
           <thead>
-            <tr class="bg-blue-600 dark:bg-blue-700">
+            <tr>
               <th
+                nzWidth="50px"
+                nzLeft
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-                nzWidth="30px"
               >
                 STT
               </th>
               <th
+                nzWidth="150px"
+                nzLeft
                 class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               >
                 {{ "scales.name" | translate }}
               </th>
               <th
+                nzWidth="120px"
+                nzLeft
                 class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
               >
                 {{ "scales.model" | translate }}
@@ -165,8 +170,9 @@
                 {{ "common.status" | translate }}
               </th>
               <th
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
                 nzWidth="120px"
+                nzRight
+                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
               >
                 {{ "common.actions" | translate }}
               </th>
@@ -177,18 +183,18 @@
               *ngFor="let scale of scales; let i = index"
               class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td nzLeft class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{
                   i + 1
                 }}</span>
               </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td nzLeft class="px-3 !py-2 whitespace-nowrap">
                 <span
                   class="text-sm font-medium text-gray-900 dark:text-gray-100"
                   >{{ scale.name }}</span
                 >
               </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td nzLeft class="px-3 !py-2 whitespace-nowrap">
                 <span class="text-sm text-gray-900 dark:text-white">{{
                   scale.model
                 }}</span>
@@ -244,7 +250,7 @@
                   -
                 </span>
               </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
+              <td nzRight class="px-3 !py-2 whitespace-nowrap">
                 <div class="flex items-center justify-center gap-1">
                   <button
                     nz-button

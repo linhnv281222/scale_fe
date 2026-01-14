@@ -71,6 +71,200 @@ app-root {
   border-radius: 6px !important;
 }
 
+/* Table fixed columns styling */
+.ant-table th.ant-table-cell-fix-left,
+.ant-table th.ant-table-cell-fix-right {
+  background-color: #fffacd !important;
+}
+
+.ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background-color: #fffacd !important;
+}
+
+.ant-table-tbody > tr:nth-child(even) > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr:nth-child(even) > td.ant-table-cell-fix-right {
+  background-color: #fffacd !important;
+}
+
+.ant-table-tbody > tr:nth-child(odd) > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr:nth-child(odd) > td.ant-table-cell-fix-right {
+  background-color: #fffacd !important;
+}
+
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+  background-color: #fffacd !important;
+}
+
+.ant-table-tbody > tr.ant-table-row-selected > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr.ant-table-row-selected > td.ant-table-cell-fix-right {
+  background-color: #fffacd !important;
+}
+
+.ant-table th.ant-table-cell-fix-left-first::after,
+.ant-table th.ant-table-cell-fix-left-last::after,
+.ant-table td.ant-table-cell-fix-left-first::after,
+.ant-table td.ant-table-cell-fix-left-last::after {
+  box-shadow: inset 10px 0 8px -8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ant-table th.ant-table-cell-fix-right-first::after,
+.ant-table th.ant-table-cell-fix-right-last::after,
+.ant-table td.ant-table-cell-fix-right-first::after,
+.ant-table td.ant-table-cell-fix-right-last::after {
+  box-shadow: inset -10px 0 8px -8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dark .ant-table th.ant-table-cell-fix-left,
+.dark .ant-table th.ant-table-cell-fix-right {
+  background-color: #8a8a6a !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.dark .ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background-color: #7a7a5a !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-table-tbody > tr:nth-child(even) > td.ant-table-cell-fix-left,
+.dark .ant-table-tbody > tr:nth-child(even) > td.ant-table-cell-fix-right {
+  background-color: #7a7a5a !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-table-tbody > tr:nth-child(odd) > td.ant-table-cell-fix-left,
+.dark .ant-table-tbody > tr:nth-child(odd) > td.ant-table-cell-fix-right {
+  background-color: #7a7a5a !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td.ant-table-cell-fix-left,
+.dark .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+  background-color: #8a8a6a !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-table-tbody > tr.ant-table-row-selected > td.ant-table-cell-fix-left,
+.dark
+  .ant-table-tbody
+  > tr.ant-table-row-selected
+  > td.ant-table-cell-fix-right {
+  background-color: #7a7a5a !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-table-tbody > tr > td.ant-table-cell-fix-left > span,
+.dark .ant-table-tbody > tr > td.ant-table-cell-fix-right > span {
+  color: #ffffff !important;
+}
+
+.dark .ant-table-tbody > tr > td.ant-table-cell-fix-left button .anticon,
+.dark .ant-table-tbody > tr > td.ant-table-cell-fix-right button .anticon {
+  filter: brightness(1.3) contrast(1.2) !important;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .ant-table-tbody > tr > td.ant-table-cell-fix-left button:hover .anticon,
+.dark
+  .ant-table-tbody
+  > tr
+  > td.ant-table-cell-fix-right
+  button:hover
+  .anticon {
+  filter: brightness(1.5) contrast(1.3) !important;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark
+  .ant-table-tbody
+  > tr
+  > td.ant-table-cell-fix-left
+  button.text-teal-600
+  .anticon,
+.dark
+  .ant-table-tbody
+  > tr
+  > td.ant-table-cell-fix-right
+  button.text-teal-600
+  .anticon {
+  color: #34ffe1 !important;
+}
+
+.dark
+  .ant-table-tbody
+  > tr
+  > td.ant-table-cell-fix-left
+  button.text-gray-600
+  .anticon,
+.dark
+  .ant-table-tbody
+  > tr
+  > td.ant-table-cell-fix-right
+  button.text-gray-600
+  .anticon {
+  color: #e6ebf2 !important;
+}
+
+.dark
+  .ant-table-tbody
+  > tr
+  > td.ant-table-cell-fix-left
+  button.text-red-600
+  .anticon,
+.dark
+  .ant-table-tbody
+  > tr
+  > td.ant-table-cell-fix-right
+  button.text-red-600
+  .anticon {
+  color: #ff2929 !important;
+}
+
+.ant-table-tbody > tr > td.ant-table-cell-fix-left button .anticon,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right button .anticon {
+  filter: brightness(0.95) contrast(1.1) !important;
+}
+
+.ant-table-tbody > tr > td.ant-table-cell-fix-left button:hover .anticon,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right button:hover .anticon {
+  filter: brightness(1.1) contrast(1.2) !important;
+}
+
+/* Enhanced table header styling */
+.ant-table-thead > tr > th {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid #1e40af !important;
+}
+
+.dark .ant-table-thead > tr > th {
+  background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%) !important;
+  color: #ffffff !important;
+}
+
+/* Enhanced table row hover */
+.ant-table-tbody > tr:hover > td {
+  background-color: #f0f9ff !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td {
+  background-color: #1e3a8a !important;
+}
+
+/* Table border improvements */
+.ant-table {
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.dark .ant-table {
+  border-color: #4b5563 !important;
+}
+
 /* Override ng-zorro dark theme colors */
 .dark .ant-input,
 .dark .ant-input-number,
@@ -618,4 +812,35 @@ nz-table thead th {
   .ant-select-selector,
 .ant-select-disabled.ant-select-multiple .ant-select-selection-item {
   color: black;
+}
+
+/* Tree component styling for dark theme */
+.dark .ant-tree {
+  background: transparent !important;
+  color: white;
+}
+
+/* Checkbox tree styling for dark theme */
+.dark .ant-checkbox-wrapper {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-checkbox-wrapper span {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-checkbox-wrapper:hover span {
+  color: #ffffff !important;
+}
+
+.dark .ant-checkbox-group .ant-checkbox-wrapper {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-checkbox-group .ant-checkbox-wrapper span {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-checkbox-group .ant-checkbox-wrapper:hover span {
+  color: #ffffff !important;
 }
