@@ -1,10 +1,70 @@
 /* You can add global styles to this file, and also import other style files */
 @import "../node_modules/ng-zorro-antd/resizable/style/index.min.css";
 
-/* Tailwind CSS directives */
+/* Tailwind CSS directives - These are valid Tailwind directives processed by PostCSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth !important;
+}
+
+* {
+  scroll-behavior: smooth !important;
+}
+
+/* Smooth transitions for interactive elements */
+button:not(.ant-modal-close),
+.ant-btn:not(.ant-modal-close),
+.ant-input,
+.ant-select,
+.ant-picker,
+.ant-checkbox-wrapper,
+.ant-radio-wrapper {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ant-modal-close,
+.ant-modal-close-x {
+  overflow: visible !important;
+}
+
+/* Fade in animation for table rows */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse animation for loading states */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Ripple effect animation */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
 
 /* Reset default margins and padding */
 html,
@@ -71,12 +131,7 @@ app-root {
   border-radius: 6px !important;
 }
 
-/* Table fixed columns styling */
-.ant-table th.ant-table-cell-fix-left,
-.ant-table th.ant-table-cell-fix-right {
-  background-color: #fffacd !important;
-}
-
+/* Table fixed columns styling - Only apply to td, not th */
 .ant-table-tbody > tr > td.ant-table-cell-fix-left,
 .ant-table-tbody > tr > td.ant-table-cell-fix-right {
   background-color: #fffacd !important;
@@ -114,12 +169,6 @@ app-root {
 .ant-table td.ant-table-cell-fix-right-first::after,
 .ant-table td.ant-table-cell-fix-right-last::after {
   box-shadow: inset -10px 0 8px -8px rgba(0, 0, 0, 0.15) !important;
-}
-
-.dark .ant-table th.ant-table-cell-fix-left,
-.dark .ant-table th.ant-table-cell-fix-right {
-  background-color: #8a8a6a !important;
-  color: #ffffff !important;
 }
 
 .dark .ant-table-tbody > tr > td.ant-table-cell-fix-left,
@@ -234,35 +283,79 @@ app-root {
 
 /* Enhanced table header styling */
 .ant-table-thead > tr > th {
-  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%) !important;
+  background: #3b82f6 !important;
   color: #ffffff !important;
   font-weight: 600 !important;
   border-bottom: 2px solid #1e40af !important;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2) !important;
 }
 
 .dark .ant-table-thead > tr > th {
-  background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%) !important;
+  background: #1e40af !important;
   color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3) !important;
 }
 
-/* Enhanced table row hover */
+/* Enhanced table row hover with smooth animations */
+.ant-table-tbody > tr {
+  transition: all 0.3s ease !important;
+  animation: fadeIn 0.3s ease-out !important;
+}
+
+.ant-table-tbody > tr:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.ant-table-tbody > tr:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.ant-table-tbody > tr:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.ant-table-tbody > tr:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
 .ant-table-tbody > tr:hover > td {
   background-color: #f0f9ff !important;
+}
+
+.ant-table-tbody > tr:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .dark .ant-table-tbody > tr:hover > td {
   background-color: #1e3a8a !important;
 }
 
-/* Table border improvements */
+.dark .ant-table-tbody > tr:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Table border improvements with enhanced shadows */
 .ant-table {
   border: 1px solid #e5e7eb !important;
   border-radius: 8px !important;
   overflow: hidden !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
 .dark .ant-table {
   border-color: #4b5563 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+.ant-table-tbody > tr:first-child > td:first-child {
+  border-top-left-radius: 8px;
+}
+
+.ant-table-tbody > tr:first-child > td:last-child {
+  border-top-right-radius: 8px;
 }
 
 /* Override ng-zorro dark theme colors */
@@ -814,6 +907,217 @@ nz-table thead th {
   color: black;
 }
 
+/* Button hover effects with smooth animations - Only for ng-zorro buttons */
+[nz-button]:not(.ant-modal-close):not(header [nz-button]),
+.ant-btn:not(.ant-modal-close):not(header .ant-btn) {
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 6px !important;
+}
+
+[nz-button]:not(.ant-modal-close):not(header [nz-button]):not(
+    .ant-btn-icon-only
+  ):not(.ant-btn-text),
+.ant-btn:not(.ant-modal-close):not(header .ant-btn):not(.ant-btn-icon-only):not(
+    .ant-btn-text
+  ) {
+  min-width: 80px !important;
+}
+
+[nz-button].ant-btn-icon-only:not(header [nz-button]),
+.ant-btn.ant-btn-icon-only:not(header .ant-btn),
+[nz-button].ant-btn-text:not(header [nz-button]),
+.ant-btn.ant-btn-text:not(header .ant-btn) {
+  border-radius: 6px !important;
+  min-width: auto !important;
+}
+
+header [nz-button],
+header .ant-btn {
+  border-radius: 4px !important;
+  min-width: auto !important;
+}
+
+[nz-button]:not(.ant-modal-close):hover,
+.ant-btn:not(.ant-modal-close):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+[nz-button]:not(.ant-modal-close):active,
+.ant-btn:not(.ant-modal-close):active {
+  transform: translateY(0) !important;
+}
+
+.ant-btn-sm {
+  min-width: 70px !important;
+  border-radius: 6px !important;
+}
+
+.ant-btn-lg {
+  min-width: 100px !important;
+  border-radius: 8px !important;
+}
+
+.ant-modal-footer .ant-btn {
+  border-radius: 6px !important;
+  min-width: 80px !important;
+}
+
+.ant-modal-footer .ant-btn-sm {
+  min-width: 70px !important;
+}
+
+.ant-btn-primary {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+}
+
+.ant-btn-primary:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5) !important;
+}
+
+.dark .ant-btn-primary {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4) !important;
+}
+
+.dark .ant-btn-primary:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6) !important;
+}
+
+/* Ripple effect for buttons - exclude modal close button */
+.ant-btn:not(.ant-modal-close)::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  width: 100px;
+  height: 100px;
+  margin-top: -50px;
+  margin-left: -50px;
+  opacity: 0;
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+}
+
+.ant-btn:not(.ant-modal-close):active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+/* Glow effects for badges */
+.bg-blue-100,
+.bg-green-100,
+.bg-red-100 {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.bg-blue-100:hover,
+.bg-green-100:hover,
+.bg-red-100:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dark .bg-blue-900\/40 {
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .bg-blue-900\/40:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5) !important;
+}
+
+.dark .bg-green-900\/40 {
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3) !important;
+}
+
+.dark .bg-green-900\/40:hover {
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.5) !important;
+}
+
+.dark .bg-red-900\/40 {
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+.dark .bg-red-900\/40:hover {
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Pulse animation for loading states */
+.ant-spin-dot-item {
+  animation: pulse 1.5s ease-in-out infinite !important;
+}
+
+.ant-spin {
+  animation: pulse 2s ease-in-out infinite !important;
+}
+
+/* Backdrop blur for modals and dropdowns */
+.ant-modal-mask {
+  backdrop-filter: blur(4px) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+}
+
+.dark .ant-modal-mask {
+  backdrop-filter: blur(6px) !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+
+.ant-dropdown {
+  backdrop-filter: blur(8px) !important;
+}
+
+.dark .ant-dropdown {
+  backdrop-filter: blur(10px) !important;
+}
+
+/* Smooth transitions for inputs and selects */
+.ant-input,
+.ant-select-selector,
+.ant-picker {
+  transition: all 0.2s ease !important;
+}
+
+.ant-input:focus,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  transform: scale(1.01) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Enhanced checkbox and radio animations */
+.ant-checkbox-wrapper,
+.ant-radio-wrapper {
+  transition: all 0.2s ease !important;
+}
+
+.ant-checkbox-wrapper:hover,
+.ant-radio-wrapper:hover {
+  transform: scale(1.05) !important;
+}
+
+/* Smooth table cell transitions */
+.ant-table-tbody > tr > td {
+  transition: all 0.2s ease !important;
+}
+
+/* Enhanced fixed columns with subtle effects */
+.ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  transition: all 0.2s ease !important;
+}
+
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td.ant-table-cell-fix-left,
+.dark .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2) !important;
+}
+
 /* Tree component styling for dark theme */
 .dark .ant-tree {
   background: transparent !important;
@@ -843,4 +1147,200 @@ nz-table thead th {
 
 .dark .ant-checkbox-group .ant-checkbox-wrapper:hover span {
   color: #ffffff !important;
+}
+
+/* Typography Hierarchy Improvements */
+h1,
+.h1 {
+  font-weight: 700 !important;
+  color: #111827 !important;
+}
+
+.dark h1,
+.dark .h1 {
+  color: #f9fafb !important;
+}
+
+h2,
+.h2 {
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+}
+
+.dark h2,
+.dark .h2 {
+  color: #e5e7eb !important;
+}
+
+h3,
+.h3 {
+  font-weight: 600 !important;
+  color: #374151 !important;
+}
+
+.dark h3,
+.dark .h3 {
+  color: #d1d5db !important;
+}
+
+h4,
+.h4 {
+  font-weight: 600 !important;
+  color: #4b5563 !important;
+}
+
+.dark h4,
+.dark .h4 {
+  color: #9ca3af !important;
+}
+
+.text-primary {
+  color: #3b82f6 !important;
+}
+
+.dark .text-primary {
+  color: #60a5fa !important;
+}
+
+.text-secondary {
+  color: #6b7280 !important;
+}
+
+.dark .text-secondary {
+  color: #9ca3af !important;
+}
+
+.text-success {
+  color: #10b981 !important;
+}
+
+.dark .text-success {
+  color: #34d399 !important;
+}
+
+.text-warning {
+  color: #f59e0b !important;
+}
+
+.dark .text-warning {
+  color: #fbbf24 !important;
+}
+
+.text-error {
+  color: #ef4444 !important;
+}
+
+.dark .text-error {
+  color: #f87171 !important;
+}
+
+.font-bold {
+  font-weight: 700 !important;
+}
+
+.font-semibold {
+  font-weight: 600 !important;
+}
+
+.font-medium {
+  font-weight: 500 !important;
+}
+
+.font-normal {
+  font-weight: 400 !important;
+}
+
+/* Form Field Success States */
+.ant-input-success,
+.ant-select-success .ant-select-selector,
+.ant-picker-success {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1) !important;
+}
+
+.ant-input-success:focus,
+.ant-select-success.ant-select-focused .ant-select-selector,
+.ant-picker-success.ant-picker-focused {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+.dark .ant-input-success,
+.dark .ant-select-success .ant-select-selector,
+.dark .ant-picker-success {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.15) !important;
+}
+
+.dark .ant-input-success:focus,
+.dark .ant-select-success.ant-select-focused .ant-select-selector,
+.dark .ant-picker-success.ant-picker-focused {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.25) !important;
+}
+
+.form-field-success {
+  position: relative;
+}
+
+.form-field-success::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background-color: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-field-success::after {
+  content: "✓";
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.dark .form-field-success::after {
+  background-color: #34d399;
+}
+
+/* Help Text Styling */
+.help-text {
+  font-size: 0.75rem !important;
+  color: #6b7280 !important;
+  margin-top: 4px !important;
+  display: block !important;
+}
+
+.dark .help-text {
+  color: #9ca3af !important;
+}
+
+.help-text-success {
+  color: #10b981 !important;
+}
+
+.dark .help-text-success {
+  color: #34d399 !important;
+}
+
+.help-text-error {
+  color: #ef4444 !important;
+}
+
+.dark .help-text-error {
+  color: #f87171 !important;
+}
+
+.help-text-warning {
+  color: #f59e0b !important;
+}
+
+.dark .help-text-warning {
+  color: #fbbf24 !important;
 }

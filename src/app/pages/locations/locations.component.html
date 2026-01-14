@@ -95,10 +95,7 @@
               *ngFor="let location of flatLocations; let i = index"
               class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
             >
-              <td
-                nzLeft
-                class="px-3 !py-2 whitespace-nowrap"
-              >
+              <td nzLeft class="px-3 !py-2 whitespace-nowrap">
                 <div
                   class="relative flex items-center"
                   [style.padding-left.px]="(location.level || 0) * 24"
@@ -252,10 +249,7 @@
                   >-</span
                 >
               </td>
-              <td
-                nzRight
-                class="px-3 !py-2 whitespace-nowrap"
-              >
+              <td nzRight class="px-3 !py-2 whitespace-nowrap">
                 <div class="flex items-center justify-center gap-2">
                   <button
                     nz-button
@@ -351,7 +345,12 @@
   <div *nzModalContent>
     <div class="mb-4">
       <label
-        [class]="'block text-sm font-medium ' + (isRequiredFieldEmpty(dataLocation.code) ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-700 dark:text-gray-300')"
+        [class]="
+          'block text-sm font-medium ' +
+          (isRequiredFieldEmpty(dataLocation.code)
+            ? 'text-red-600 dark:text-red-400 font-bold'
+            : 'text-gray-700 dark:text-gray-300')
+        "
       >
         {{ "locations.code" | translate
         }}<span class="ml-1 text-red-500">*</span>
@@ -370,7 +369,12 @@
     </div>
     <div class="mb-4">
       <label
-        [class]="'block text-sm font-medium ' + (isRequiredFieldEmpty(dataLocation.name) ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-700 dark:text-gray-300')"
+        [class]="
+          'block text-sm font-medium ' +
+          (isRequiredFieldEmpty(dataLocation.name)
+            ? 'text-red-600 dark:text-red-400 font-bold'
+            : 'text-gray-700 dark:text-gray-300')
+        "
       >
         {{ "locations.name" | translate
         }}<span class="ml-1 text-red-500">*</span>
@@ -395,7 +399,6 @@
         [(ngModel)]="dataLocation.parentId"
         [nzPlaceHolder]="'locations.selectParent' | translate"
         [nzDropdownMatchSelectWidth]="false"
-        [nzPlacement]="'bottomLeft'"
         nzAllowClear
         nzShowSearch
         [nzDisabled]="isViewMode"

@@ -443,6 +443,16 @@ export class ScalesComponent implements OnInit, OnDestroy {
     this.loadScales();
   }
 
+  filterByStatus(isActive: boolean | null): void {
+    if (isActive === null) {
+      this.filterData.isActive = undefined;
+    } else {
+      this.filterData.isActive = isActive;
+    }
+    this.pageIndex = 1;
+    this.loadScales();
+  }
+
   nzEvent(event: NzFormatEmitEvent): void {
     if (event.eventName !== 'check') {
       return;

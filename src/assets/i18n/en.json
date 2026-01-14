@@ -49,7 +49,43 @@
     "selectStatus": "Select status",
     "selected": "selected",
     "download": "Download",
-    "archive": "Archive"
+    "archive": "Archive",
+    "emptyState": {
+      "noData": "No data",
+      "noDataDescription": "There is currently no data to display",
+      "noResults": "No results found",
+      "noResultsDescription": "Try changing filters or search keywords",
+      "error": "An error occurred",
+      "errorDescription": "Unable to load data. Please try again later",
+      "emptyList": "Empty list",
+      "emptyListDescription": "There are no items in this list yet"
+    },
+    "tooltips": {
+      "view": "View details",
+      "edit": "Edit",
+      "delete": "Delete",
+      "refresh": "Refresh data",
+      "add": "Add new",
+      "save": "Save changes",
+      "cancel": "Cancel",
+      "search": "Search",
+      "filter": "Filter data",
+      "export": "Export data",
+      "download": "Download"
+    },
+    "helpText": {
+      "required": "This field is required",
+      "optional": "This field is optional",
+      "minLength": "Minimum {{min}} characters",
+      "maxLength": "Maximum {{max}} characters",
+      "pattern": "Invalid format"
+    },
+    "success": {
+      "saved": "Saved successfully",
+      "updated": "Updated successfully",
+      "deleted": "Deleted successfully",
+      "created": "Created successfully"
+    }
   },
   "activityMonitoring": {
     "title": "Activity Monitoring",

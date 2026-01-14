@@ -78,7 +78,6 @@
                 (ngModelChange)="field.onChange && field.onChange($event)"
                 [nzPlaceHolder]="field.placeholder || '' | translate"
                 [nzDropdownMatchSelectWidth]="false"
-                [nzPlacement]="'bottomLeft'"
                 nzAllowClear
                 class="w-full !mt-0"
               >
@@ -97,7 +96,6 @@
                 [nzMode]="'multiple'"
                 [nzMaxTagCount]="1"
                 [nzDropdownMatchSelectWidth]="false"
-                [nzPlacement]="'bottomLeft'"
                 nzAllowClear
                 class="w-full !mt-0"
               >
@@ -323,26 +321,17 @@
             *ngFor="let row of reportRows; let i = index"
             class="hover:bg-gray-50 dark:hover:bg-gray-700"
           >
-            <td
-              nzLeft
-              class="px-2 !py-1 whitespace-nowrap text-center"
-            >
+            <td nzLeft class="px-2 !py-1 whitespace-nowrap text-center">
               <span class="text-xs text-gray-900 dark:text-white">{{
                 i + 1
               }}</span>
             </td>
-            <td
-              nzLeft
-              class="px-2 !py-1 whitespace-nowrap"
-            >
+            <td nzLeft class="px-2 !py-1 whitespace-nowrap">
               <span class="text-xs font-medium text-gray-900 dark:text-white">
                 {{ row.scale.name }}
               </span>
             </td>
-            <td
-              nzLeft
-              class="px-2 !py-1 whitespace-nowrap"
-            >
+            <td nzLeft class="px-2 !py-1 whitespace-nowrap">
               <span class="text-xs font-medium text-gray-900 dark:text-white">
                 {{ row.scale.model }}
               </span>

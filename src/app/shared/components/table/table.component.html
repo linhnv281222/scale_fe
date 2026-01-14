@@ -15,7 +15,7 @@
       <tr class="bg-blue-50 dark:bg-gray-700">
         <th
           class="px-4 py-3 !text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
-          style="width: 50px;"
+          style="width: 50px"
         >
           STT
         </th>
@@ -29,7 +29,7 @@
         <th
           *ngIf="showActions"
           class="px-4 py-3 !text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
-          style="max-width: 150px; width: 150px;"
+          style="max-width: 150px; width: 150px"
         >
           {{ "common.actions" | translate }}
         </th>
@@ -44,7 +44,9 @@
             'bg-gray-50 dark:bg-gray-800/50': i % 2 === 1
           }"
         >
-          <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
+          <td
+            class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap"
+          >
             <span>{{ i + 1 }}</span>
           </td>
           <td
@@ -119,7 +121,6 @@
           class="w-24"
           nzSize="small"
           [nzDropdownMatchSelectWidth]="false"
-          [nzPlacement]="'bottomLeft'"
         >
           <nz-option
             *ngFor="let size of [10, 20, 50, 100]"

@@ -40,6 +40,7 @@ import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.componen
 import { DynamicFormComponent } from './dynamic-form/dynamic-form.component';
 import { DynamicTableComponent } from './dynamic-table/dynamic-table.component';
 import { UploadFileComponent } from './upload-file/upload-file.component';
+import { SkeletonLoaderComponent } from './skeleton-loader/skeleton-loader.component';
 
 @NgModule({
   declarations: [
@@ -54,6 +55,7 @@ import { UploadFileComponent } from './upload-file/upload-file.component';
     DynamicFormComponent,
     DynamicTableComponent,
     UploadFileComponent,
+    SkeletonLoaderComponent,
   ],
   imports: [
     CommonModule,
@@ -98,6 +100,7 @@ import { UploadFileComponent } from './upload-file/upload-file.component';
     DynamicFormComponent,
     DynamicTableComponent,
     UploadFileComponent,
+    SkeletonLoaderComponent,
     // Export Ng-Zorro Modules so page components can use them
     NzTableModule,
     NzButtonModule,

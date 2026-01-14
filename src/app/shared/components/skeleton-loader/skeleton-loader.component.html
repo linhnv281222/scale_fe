@@ -1,0 +1,48 @@
+<div [ngSwitch]="type" class="skeleton-container">
+  <!-- Table Skeleton -->
+  <div *ngSwitchCase="'table'" class="skeleton-table">
+    <div class="skeleton-table-header">
+      <div
+        *ngFor="let col of [].constructor(columns)"
+        class="skeleton-header-cell"
+      ></div>
+    </div>
+    <div
+      *ngFor="let row of [].constructor(rows)"
+      class="skeleton-table-row"
+    >
+      <div
+        *ngFor="let col of [].constructor(columns)"
+        class="skeleton-cell"
+      ></div>
+    </div>
+  </div>
+
+  <!-- Card Skeleton -->
+  <div *ngSwitchCase="'card'" class="skeleton-card">
+    <div class="skeleton-card-header"></div>
+    <div class="skeleton-card-body">
+      <div *ngFor="let row of [].constructor(rows)" class="skeleton-card-row"></div>
+    </div>
+  </div>
+
+  <!-- List Skeleton -->
+  <div *ngSwitchCase="'list'" class="skeleton-list">
+    <div *ngFor="let row of [].constructor(rows)" class="skeleton-list-item">
+      <div class="skeleton-list-avatar"></div>
+      <div class="skeleton-list-content">
+        <div class="skeleton-list-title"></div>
+        <div class="skeleton-list-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Skeleton -->
+  <div *ngSwitchCase="'form'" class="skeleton-form">
+    <div *ngFor="let row of [].constructor(rows)" class="skeleton-form-row">
+      <div class="skeleton-form-label"></div>
+      <div class="skeleton-form-input"></div>
+    </div>
+  </div>
+</div>
+

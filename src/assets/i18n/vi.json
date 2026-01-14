@@ -50,7 +50,43 @@
     "selectStatus": "Chọn trạng thái",
     "selected": "đã chọn",
     "download": "Tải",
-    "archive": "Lưu trữ"
+    "archive": "Lưu trữ",
+    "emptyState": {
+      "noData": "Không có dữ liệu",
+      "noDataDescription": "Hiện tại không có dữ liệu để hiển thị",
+      "noResults": "Không tìm thấy kết quả",
+      "noResultsDescription": "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm",
+      "error": "Đã xảy ra lỗi",
+      "errorDescription": "Không thể tải dữ liệu. Vui lòng thử lại sau",
+      "emptyList": "Danh sách trống",
+      "emptyListDescription": "Chưa có mục nào trong danh sách này"
+    },
+    "tooltips": {
+      "view": "Xem chi tiết",
+      "edit": "Chỉnh sửa",
+      "delete": "Xóa",
+      "refresh": "Làm mới dữ liệu",
+      "add": "Thêm mới",
+      "save": "Lưu thay đổi",
+      "cancel": "Hủy bỏ",
+      "search": "Tìm kiếm",
+      "filter": "Lọc dữ liệu",
+      "export": "Xuất dữ liệu",
+      "download": "Tải xuống"
+    },
+    "helpText": {
+      "required": "Trường này là bắt buộc",
+      "optional": "Trường này là tùy chọn",
+      "minLength": "Tối thiểu {{min}} ký tự",
+      "maxLength": "Tối đa {{max}} ký tự",
+      "pattern": "Định dạng không hợp lệ"
+    },
+    "success": {
+      "saved": "Đã lưu thành công",
+      "updated": "Đã cập nhật thành công",
+      "deleted": "Đã xóa thành công",
+      "created": "Đã tạo thành công"
+    }
   },
   "activityMonitoring": {
     "title": "Giám sát Hoạt động",

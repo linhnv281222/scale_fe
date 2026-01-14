@@ -112,18 +112,12 @@
             *ngFor="let template of templates; let i = index"
             class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
           >
-            <td
-              nzLeft
-              class="px-3 !py-2 whitespace-nowrap"
-            >
+            <td nzLeft class="px-3 !py-2 whitespace-nowrap">
               <span class="text-sm text-gray-900 dark:text-white">{{
                 (pageIndex - 1) * pageSize + i + 1
               }}</span>
             </td>
-            <td
-              nzLeft
-              class="px-3 !py-2 whitespace-nowrap"
-            >
+            <td nzLeft class="px-3 !py-2 whitespace-nowrap">
               <span class="text-sm font-medium text-gray-900 dark:text-white">{{
                 template.templateCode || "-"
               }}</span>
@@ -188,10 +182,7 @@
                 >-</span
               >
             </td>
-            <td
-              nzRight
-              class="px-3 !py-2 whitespace-nowrap"
-            >
+            <td nzRight class="px-3 !py-2 whitespace-nowrap">
               <div class="flex items-center justify-center gap-2">
                 <button
                   nz-button
@@ -361,7 +352,6 @@
           class="w-full"
           required
           [nzDropdownMatchSelectWidth]="false"
-          [nzPlacement]="'bottomLeft'"
         >
           <nz-option
             [nzValue]="'Báo cáo cân'"
