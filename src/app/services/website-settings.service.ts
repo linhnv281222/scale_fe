@@ -21,6 +21,10 @@ export class WebsiteSettingsService {
           ? `data:image/png;base64,${orgSettings.logoBase64}`
           : undefined;
 
+        const faviconFromBase64 = orgSettings.faviconBase64
+          ? `data:image/png;base64,${orgSettings.faviconBase64}`
+          : '';
+
         const settingsFromApi: WebsiteSettings = {
           id: orgSettings.id,
           siteName: orgSettings.companyName || 'Factory Data Manager',
@@ -30,7 +34,7 @@ export class WebsiteSettingsService {
             'Factory Data Manager',
           logo: logoFromBase64 || 'assets/img/facenet-01-k-nen.png',
           loginLogo: logoFromBase64 || 'assets/img/facenet-01-k-nen.png',
-          favicon: '',
+          favicon: faviconFromBase64,
           copyright: '',
           description: '',
           primaryColor: '#2563eb',

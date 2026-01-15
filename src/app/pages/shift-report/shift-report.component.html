@@ -183,16 +183,50 @@
       class="flex-shrink-0 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
     >
       <div class="flex items-center justify-between px-4 py-2">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
-          {{ "reports.shiftReport" | translate }}
-        </h2>
+        <div class="flex items-center flex-1 min-w-0 gap-4">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
+            {{ "reports.shiftReport" | translate }}
+          </h2>
+          <!-- Overview Summary -->
+          <div
+            class="flex items-center gap-4 overflow-x-auto whitespace-nowrap"
+            *ngIf="overviewDisplay.length"
+          >
+            <div
+              *ngFor="let direction of overviewDisplay"
+              class="flex items-center flex-shrink-0 gap-2"
+            >
+              <span
+                class="flex-shrink-0 text-xs font-semibold text-gray-700 dark:text-gray-300"
+              >
+                {{ direction.directionLabel }}:
+              </span>
+              <div class="flex items-center gap-2">
+                <span
+                  *ngFor="let item of direction.items"
+                  class="overview-chip px-2 py-0.5 text-xs font-medium rounded border flex-shrink-0 cursor-default select-none"
+                  [ngClass]="direction.badgeClass"
+                >
+                  {{ item.label }}:
+                  <ng-container *ngIf="item.value !== null; else noValue">
+                    {{ item.value | number : "1.0-2" }}
+                    <ng-container *ngIf="item.unit">
+                      &nbsp;{{ item.unit }}
+                    </ng-container>
+                  </ng-container>
+                  <ng-template #noValue>-</ng-template>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- Export Button -->
         <button
           nz-button
           nzType="primary"
           (click)="exportReport()"
           [nzLoading]="exporting"
-          class="flex items-center gap-2 rounded-md"
+          class="flex items-center gap-2 rounded-md flex-shrink-0"
         >
           <span nz-icon nzType="download" nzTheme="outline"></span>
           <span>{{ "reports.export" | translate }}</span>

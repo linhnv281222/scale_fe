@@ -10,6 +10,8 @@ export interface OrganizationSettings {
   logoUrl?: string;
   logoBase64?: string;
   hasLogo?: boolean;
+  faviconUrl?: string;
+  faviconBase64?: string;
   watermarkText?: string;
   isActive?: boolean;
   isDefault?: boolean;

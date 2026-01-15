@@ -26,6 +26,8 @@ export class WebsiteSettingsComponent implements OnInit {
   saving = false;
   logoFiles: File[] = [];
   logoFilesFromBE: any[] = [];
+  faviconFiles: File[] = [];
+  faviconFilesFromBE: any[] = [];
   hasExistingSettings = false;
 
   constructor(
@@ -65,6 +67,26 @@ export class WebsiteSettingsComponent implements OnInit {
           ];
         }
 
+        // Set favicon files from backend - CHỈ dùng faviconBase64 cho preview/download
+        this.faviconFilesFromBE = [];
+        if (data.faviconBase64) {
+          const faviconPreviewUrl = `data:image/png;base64,${data.faviconBase64}`;
+
+          this.faviconFilesFromBE = [
+            {
+              id: data.id,
+              fileName: 'favicon.ico',
+              path: '',
+              resourcePath: faviconPreviewUrl,
+              size: 0,
+              createdAt: data.updatedAt || data.createdAt,
+            },
+          ];
+        }
+
+        // Update favicon in HTML head
+        this.updateFavicon(data.faviconBase64);
+
         // Set page title
         if (this.settings.companyName) {
           this.titleService.setTitle(this.settings.companyName);
@@ -87,6 +109,15 @@ export class WebsiteSettingsComponent implements OnInit {
   onLogoFilesFromBEChanged(filesFromBE: any[]): void {
     // upload-file.component luôn emit mảng filesFromBE mới
     this.logoFilesFromBE = filesFromBE || [];
+  }
+
+  onFaviconFilesChanged(files: File[]): void {
+    this.faviconFiles = files;
+  }
+
+  onFaviconFilesFromBEChanged(filesFromBE: any[]): void {
+    // upload-file.component luôn emit mảng filesFromBE mới
+    this.faviconFilesFromBE = filesFromBE || [];
   }
 
   async saveSettings(): Promise<void> {
@@ -118,17 +149,26 @@ export class WebsiteSettingsComponent implements OnInit {
           ? this.logoFiles[0]
           : undefined;
 
+      // Get favicon file from uploaded files
+      const faviconFile =
+        this.faviconFiles && this.faviconFiles.length > 0
+          ? this.faviconFiles[0]
+          : undefined;
+
       if (this.hasExistingSettings) {
         // Update existing settings
         result = await this.organizationSettingsService.updateSettings(
           data,
-          logoFile
+          logoFile,
+          undefined,
+          faviconFile
         );
       } else {
         // Create new settings
         result = await this.organizationSettingsService.createSettings(
           data,
-          logoFile
+          logoFile,
+          faviconFile
         );
       }
 
@@ -153,6 +193,26 @@ export class WebsiteSettingsComponent implements OnInit {
           ];
         }
 
+        // Update favicon files from backend (chỉ dùng base64 cho preview/download)
+        this.faviconFiles = [];
+        this.faviconFilesFromBE = [];
+        if (result.faviconBase64) {
+          const faviconPreviewUrl = `data:image/png;base64,${result.faviconBase64}`;
+          this.faviconFilesFromBE = [
+            {
+              id: result.id,
+              fileName: 'favicon.ico',
+              path: '',
+              resourcePath: faviconPreviewUrl,
+              size: 0,
+              createdAt: result.updatedAt || result.createdAt,
+            },
+          ];
+        }
+
+        // Update favicon in HTML head
+        this.updateFavicon(result.faviconBase64);
+
         // Update page title
         if (this.settings.companyName) {
           this.titleService.setTitle(this.settings.companyName);
@@ -169,6 +229,30 @@ export class WebsiteSettingsComponent implements OnInit {
       this.toastr.error(errorMessage, 'Lỗi');
     } finally {
       this.saving = false;
+    }
+  }
+
+  private updateFavicon(faviconBase64?: string): void {
+    // Remove existing favicon links
+    const existingFavicons = document.querySelectorAll(
+      'link[rel="icon"], link[rel="shortcut icon"]'
+    );
+    existingFavicons.forEach((link) => link.remove());
+
+    if (faviconBase64) {
+      // Create new favicon link
+      const faviconLink = document.createElement('link');
+      faviconLink.rel = 'shortcut icon';
+      faviconLink.type = 'image/png';
+      faviconLink.href = `data:image/png;base64,${faviconBase64}`;
+      document.head.appendChild(faviconLink);
+    } else {
+      // Fallback to default favicon
+      const defaultFavicon = document.createElement('link');
+      defaultFavicon.rel = 'shortcut icon';
+      defaultFavicon.type = 'icon';
+      defaultFavicon.href = 'favicon.ico';
+      document.head.appendChild(defaultFavicon);
     }
   }
 }

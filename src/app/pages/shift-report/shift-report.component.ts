@@ -74,6 +74,12 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   chartOptions: any = {};
   isChartExpanded = false;
   ratioStatisticHeader = '';
+  overviewDisplay: {
+    directionKey: string;
+    directionLabel: string;
+    badgeClass: string;
+    items: { key: string; label: string; value: number | null; unit: string }[];
+  }[] = [];
 
   private getDataFieldDisplayName(
     dataKey: string,
@@ -574,6 +580,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           this.pageSize ??
           rawRows.length;
 
+        this.prepareOverviewDisplay();
         this.prepareChartData();
       } else {
         this.reportData = null;
@@ -586,6 +593,88 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     } finally {
       this.loading = false;
     }
+  }
+
+  private prepareOverviewDisplay(): void {
+    this.overviewDisplay = [];
+
+    if (!this.reportData?.overview) {
+      return;
+    }
+
+    const overview = this.reportData.overview as any;
+
+    const directionLabelMap: { [key: string]: string } = {
+      '0': 'Unknown',
+      '1': 'Nhập',
+      '2': 'Xuất',
+    };
+
+    const getBadgeClass = (directionKey: string): string => {
+      const baseClass =
+        'px-3 py-1 text-xs font-semibold rounded-full border flex-shrink-0';
+      if (directionKey === '0') {
+        return (
+          baseClass +
+          ' text-gray-800 bg-gray-100 border-gray-200 dark:bg-gray-900/40 dark:text-gray-100 dark:border-gray-700'
+        );
+      }
+      if (directionKey === '1') {
+        return (
+          baseClass +
+          ' text-green-800 bg-green-100 border-green-200 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700'
+        );
+      }
+      if (directionKey === '2') {
+        return (
+          baseClass +
+          ' text-blue-800 bg-blue-100 border-blue-200 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700'
+        );
+      }
+      return baseClass;
+    };
+
+    const getItemLabel = (dataKey: string): string => {
+      return dataKey.toUpperCase().replace('_', ' ');
+    };
+
+    Object.keys(overview).forEach((directionKey) => {
+      const directionOverview = overview[directionKey] || {};
+
+      const items = Object.keys(directionOverview).map((dataKey) => {
+        const item = directionOverview[dataKey] || {};
+        const rawValue =
+          item && typeof item.value === 'string'
+            ? parseFloat(item.value)
+            : Number(item?.value);
+        const value =
+          rawValue === null || isNaN(rawValue as number)
+            ? null
+            : (rawValue as number);
+
+        const label =
+          item && item.name && String(item.name).trim()
+            ? String(item.name).trim()
+            : getItemLabel(dataKey);
+
+        const unit =
+          item && typeof item.unit === 'string' ? String(item.unit).trim() : '';
+
+        return {
+          key: dataKey,
+          label,
+          value,
+          unit,
+        };
+      });
+
+      this.overviewDisplay.push({
+        directionKey,
+        directionLabel: directionLabelMap[directionKey] || directionKey,
+        badgeClass: getBadgeClass(directionKey),
+        items,
+      });
+    });
   }
 
   prepareChartData(): void {

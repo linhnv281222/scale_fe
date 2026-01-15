@@ -35,7 +35,8 @@ export class OrganizationSettingsService {
       taxCode?: string;
       watermarkText?: string;
     },
-    logoFile?: File
+    logoFile?: File,
+    faviconFile?: File
   ): Promise<OrganizationSettings | null> {
     try {
       const formData = new FormData();
@@ -67,6 +68,11 @@ export class OrganizationSettingsService {
       // Append logo file if provided
       if (logoFile) {
         formData.append('logo', logoFile);
+      }
+
+      // Append favicon file if provided
+      if (faviconFile) {
+        formData.append('favicon', faviconFile);
       }
 
       const res = await this.baseService.postFormData(
@@ -97,7 +103,8 @@ export class OrganizationSettingsService {
       watermarkText?: string;
     },
     logoFile?: File,
-    removeLogo?: boolean
+    removeLogo?: boolean,
+    faviconFile?: File
   ): Promise<OrganizationSettings | null> {
     try {
       const formData = new FormData();
@@ -129,6 +136,11 @@ export class OrganizationSettingsService {
       // Append logo file if provided
       if (logoFile) {
         formData.append('logo', logoFile);
+      }
+
+      // Append favicon file if provided
+      if (faviconFile) {
+        formData.append('favicon', faviconFile);
       }
 
       const res = await this.baseService.putFormData(

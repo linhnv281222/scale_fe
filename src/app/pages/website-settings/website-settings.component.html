@@ -183,6 +183,28 @@
                     (outputListFileFromBE)="onLogoFilesFromBEChanged($event)"
                   ></app-upload-file>
                 </div>
+                <div>
+                  <label
+                    class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "systemConfig.favicon" | translate }}
+                  </label>
+                  <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                    {{ "systemConfig.faviconDescription" | translate }}
+                  </p>
+                  <app-upload-file
+                    [files]="faviconFiles"
+                    [filesFromBE]="faviconFilesFromBE"
+                    [maxFiles]="1"
+                    [maxFileSizeMB]="2"
+                    [allowUpload]="true"
+                    [allowedFileTypes]="['png', 'jpg', 'jpeg', 'ico', 'svg']"
+                    [required]="false"
+                    [showTime]="false"
+                    (outputListFile)="onFaviconFilesChanged($event)"
+                    (outputListFileFromBE)="onFaviconFilesFromBEChanged($event)"
+                  ></app-upload-file>
+                </div>
               </div>
             </div>
 
