@@ -346,7 +346,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       if (channel && channel.is_used) {
         const dataKey = `data_${i}`;
         const dataName = channel.name ?? `Data ${i}`;
-        aggregation[dataKey] = 'ABS';
+        aggregation[dataKey] = dataKey === 'data_1' ? 'SUM' : 'ABS';
         columns.push({ key: dataKey, name: dataName });
       }
     }
