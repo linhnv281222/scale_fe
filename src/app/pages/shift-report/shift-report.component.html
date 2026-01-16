@@ -40,42 +40,42 @@
           </button>
         </div>
 
-         <!-- Scale Tree List -->
-         <div
-           class="flex-shrink-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
-           style="max-height: 40%"
-         >
-           <nz-tree
-             [nzData]="scaleTreeNodes"
-             nzCheckable
-             nzMultiple
-             nzShowIcon
-             [nzExpandedKeys]="expandKeys"
-             [nzCheckedKeys]="checkedKeys"
-             (nzCheckBoxChange)="onScaleTreeCheck($event)"
-           >
-             <ng-template #multiExpandedIconTpl let-node let-origin="origin">
-               @if (!origin.isLeaf) {
-               <span
-                 nz-icon
-                 [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
-                 class="ant-tree-switcher-line-icon"
-               ></span>
-               } @else {
-               <span
-                 nz-icon
-                 nzType="file"
-                 class="ant-tree-switcher-line-icon"
-               ></span>
-               }
-             </ng-template>
-             <ng-template #nzTreeTemplate let-node>
-               <span class="d-flex" style="align-items: baseline">
-                 <span [innerHTML]="node.title"></span>
-               </span>
-             </ng-template>
-           </nz-tree>
-         </div>
+        <!-- Scale Tree List -->
+        <div
+          class="flex-shrink-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
+          style="max-height: 40%"
+        >
+          <nz-tree
+            [nzData]="scaleTreeNodes"
+            nzCheckable
+            nzMultiple
+            nzShowIcon
+            [nzExpandedKeys]="expandKeys"
+            [nzCheckedKeys]="checkedKeys"
+            (nzCheckBoxChange)="onScaleTreeCheck($event)"
+          >
+            <ng-template #multiExpandedIconTpl let-node let-origin="origin">
+              @if (!origin.isLeaf) {
+              <span
+                nz-icon
+                [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
+                class="ant-tree-switcher-line-icon"
+              ></span>
+              } @else {
+              <span
+                nz-icon
+                nzType="file"
+                class="ant-tree-switcher-line-icon"
+              ></span>
+              }
+            </ng-template>
+            <ng-template #nzTreeTemplate let-node>
+              <span class="d-flex" style="align-items: baseline">
+                <span [innerHTML]="node.title"></span>
+              </span>
+            </ng-template>
+          </nz-tree>
+        </div>
 
         <!-- Detailed Filter: 100% remaining height, scroll body, search button fixed -->
         <div class="detailed-filter-container">
@@ -672,7 +672,7 @@
                       colspan="7"
                       class="px-2 py-1 text-sm font-bold text-center text-red-700 border border-gray-200 dark:text-red-300 dark:border-gray-700 bg-red-50 dark:bg-red-900/20"
                     >
-                      TỔNG KẾT
+                      TỔNG
                     </td>
                     <ng-container *ngFor="let col of dataColumns">
                       <td
