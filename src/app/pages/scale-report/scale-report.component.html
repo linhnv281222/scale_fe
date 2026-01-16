@@ -1,374 +1,420 @@
 <div class="flex h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
-  <!-- Filter Sidebar -->
-  <aside
-    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  <as-split
+    direction="horizontal"
+    [disabled]="!sidebarVisible"
+    [gutterSize]="8"
+    [useTransition]="true"
+    [unit]="'percent'"
+    [gutterColor]="'transparent'"
+    [gutterDblClickDuration]="300"
+    (dragEnd)="onSplitDragEnd($event)"
+    class="h-full"
   >
-    <div
-      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    <!-- Filter Sidebar -->
+    <as-split-area
+      [size]="sidebarVisible ? sidebarSize : 0"
+      [minSize]="sidebarVisible ? 15 : 0"
+      [maxSize]="sidebarVisible ? 40 : 0"
+      [visible]="sidebarVisible"
     >
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-        {{ "reports.scaleReport" | translate }}
-      </h3>
-    </div>
-
-    <!-- Scale Checkbox List -->
-    <div
-      class="flex-shrink-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
-      style="max-height: 40%"
-    >
-      <label
-        nz-checkbox
-        [(ngModel)]="allScalesChecked"
-        (ngModelChange)="updateAllScalesChecked()"
-        [nzIndeterminate]="indeterminate"
-        class="mb-2"
+      <aside
+        class="flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
       >
-        {{ "reports.selectAllScales" | translate }}
-      </label>
+        <div
+          class="flex items-center justify-between flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+            {{ "reports.scaleReport" | translate }}
+          </h3>
+          <!-- Toggle Sidebar Button in Sidebar Header -->
+          <button
+            nz-button
+            nzType="text"
+            nzShape="circle"
+            (click)="toggleSidebar()"
+            class="flex items-center justify-center flex-shrink-0 w-6 h-6"
+            nz-tooltip
+            [nzTooltipTitle]="'common.collapse' | translate"
+          >
+            <span nz-icon nzType="left" nzTheme="outline"></span>
+          </button>
+        </div>
 
-      <nz-divider />
+        <!-- Scale Checkbox List -->
+        <div
+          class="flex-shrink-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
+          style="max-height: 40%"
+        >
+          <label
+            nz-checkbox
+            [(ngModel)]="allScalesChecked"
+            (ngModelChange)="updateAllScalesChecked()"
+            [nzIndeterminate]="indeterminate"
+            class="mb-2"
+          >
+            {{ "reports.selectAllScales" | translate }}
+          </label>
 
-      <nz-checkbox-group
-        [(ngModel)]="scaleCheckboxOptions"
-        (ngModelChange)="updateSingleScaleChecked()"
-      ></nz-checkbox-group>
-    </div>
+          <nz-divider />
 
-    <!-- Detailed Filter: max 50% height, scroll body, search button fixed -->
-    <div class="detailed-filter-container">
-      <h3
-        class="px-3 pt-3 mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
-      >
-        {{ "filter.title" | translate }}
-      </h3>
-      <!-- Scrollable Filter Fields -->
-      <div class="detailed-filter-scroll">
-        <div class="px-3 pb-3">
-          <!-- Filter Fields (without search button) -->
-          <div class="space-y-3">
-            <div *ngFor="let field of filterFields" class="space-y-2">
-              <label
-                class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-200"
-              >
-                {{ field.label | translate }}
-              </label>
+          <nz-checkbox-group
+            [(ngModel)]="scaleCheckboxOptions"
+            (ngModelChange)="updateSingleScaleChecked()"
+          ></nz-checkbox-group>
+        </div>
 
-              <!-- Text Input -->
-              <nz-input-group *ngIf="field.type === 'text'" class="!mt-0">
-                <input
-                  type="text"
-                  nz-input
-                  [(ngModel)]="filterData[field.key]"
-                  [placeholder]="field.placeholder || '' | translate"
-                  class="w-full"
-                />
-              </nz-input-group>
-
-              <!-- Select -->
-              <nz-select
-                *ngIf="field.type === 'select'"
-                [(ngModel)]="filterData[field.key]"
-                (ngModelChange)="field.onChange && field.onChange($event)"
-                [nzPlaceHolder]="field.placeholder || '' | translate"
-                [nzDropdownMatchSelectWidth]="false"
-                nzAllowClear
-                class="w-full !mt-0"
-              >
-                <nz-option
-                  *ngFor="let option of field.options"
-                  [nzValue]="option.value"
-                  [nzLabel]="option.label | translate"
-                ></nz-option>
-              </nz-select>
-
-              <!-- Multiselect -->
-              <nz-select
-                *ngIf="field.type === 'multiselect'"
-                [(ngModel)]="filterData[field.key]"
-                [nzPlaceHolder]="field.placeholder || '' | translate"
-                [nzMode]="'multiple'"
-                [nzMaxTagCount]="1"
-                [nzDropdownMatchSelectWidth]="false"
-                nzAllowClear
-                class="w-full !mt-0"
-              >
-                <nz-option
-                  *ngFor="let option of field.options"
-                  [nzValue]="option.value"
-                  [nzLabel]="option.label | translate"
-                ></nz-option>
-              </nz-select>
-
-              <!-- Date Range -->
-              <nz-range-picker
-                *ngIf="field.type === 'dateRange'"
-                [(ngModel)]="filterData[field.key]"
-                [nzPlaceHolder]="[
-                  ('filter.from' | translate) +
-                    ' ' +
-                    (field.placeholder || '' | translate),
-                  ('filter.to' | translate) +
-                    ' ' +
-                    (field.placeholder || '' | translate)
-                ]"
-                [nzFormat]="field.format || 'dd/MM/yyyy'"
-                [nzShowTime]="field.showTime || false"
-                class="w-full !mt-0"
-              ></nz-range-picker>
-            </div>
-
-            <!-- Aggregation By Field -->
-            <div *ngIf="dataColumns.length > 0" class="mt-4">
-              <h4
-                class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
-              >
-                {{ "reports.aggregationByField" | translate }}
-              </h4>
-              <div class="space-y-2">
-                <div *ngFor="let col of dataColumns" class="space-y-1">
+        <!-- Detailed Filter: max 50% height, scroll body, search button fixed -->
+        <div class="detailed-filter-container">
+          <h3
+            class="px-3 pt-3 mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+          >
+            {{ "filter.title" | translate }}
+          </h3>
+          <!-- Scrollable Filter Fields -->
+          <div class="detailed-filter-scroll">
+            <div class="px-3 pb-3">
+              <!-- Filter Fields (without search button) -->
+              <div class="space-y-3">
+                <div *ngFor="let field of filterFields" class="space-y-2">
                   <label
-                    class="block text-xs font-medium text-gray-700 dark:text-gray-300"
+                    class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-200"
                   >
-                    {{ col.name }}
+                    {{ field.label | translate }}
                   </label>
+
+                  <!-- Text Input -->
+                  <nz-input-group *ngIf="field.type === 'text'" class="!mt-0">
+                    <input
+                      type="text"
+                      nz-input
+                      [(ngModel)]="filterData[field.key]"
+                      [placeholder]="field.placeholder || '' | translate"
+                      class="w-full"
+                    />
+                  </nz-input-group>
+
+                  <!-- Select -->
                   <nz-select
-                    [ngModel]="filterData.aggregationByField[col.key]"
-                    (ngModelChange)="updateAggregation(col.key, $event)"
-                    class="w-full"
-                    nzPlaceHolder="{{
-                      'reports.selectAggregation' | translate
-                    }}"
+                    *ngIf="field.type === 'select'"
+                    [(ngModel)]="filterData[field.key]"
+                    (ngModelChange)="field.onChange && field.onChange($event)"
+                    [nzPlaceHolder]="field.placeholder || '' | translate"
+                    [nzDropdownMatchSelectWidth]="false"
+                    nzAllowClear
+                    class="w-full !mt-0"
                   >
                     <nz-option
-                      *ngFor="let opt of aggregationOptions"
-                      [nzValue]="opt.value"
-                      [nzLabel]="opt.label"
+                      *ngFor="let option of field.options"
+                      [nzValue]="option.value"
+                      [nzLabel]="option.label | translate"
                     ></nz-option>
                   </nz-select>
+
+                  <!-- Multiselect -->
+                  <nz-select
+                    *ngIf="field.type === 'multiselect'"
+                    [(ngModel)]="filterData[field.key]"
+                    [nzPlaceHolder]="field.placeholder || '' | translate"
+                    [nzMode]="'multiple'"
+                    [nzMaxTagCount]="1"
+                    [nzDropdownMatchSelectWidth]="false"
+                    nzAllowClear
+                    class="w-full !mt-0"
+                  >
+                    <nz-option
+                      *ngFor="let option of field.options"
+                      [nzValue]="option.value"
+                      [nzLabel]="option.label | translate"
+                    ></nz-option>
+                  </nz-select>
+
+                  <!-- Date Range -->
+                  <nz-range-picker
+                    *ngIf="field.type === 'dateRange'"
+                    [(ngModel)]="filterData[field.key]"
+                    [nzPlaceHolder]="[
+                      ('filter.from' | translate) +
+                        ' ' +
+                        (field.placeholder || '' | translate),
+                      ('filter.to' | translate) +
+                        ' ' +
+                        (field.placeholder || '' | translate)
+                    ]"
+                    [nzFormat]="field.format || 'dd/MM/yyyy'"
+                    [nzShowTime]="field.showTime || false"
+                    class="w-full !mt-0"
+                  ></nz-range-picker>
+                </div>
+
+                <!-- Aggregation By Field -->
+                <div *ngIf="dataColumns.length > 0" class="mt-4">
+                  <h4
+                    class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+                  >
+                    {{ "reports.aggregationByField" | translate }}
+                  </h4>
+                  <div class="space-y-2">
+                    <div *ngFor="let col of dataColumns" class="space-y-1">
+                      <label
+                        class="block text-xs font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        {{ col.name }}
+                      </label>
+                      <nz-select
+                        [ngModel]="filterData.aggregationByField[col.key]"
+                        (ngModelChange)="updateAggregation(col.key, $event)"
+                        class="w-full"
+                        nzPlaceHolder="{{
+                          'reports.selectAggregation' | translate
+                        }}"
+                      >
+                        <nz-option
+                          *ngFor="let opt of aggregationOptions"
+                          [nzValue]="opt.value"
+                          [nzLabel]="opt.label"
+                        ></nz-option>
+                      </nz-select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Fixed Search Button at Bottom -->
-      <div
-        class="flex-shrink-0 p-3 border-t border-gray-200 dark:border-gray-700"
-      >
-        <button
-          nz-button
-          nzType="primary"
-          (click)="onSearch()"
-          class="flex items-center justify-center w-full gap-2 rounded-md"
-        >
-          <span nz-icon nzType="search" nzTheme="outline"></span>
-          <span>{{ "filter.search" | translate }}</span>
-        </button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="flex flex-col flex-1 overflow-hidden">
-    <!-- Header with Overview Summary and Export Button -->
-    <div
-      class="flex-shrink-0 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
-    >
-      <div class="flex items-center justify-between px-4 py-2">
-        <div class="flex items-center flex-1 min-w-0 gap-4">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
-            {{ "reports.scaleReport" | translate }}
-          </h2>
-          <!-- Overview Summary -->
+          <!-- Fixed Search Button at Bottom -->
           <div
-            class="flex items-center gap-4 overflow-x-auto whitespace-nowrap"
-            *ngIf="overviewDisplay.length"
+            class="flex-shrink-0 p-3 border-t border-gray-200 dark:border-gray-700"
           >
-            <div
-              *ngFor="let direction of overviewDisplay"
-              class="flex items-center flex-shrink-0 gap-2"
+            <button
+              nz-button
+              nzType="primary"
+              (click)="onSearch()"
+              class="flex items-center justify-center w-full gap-2 rounded-md"
             >
-              <span
-                class="flex-shrink-0 text-xs font-semibold text-gray-700 dark:text-gray-300"
-              >
-                {{ direction.directionLabel }}:
-              </span>
-              <div class="flex items-center gap-2">
-                <span
-                  *ngFor="let item of direction.items"
-                  class="overview-chip px-2 py-0.5 text-xs font-medium rounded border flex-shrink-0 cursor-default select-none"
-                  [ngClass]="direction.badgeClass"
-                >
-                  {{ item.label }}:
-                  <ng-container *ngIf="item.value !== null; else noValue">
-                    {{ item.value | number : "1.0-2" }}
-                    <ng-container *ngIf="item.unit">
-                      {{ item.unit }}
-                    </ng-container>
-                  </ng-container>
-                  <ng-template #noValue>-</ng-template>
-                </span>
-              </div>
-            </div>
+              <span nz-icon nzType="search" nzTheme="outline"></span>
+              <span>{{ "filter.search" | translate }}</span>
+            </button>
           </div>
         </div>
-        <!-- Export Button -->
-        <button
-          nz-button
-          nzType="primary"
-          (click)="exportReport()"
-          [nzLoading]="exporting"
-          class="flex items-center gap-2 rounded-md"
-        >
-          <span nz-icon nzType="download" nzTheme="outline"></span>
-          <span>{{ "reports.export" | translate }}</span>
-        </button>
-      </div>
-    </div>
+      </aside>
+    </as-split-area>
 
-    <!-- Chart Section -->
-    <div
-      *ngIf="chartData.length > 0"
-      class="flex-shrink-0 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
-    >
-      <!-- Chart Header - Clickable to Toggle -->
-      <div
-        (click)="isChartExpanded = !isChartExpanded"
-        class="flex items-center justify-between px-4 py-2 transition-colors border-b border-gray-200 cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-        <h4
-          class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
-        >
-          <span
-            nz-icon
-            [nzType]="isChartExpanded ? 'down' : 'right'"
-            nzTheme="outline"
-            class="text-xs"
-          ></span>
-          <span>{{ "reports.chart" | translate }}</span>
-        </h4>
-      </div>
-      <!-- Chart Content -->
-      <div *ngIf="isChartExpanded" class="h-64">
-        <div echarts [options]="chartOptions" class="w-full h-full"></div>
-      </div>
-    </div>
-
-    <!-- Data Table -->
-    <div class="flex flex-col flex-1 bg-white dark:bg-gray-800">
-      <nz-spin [nzSpinning]="loading" class="flex flex-col flex-1 min-h-0">
+    <!-- Main Content -->
+    <as-split-area [size]="sidebarVisible ? 100 - sidebarSize : 100">
+      <main class="relative flex flex-col h-full overflow-hidden">
+        <!-- Header with Overview Summary and Export Button -->
         <div
-          class="flex-1 min-h-0 overflow-auto"
-          [style.height]="
-            isHistoryExpanded &&
-            selectedRow &&
-            isChartExpanded &&
-            chartData.length > 0
-              ? 'calc(100vh - 730px)'
-              : isHistoryExpanded &&
+          class="flex-shrink-0 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+        >
+          <div class="flex items-center justify-between px-4 py-2">
+            <div class="flex items-center flex-1 min-w-0 gap-4">
+              <!-- Toggle Sidebar Button when sidebar is hidden -->
+              <button
+                *ngIf="!sidebarVisible"
+                nz-button
+                nzType="text"
+                nzShape="circle"
+                (click)="toggleSidebar()"
+                class="flex items-center justify-center flex-shrink-0 w-8 h-8"
+                nz-tooltip
+                [nzTooltipTitle]="'common.expand' | translate"
+              >
+                <span nz-icon nzType="right" nzTheme="outline"></span>
+              </button>
+              <h2
+                class="text-base font-semibold text-gray-900 dark:text-gray-200 whitespace-nowrap"
+              >
+                {{ "reports.scaleReport" | translate }}
+              </h2>
+              <!-- Overview Summary -->
+              <div
+                class="flex items-center gap-4 overflow-x-auto whitespace-nowrap"
+                *ngIf="overviewDisplay.length"
+              >
+                <div
+                  *ngFor="let direction of overviewDisplay"
+                  class="flex items-center flex-shrink-0 gap-2"
+                >
+                  <span
+                    class="flex-shrink-0 text-xs font-semibold text-gray-700 dark:text-gray-300"
+                  >
+                    {{ direction.directionLabel }}:
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <span
+                      *ngFor="let item of direction.items"
+                      class="overview-chip px-2 py-0.5 text-xs font-medium rounded border flex-shrink-0 cursor-default select-none"
+                      [ngClass]="direction.badgeClass"
+                    >
+                      {{ item.label }}:
+                      <ng-container *ngIf="item.value !== null; else noValue">
+                        {{ item.value | number : "1.0-2" }}
+                        <ng-container *ngIf="item.unit">
+                          {{ item.unit }}
+                        </ng-container>
+                      </ng-container>
+                      <ng-template #noValue>-</ng-template>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Export Button -->
+            <button
+              nz-button
+              nzType="primary"
+              (click)="exportReport()"
+              [nzLoading]="exporting"
+              class="flex items-center gap-2 rounded-md"
+            >
+              <span nz-icon nzType="download" nzTheme="outline"></span>
+              <span>{{ "reports.export" | translate }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div
+          *ngIf="chartData.length > 0"
+          class="flex-shrink-0 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+        >
+          <!-- Chart Header - Clickable to Toggle -->
+          <div
+            (click)="isChartExpanded = !isChartExpanded"
+            class="flex items-center justify-between px-4 py-2 transition-colors border-b border-gray-200 cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <h4
+              class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+            >
+              <span
+                nz-icon
+                [nzType]="isChartExpanded ? 'down' : 'right'"
+                nzTheme="outline"
+                class="text-xs"
+              ></span>
+              <span>{{ "reports.chart" | translate }}</span>
+            </h4>
+          </div>
+          <!-- Chart Content -->
+          <div *ngIf="isChartExpanded" class="h-64">
+            <div echarts [options]="chartOptions" class="w-full h-full"></div>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="flex flex-col flex-1 bg-white dark:bg-gray-800">
+          <nz-spin [nzSpinning]="loading" class="flex flex-col flex-1 min-h-0">
+            <div
+              class="flex-1 min-h-0 overflow-auto"
+              [style.height]="
+                isHistoryExpanded &&
                 selectedRow &&
-                !(isChartExpanded && chartData.length > 0)
-              ? 'calc(100vh - 470px)'
-              : !(isHistoryExpanded && selectedRow) &&
                 isChartExpanded &&
                 chartData.length > 0
-              ? 'calc(100vh - 465px)'
-              : 'calc(100vh - 220px)'
-          "
-        >
-          <table class="w-full border-collapse" style="min-width: 100%">
-            <thead>
-              <tr class="bg-blue-600 dark:bg-blue-700">
-                <th
-                  style="
-                    min-width: 50px;
-                    width: 50px;
-                    position: sticky;
-                    left: 0;
-                    z-index: 99;
-                  "
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
-                >
-                  STT
-                </th>
-                <th
-                  style="
-                    min-width: 100px;
-                    width: 100px;
-                    position: sticky;
-                    left: 50px;
-                    z-index: 99;
-                  "
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
-                >
-                  {{ "scales.name" | translate }}
-                </th>
-                <th
-                  style="
-                    min-width: 60px;
-                    width: 60px;
-                    position: sticky;
-                    left: 150px;
-                    z-index: 99;
-                  "
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
-                >
-                  {{ "scales.code" | translate }}
-                </th>
-                <th
-                  style="
-                    min-width: 90px;
-                    width: 90px;
-                    position: sticky;
-                    left: 225px;
-                    z-index: 99;
-                  "
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
-                >
-                  {{ "reports.direction.title" | translate }}
-                </th>
-                <th
-                  style="min-width: 120px; width: 120px"
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
-                >
-                  {{ "locations.name" | translate }}
-                </th>
-                <th
-                  style="min-width: 150px; width: 150px"
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
-                >
-                  {{ "shifts.startTime" | translate }}
-                </th>
-                <th
-                  style="min-width: 100px; width: 100px"
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
-                >
-                  {{ "reports.period" | translate }}
-                </th>
-                <th
-                  style="min-width: 150px; width: 150px"
-                  rowspan="2"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
-                >
-                  {{ "shifts.endTime" | translate }}
-                </th>
-                <th
-                  *ngFor="let col of dataColumns"
-                  [attr.colspan]="3"
-                  style="min-width: 450px; width: 450px"
-                  class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
-                >
-                  {{ col.name }}
-                </th>
-                <th
+                  ? 'calc(100vh - 695px)'
+                  : isHistoryExpanded &&
+                    selectedRow &&
+                    !(isChartExpanded && chartData.length > 0)
+                  ? 'calc(100vh - 435px)'
+                  : !(isHistoryExpanded && selectedRow) &&
+                    isChartExpanded &&
+                    chartData.length > 0
+                  ? 'calc(100vh - 430px)'
+                  : 'calc(100vh - 185px)'
+              "
+            >
+              <table class="w-full border-collapse" style="min-width: 100%">
+                <thead style="position: sticky; top: 0; z-index: 100">
+                  <tr class="bg-blue-600 dark:bg-blue-700">
+                    <th
+                      style="
+                        min-width: 50px;
+                        width: 50px;
+                        position: sticky;
+                        left: 0;
+                        z-index: 99;
+                      "
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                    >
+                      STT
+                    </th>
+                    <th
+                      style="
+                        min-width: 100px;
+                        width: 100px;
+                        position: sticky;
+                        left: 50px;
+                        z-index: 99;
+                      "
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                    >
+                      {{ "scales.name" | translate }}
+                    </th>
+                    <th
+                      style="
+                        min-width: 60px;
+                        width: 60px;
+                        position: sticky;
+                        left: 150px;
+                        z-index: 99;
+                      "
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                    >
+                      {{ "scales.code" | translate }}
+                    </th>
+                    <th
+                      style="
+                        min-width: 90px;
+                        width: 90px;
+                        position: sticky;
+                        left: 225px;
+                        z-index: 99;
+                      "
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
+                    >
+                      {{ "reports.direction.title" | translate }}
+                    </th>
+                    <th
+                      style="min-width: 120px; width: 120px"
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                    >
+                      {{ "locations.name" | translate }}
+                    </th>
+                    <th
+                      style="min-width: 150px; width: 150px"
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                    >
+                      {{ "shifts.startTime" | translate }}
+                    </th>
+                    <th
+                      style="min-width: 100px; width: 100px"
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                    >
+                      {{ "reports.period" | translate }}
+                    </th>
+                    <th
+                      style="min-width: 150px; width: 150px"
+                      rowspan="2"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                    >
+                      {{ "shifts.endTime" | translate }}
+                    </th>
+                    <th
+                      *ngFor="let col of dataColumns"
+                      [attr.colspan]="3"
+                      style="min-width: 450px; width: 450px"
+                      class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                    >
+                      {{ col.name }}
+                    </th>
+                    <!-- <th
                   style="
                     min-width: 140px;
                     width: 140px;
@@ -380,190 +426,195 @@
                   class="px-2 py-1 text-sm font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                 >
                   {{ ratioStatisticHeader }}
-                </th>
-              </tr>
-              <tr class="bg-blue-600 dark:bg-blue-700">
-                <ng-container *ngFor="let col of dataColumns">
-                  <th
-                    style="min-width: 100px; width: 100px"
-                    class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                </th> -->
+                  </tr>
+                  <tr class="bg-blue-600 dark:bg-blue-700">
+                    <ng-container *ngFor="let col of dataColumns">
+                      <th
+                        style="min-width: 100px; width: 100px"
+                        class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                      >
+                        {{ "reports.startValue" | translate }}
+                      </th>
+                      <th
+                        style="min-width: 150px; width: 150px"
+                        class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                      >
+                        {{ "reports.endValue" | translate }}
+                      </th>
+                      <th
+                        style="min-width: 150px; width: 150px"
+                        class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
+                      >
+                        {{ "reports.statisticValue" | translate }}
+                      </th>
+                    </ng-container>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let row of reportRows; let i = index"
+                    (click)="onRowClick(row, i)"
+                    class="transition-colors cursor-pointer report-row group hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    {{ "reports.startValue" | translate }}
-                  </th>
-                  <th
-                    style="min-width: 150px; width: 150px"
-                    class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
-                  >
-                    {{ "reports.endValue" | translate }}
-                  </th>
-                  <th
-                    style="min-width: 150px; width: 150px"
-                    class="px-2 py-1 text-sm font-semibold text-center text-white uppercase border border-white dark:border-gray-600"
-                  >
-                    {{ "reports.statisticValue" | translate }}
-                  </th>
-                </ng-container>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let row of reportRows; let i = index"
-                (click)="onRowClick(row, i)"
-                class="transition-colors cursor-pointer report-row group hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <td
-                  style="
-                    min-width: 50px;
-                    width: 50px;
-                    position: sticky;
-                    left: 0;
-                    z-index: 5;
-                  "
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="fixed-cell px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
-                  [ngClass]="
-                    i % 2 === 0
-                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
-                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
-                  "
-                >
-                  <span class="text-gray-900 dark:text-white">{{ i + 1 }}</span>
-                </td>
-                <td
-                  style="
-                    min-width: 100px;
-                    width: 100px;
-                    position: sticky;
-                    left: 50px;
-                    z-index: 5;
-                  "
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="fixed-cell px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
-                  [ngClass]="
-                    i % 2 === 0
-                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
-                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
-                  "
-                >
-                  <span class="font-medium text-gray-900 dark:text-white">
-                    {{ row.scale.name }}
-                  </span>
-                </td>
-                <td
-                  style="
-                    min-width: 60px;
-                    width: 60px;
-                    position: sticky;
-                    left: 150px;
-                    z-index: 5;
-                  "
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="fixed-cell px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
-                  [ngClass]="
-                    i % 2 === 0
-                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
-                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
-                  "
-                >
-                  <span class="font-medium text-gray-900 dark:text-white">
-                    {{ row.scale.model }}
-                  </span>
-                </td>
-                <td
-                  style="
-                    min-width: 90px;
-                    width: 90px;
-                    position: sticky;
-                    left: 225px;
-                    z-index: 5;
-                  "
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="fixed-cell px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
-                  [ngClass]="
-                    i % 2 === 0
-                      ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
-                      : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
-                  "
-                >
-                  <span
-                    class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold border"
-                    [ngClass]="row.directionBadgeClass"
-                  >
-                    {{ row.directionLabelKey | translate }}
-                  </span>
-                </td>
-                <td
-                  style="min-width: 120px; width: 120px"
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
-                >
-                  <span class="font-medium text-gray-900 dark:text-white">
-                    {{ row.scale.location?.name }}
-                  </span>
-                </td>
-                <td
-                  style="min-width: 150px; width: 150px"
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
-                >
-                  <span class="font-medium text-gray-900 dark:text-white">
-                    {{ row.start_time | date : "dd/MM/yyyy HH:mm" }}
-                  </span>
-                </td>
-                <td
-                  style="min-width: 100px; width: 100px"
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
-                >
-                  <span class="font-medium text-gray-900 dark:text-white">
-                    {{ row.period | date : "dd/MM/yyyy HH:mm" }}
-                  </span>
-                </td>
-                <td
-                  style="min-width: 150px; width: 150px"
-                  [class.selected-row]="selectedRowIndex === i"
-                  class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
-                >
-                  <span class="font-medium text-gray-900 dark:text-white">
-                    {{ row.end_time | date : "dd/MM/yyyy HH:mm" }}
-                  </span>
-                </td>
-                <ng-container *ngFor="let col of dataColumns">
-                  <td
-                    style="min-width: 100px; width: 100px"
-                    [class.selected-row]="selectedRowIndex === i"
-                    class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
-                  >
-                    <span class="font-medium text-gray-900 dark:text-white">
-                      {{
-                        row.formattedData[col.key + "_start"] | number : "0.0-2"
-                      }}
-                    </span>
-                  </td>
-                  <td
-                    style="min-width: 150px; width: 150px"
-                    [class.selected-row]="selectedRowIndex === i"
-                    class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
-                  >
-                    <span class="font-medium text-gray-900 dark:text-white">
-                      {{
-                        row.formattedData[col.key + "_end"] | number : "0.0-2"
-                      }}
-                    </span>
-                  </td>
-                  <td
-                    style="min-width: 150px; width: 150px"
-                    [class.selected-row]="selectedRowIndex === i"
-                    class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
-                  >
-                    <span class="font-medium text-gray-900 dark:text-white">
-                      {{
-                        row.formattedData[col.key + "_data"] | number : "0.0-2"
-                      }}
-                    </span>
-                  </td>
-                </ng-container>
-                <td
+                    <td
+                      style="
+                        min-width: 50px;
+                        width: 50px;
+                        position: sticky;
+                        left: 0;
+                        z-index: 5;
+                      "
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="fixed-cell px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                      [ngClass]="
+                        i % 2 === 0
+                          ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                          : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                      "
+                    >
+                      <span class="text-gray-900 dark:text-white">{{
+                        i + 1
+                      }}</span>
+                    </td>
+                    <td
+                      style="
+                        min-width: 100px;
+                        width: 100px;
+                        position: sticky;
+                        left: 50px;
+                        z-index: 5;
+                      "
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="fixed-cell px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                      [ngClass]="
+                        i % 2 === 0
+                          ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                          : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                      "
+                    >
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ row.scale.name }}
+                      </span>
+                    </td>
+                    <td
+                      style="
+                        min-width: 60px;
+                        width: 60px;
+                        position: sticky;
+                        left: 150px;
+                        z-index: 5;
+                      "
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="fixed-cell px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                      [ngClass]="
+                        i % 2 === 0
+                          ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                          : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                      "
+                    >
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ row.scale.model }}
+                      </span>
+                    </td>
+                    <td
+                      style="
+                        min-width: 90px;
+                        width: 90px;
+                        position: sticky;
+                        left: 225px;
+                        z-index: 5;
+                      "
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="fixed-cell px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 group-hover:bg-[#f0e79b] dark:group-hover:bg-[#616149]"
+                      [ngClass]="
+                        i % 2 === 0
+                          ? 'bg-[#f7f0b5] dark:bg-[#6d6d52]'
+                          : 'bg-[#fffacd] dark:bg-[#7a7a5a]'
+                      "
+                    >
+                      <span
+                        class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold border"
+                        [ngClass]="row.directionBadgeClass"
+                      >
+                        {{ row.directionLabelKey | translate }}
+                      </span>
+                    </td>
+                    <td
+                      style="min-width: 120px; width: 120px"
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                    >
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ row.scale.location?.name }}
+                      </span>
+                    </td>
+                    <td
+                      style="min-width: 150px; width: 150px"
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                    >
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ row.start_time | date : "dd/MM/yyyy HH:mm" }}
+                      </span>
+                    </td>
+                    <td
+                      style="min-width: 100px; width: 100px"
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                    >
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ row.period | date : "dd/MM/yyyy HH:mm" }}
+                      </span>
+                    </td>
+                    <td
+                      style="min-width: 150px; width: 150px"
+                      [class.selected-row]="selectedRowIndex === i"
+                      class="px-2 py-1 text-sm border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                    >
+                      <span class="font-medium text-gray-900 dark:text-white">
+                        {{ row.end_time | date : "dd/MM/yyyy HH:mm" }}
+                      </span>
+                    </td>
+                    <ng-container *ngFor="let col of dataColumns">
+                      <td
+                        style="min-width: 100px; width: 100px"
+                        [class.selected-row]="selectedRowIndex === i"
+                        class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                      >
+                        <span class="font-medium text-gray-900 dark:text-white">
+                          {{
+                            row.formattedData[col.key + "_start"]
+                              | number : "0.0-2"
+                          }}
+                        </span>
+                      </td>
+                      <td
+                        style="min-width: 150px; width: 150px"
+                        [class.selected-row]="selectedRowIndex === i"
+                        class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                      >
+                        <span class="font-medium text-gray-900 dark:text-white">
+                          {{
+                            row.formattedData[col.key + "_end"]
+                              | number : "0.0-2"
+                          }}
+                        </span>
+                      </td>
+                      <td
+                        style="min-width: 150px; width: 150px"
+                        [class.selected-row]="selectedRowIndex === i"
+                        class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700"
+                      >
+                        <span class="font-medium text-gray-900 dark:text-white">
+                          {{
+                            row.formattedData[col.key + "_data"]
+                              | number : "0.0-2"
+                          }}
+                        </span>
+                      </td>
+                    </ng-container>
+                    <!-- <td
                   style="
                     min-width: 140px;
                     width: 140px;
@@ -582,151 +633,204 @@
                   <span class="font-medium text-gray-900 dark:text-white">
                     {{ row.ratioDisplayValue | number : "0.0-4" }}
                   </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div
-          *ngIf="reportRows.length === 0 && !loading"
-          class="p-8 text-center"
-        >
-          <nz-empty></nz-empty>
-        </div>
-      </nz-spin>
-
-      <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700">
-        <app-pagination
-          [currentPage]="pageIndex"
-          [currentSize]="pageSize"
-          [total]="total"
-          (emitPage)="onPaginationChange($event)"
-        ></app-pagination>
-      </div>
-
-      <ng-template #noResultTemplate>
-        <nz-empty></nz-empty>
-      </ng-template>
-    </div>
-
-    <!-- History Section - Displayed below main table -->
-    <div
-      *ngIf="selectedRow && isHistoryExpanded"
-      class="flex-shrink-0 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700"
-    >
-      <!-- History Header -->
-      <div
-        class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700"
-      >
-        <h4
-          class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
-        >
-          <span>{{ "reports.history" | translate }}</span>
-          <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
-            ({{ selectedRow.scale.name }} -
-            {{ selectedRow.period | date : "dd/MM/yyyy" }})
-          </span>
-        </h4>
-        <button
-          nz-button
-          nzType="text"
-          nzSize="small"
-          (click)="closeHistorySection()"
-          class="flex items-center gap-1"
-        >
-          <span nz-icon nzType="close" nzTheme="outline"></span>
-        </button>
-      </div>
-
-      <!-- History Table -->
-      <div class="overflow-auto max-h-96">
-        <nz-table
-          #historyTable
-          [nzData]="historyData"
-          [nzLoading]="historyLoading"
-          [nzShowPagination]="false"
-          [nzNoResult]="noHistoryResultTemplate"
-          class="w-full"
-          [nzScroll]="{ x: 'auto', y: '150px' }"
-        >
-          <thead>
-            <tr class="bg-gray-50 dark:bg-gray-800">
-              <th
-                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-                nzWidth="30px"
-              >
-                STT
-              </th>
-              <th
-                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-              >
-                {{ "scales.name" | translate }}
-              </th>
-              <th
-                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-              >
-                {{ "reports.lastTime" | translate }}
-              </th>
-              <th
-                *ngFor="let col of dataColumns"
-                class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
-              >
-                {{ col.name }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let item of historyData; let i = index"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700"
+                </td> -->
+                  </tr>
+                  <!-- Summary Row -->
+                  <tr
+                    *ngIf="reportRows.length > 0 && hasDataFieldSummaries()"
+                    class="border-t-2 border-red-500 bg-red-50 dark:bg-red-900/20"
+                    style="position: sticky; bottom: 0; z-index: 100"
+                  >
+                    <td
+                      colspan="8"
+                      class="px-2 py-1 text-sm font-bold text-center text-red-700 border border-gray-200 dark:text-red-300 dark:border-gray-700 bg-red-50 dark:bg-red-900/20"
+                    >
+                      Tổng
+                    </td>
+                    <ng-container *ngFor="let col of dataColumns">
+                      <td
+                        style="min-width: 100px; width: 100px"
+                        class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 bg-red-50 dark:bg-red-900/20"
+                      ></td>
+                      <td
+                        style="min-width: 150px; width: 150px"
+                        class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 bg-red-50 dark:bg-red-900/20"
+                      ></td>
+                      <td
+                        style="min-width: 150px; width: 150px"
+                        class="px-2 py-1 text-sm text-center border border-gray-200 whitespace-nowrap dark:border-gray-700 bg-red-50 dark:bg-red-900/20"
+                      >
+                        <span class="font-bold text-red-700 dark:text-red-300">
+                          <ng-container *ngIf="dataFieldSummaries[col.key]">
+                            {{
+                              dataFieldSummaries[col.key].value
+                                | number : "0.0-2"
+                            }}
+                            <ng-container
+                              *ngIf="dataFieldSummaries[col.key].unit"
+                            >
+                              &nbsp;({{ dataFieldSummaries[col.key].unit }})
+                            </ng-container>
+                          </ng-container>
+                        </span>
+                      </td>
+                    </ng-container>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div
+              *ngIf="reportRows.length === 0 && !loading"
+              class="p-8 text-center"
             >
-              <td class="px-2 !py-1 whitespace-nowrap text-center">
-                <span class="text-xs text-gray-900 dark:text-white">{{
-                  (historyPageIndex - 1) * historyPageSize + i + 1
-                }}</span>
-              </td>
-              <td class="px-2 !py-1 whitespace-nowrap">
-                <span class="text-xs font-medium text-gray-900 dark:text-white">
-                  {{ item.scaleName }}
-                </span>
-              </td>
-              <td class="px-2 !py-1 whitespace-nowrap">
-                <span class="text-xs font-medium text-gray-900 dark:text-white">
-                  {{ item.lastTime | date : "dd/MM/yyyy HH:mm:ss" }}
-                </span>
-              </td>
-              <td
-                *ngFor="let col of dataColumns"
-                class="px-2 !py-1 whitespace-nowrap text-center"
+              <nz-empty></nz-empty>
+            </div>
+          </nz-spin>
+
+          <div
+            class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700"
+          >
+            <app-pagination
+              [currentPage]="pageIndex"
+              [currentSize]="pageSize"
+              [total]="total"
+              (emitPage)="onPaginationChange($event)"
+            ></app-pagination>
+          </div>
+
+          <ng-template #noResultTemplate>
+            <nz-empty></nz-empty>
+          </ng-template>
+        </div>
+
+        <!-- History Section - Displayed below main table -->
+        <div
+          *ngIf="selectedRow && isHistoryExpanded"
+          class="flex-shrink-0 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+        >
+          <!-- History Header -->
+          <div
+            class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700"
+          >
+            <h4
+              class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+            >
+              <span>{{ "reports.history" | translate }}</span>
+              <span
+                class="text-xs font-normal text-gray-500 dark:text-gray-400"
               >
-                <span class="text-xs font-medium text-gray-900 dark:text-white">
-                  {{ item.formattedData[col.key] | number : "0.0-2" }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </nz-table>
+                ({{ selectedRow.scale.name }} -
+                {{ selectedRow.period | date : "dd/MM/yyyy" }})
+              </span>
+            </h4>
+            <button
+              nz-button
+              nzType="text"
+              nzSize="small"
+              (click)="closeHistorySection()"
+              class="flex items-center gap-1"
+            >
+              <span nz-icon nzType="close" nzTheme="outline"></span>
+            </button>
+          </div>
 
-        <ng-template #noHistoryResultTemplate>
-          <nz-empty></nz-empty>
-        </ng-template>
-      </div>
+          <!-- History Table -->
+          <div class="overflow-auto max-h-96">
+            <nz-table
+              #historyTable
+              [nzData]="historyData"
+              [nzLoading]="historyLoading"
+              [nzShowPagination]="false"
+              [nzNoResult]="noHistoryResultTemplate"
+              class="w-full"
+              [nzScroll]="{ x: 'auto', y: '150px' }"
+            >
+              <thead>
+                <tr class="bg-gray-50 dark:bg-gray-800">
+                  <th
+                    class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+                    nzWidth="30px"
+                  >
+                    STT
+                  </th>
+                  <th
+                    class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+                  >
+                    {{ "scales.name" | translate }}
+                  </th>
+                  <th
+                    class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+                  >
+                    {{ "reports.lastTime" | translate }}
+                  </th>
+                  <th
+                    *ngFor="let col of dataColumns"
+                    class="px-2 !py-1 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase"
+                  >
+                    {{ col.name }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let item of historyData; let i = index"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <td class="px-2 !py-1 whitespace-nowrap text-center">
+                    <span class="text-xs text-gray-900 dark:text-white">{{
+                      (historyPageIndex - 1) * historyPageSize + i + 1
+                    }}</span>
+                  </td>
+                  <td class="px-2 !py-1 whitespace-nowrap">
+                    <span
+                      class="text-xs font-medium text-gray-900 dark:text-white"
+                    >
+                      {{ item.scaleName }}
+                    </span>
+                  </td>
+                  <td class="px-2 !py-1 whitespace-nowrap">
+                    <span
+                      class="text-xs font-medium text-gray-900 dark:text-white"
+                    >
+                      {{ item.lastTime | date : "dd/MM/yyyy HH:mm:ss" }}
+                    </span>
+                  </td>
+                  <td
+                    *ngFor="let col of dataColumns"
+                    class="px-2 !py-1 whitespace-nowrap text-center"
+                  >
+                    <span
+                      class="text-xs font-medium text-gray-900 dark:text-white"
+                    >
+                      {{ item.formattedData[col.key] | number : "0.0-2" }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </nz-table>
 
-      <!-- History Pagination -->
-      <div
-        *ngIf="historyData.length > 0"
-        class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
-      >
-        <app-pagination
-          [total]="historyTotal"
-          [currentPage]="historyPageIndex"
-          [currentSize]="historyPageSize"
-          (emitPage)="onHistoryPaginationChange($event)"
-          (goToChange)="onHistoryPaginationChange($event)"
-        ></app-pagination>
-      </div>
-    </div>
-  </main>
+            <ng-template #noHistoryResultTemplate>
+              <nz-empty></nz-empty>
+            </ng-template>
+          </div>
+
+          <!-- History Pagination -->
+          <div
+            *ngIf="historyData.length > 0"
+            class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+          >
+            <app-pagination
+              [total]="historyTotal"
+              [currentPage]="historyPageIndex"
+              [currentSize]="historyPageSize"
+              (emitPage)="onHistoryPaginationChange($event)"
+              (goToChange)="onHistoryPaginationChange($event)"
+            ></app-pagination>
+          </div>
+        </div>
+      </main>
+    </as-split-area>
+  </as-split>
 </div>
 
 <!-- Template Selection Modal -->

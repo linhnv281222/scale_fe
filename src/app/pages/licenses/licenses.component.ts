@@ -28,6 +28,8 @@ export class LicensesComponent implements OnInit, OnDestroy {
   saving = false;
   selectedLicense: License | null = null;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
@@ -242,5 +244,16 @@ export class LicensesComponent implements OnInit, OnDestroy {
   onReset(): void {
     this.filterData = {};
     this.loadLicenses();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

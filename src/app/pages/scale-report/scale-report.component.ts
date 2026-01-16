@@ -91,6 +91,24 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     badgeClass: string;
     items: { key: string; label: string; value: number | null; unit: string }[];
   }[] = [];
+  dataFieldSummaries: { [key: string]: { value: string; aggregation: string; name: string; unit: string; used: boolean } } = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  hasDataFieldSummaries(): boolean {
+    return this.dataFieldSummaries && Object.keys(this.dataFieldSummaries).length > 0;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
+  }
 
   private getDataFieldDisplayName(
     dataKey: string,
@@ -409,6 +427,15 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           apiData?.data?.dataFieldNames ||
           (Array.isArray(apiData?.data) && apiData.data[0]
             ? apiData.data[0].dataFieldNames
+            : {}) ||
+          {};
+
+        // Lấy dataFieldSummaries từ API response
+        this.dataFieldSummaries =
+          apiData?.dataFieldSummaries ||
+          apiData?.data?.dataFieldSummaries ||
+          (Array.isArray(apiData?.data) && apiData.data[0]
+            ? apiData.data[0].dataFieldSummaries
             : {}) ||
           {};
         if (

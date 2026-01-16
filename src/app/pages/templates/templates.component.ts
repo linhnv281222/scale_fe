@@ -45,6 +45,8 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   filterData: any = {
     templateType: null,
   };
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   filterFields: FilterField[] = [
     {
@@ -409,5 +411,16 @@ export class TemplatesComponent implements OnInit, OnDestroy {
       this.templateToArchive.originalFilename ||
       this.templateToArchive.templateCode
     }"?`;
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

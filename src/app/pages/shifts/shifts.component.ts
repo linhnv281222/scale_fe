@@ -25,6 +25,8 @@ export class ShiftsComponent implements OnInit {
   saving = false;
   selectedShift: Shift | null = null;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
@@ -377,5 +379,16 @@ export class ShiftsComponent implements OnInit {
     if (!time) return '-';
     if (time.length === 5) return time; // Already HH:mm format
     return moment(time, 'HH:mm:ss').format('HH:mm');
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

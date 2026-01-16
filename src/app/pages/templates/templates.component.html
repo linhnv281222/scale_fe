@@ -1,33 +1,79 @@
 <div class="flex h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
-  <!-- Filter Sidebar -->
-  <aside
-    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  <as-split
+    direction="horizontal"
+    [disabled]="!sidebarVisible"
+    [gutterSize]="8"
+    [useTransition]="true"
+    [unit]="'percent'"
+    [gutterColor]="'transparent'"
+    [gutterDblClickDuration]="300"
+    (dragEnd)="onSplitDragEnd($event)"
+    class="h-full"
   >
-    <div
-      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    <!-- Filter Sidebar -->
+    <as-split-area
+      [size]="sidebarVisible ? sidebarSize : 0"
+      [minSize]="sidebarVisible ? 15 : 0"
+      [maxSize]="sidebarVisible ? 40 : 0"
+      [visible]="sidebarVisible"
     >
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-        {{ "templates.title" | translate }}
-      </h3>
-    </div>
-    <div class="flex-1 min-h-0 p-3">
-      <app-filter-sidebar
-        [fields]="filterFields"
-        [filterData]="filterData"
-        (search)="onSearch($event)"
-      ></app-filter-sidebar>
-    </div>
-  </aside>
+      <aside
+        class="flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+      >
+        <div
+          class="flex items-center justify-between flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+            {{ "templates.title" | translate }}
+          </h3>
+          <!-- Toggle Sidebar Button in Sidebar Header -->
+          <button
+            nz-button
+            nzType="text"
+            nzShape="circle"
+            (click)="toggleSidebar()"
+            class="flex items-center justify-center w-6 h-6 flex-shrink-0"
+            nz-tooltip
+            [nzTooltipTitle]="'common.collapse' | translate"
+          >
+            <span nz-icon nzType="left" nzTheme="outline"></span>
+          </button>
+        </div>
+        <div class="flex-1 min-h-0 p-3">
+          <app-filter-sidebar
+            [fields]="filterFields"
+            [filterData]="filterData"
+            (search)="onSearch($event)"
+          ></app-filter-sidebar>
+        </div>
+      </aside>
+    </as-split-area>
 
-  <!-- Main Content -->
-  <main class="flex flex-col flex-1 overflow-hidden">
-    <!-- Header with Add Button -->
-    <div
-      class="flex items-center justify-between bg-white dark:bg-gray-800 dark:border-gray-700"
-    >
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">
-        {{ "templates.title" | translate }}
-      </h2>
+    <!-- Main Content -->
+    <as-split-area [size]="sidebarVisible ? 100 - sidebarSize : 100">
+      <main class="flex flex-col flex-1 overflow-hidden h-full">
+        <!-- Header with Add Button -->
+        <div
+          class="flex items-center justify-between bg-white dark:bg-gray-800 dark:border-gray-700"
+        >
+          <div class="flex items-center gap-2">
+            <!-- Toggle Sidebar Button when sidebar is hidden -->
+            <button
+              *ngIf="!sidebarVisible"
+              nz-button
+              nzType="text"
+              nzShape="circle"
+              (click)="toggleSidebar()"
+              class="flex items-center justify-center w-8 h-8 flex-shrink-0"
+              nz-tooltip
+              [nzTooltipTitle]="'common.expand' | translate"
+            >
+              <span nz-icon nzType="right" nzTheme="outline"></span>
+            </button>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">
+              {{ "templates.title" | translate }}
+            </h2>
+          </div>
       <button
         nz-button
         nzType="primary"
@@ -257,7 +303,9 @@
         ></app-pagination>
       </div>
     </div>
-  </main>
+      </main>
+    </as-split-area>
+  </as-split>
 </div>
 
 <!-- Confirm Archive Dialog -->

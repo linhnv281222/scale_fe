@@ -23,6 +23,8 @@ export class UsersComponent implements OnInit {
   saving = false;
   selectedUser: User | null = null;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Form data
   dataUser: any = {
@@ -334,5 +336,16 @@ export class UsersComponent implements OnInit {
     return status === 1
       ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
       : 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

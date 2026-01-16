@@ -44,6 +44,8 @@ export class ScalesComponent implements OnInit, OnDestroy {
   saving = false;
   selectedScale: Scale | null = null;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage (scales có tree nên cần rộng hơn)
 
   isConfigModalVisible = false;
   savingConfig = false;
@@ -787,45 +789,13 @@ export class ScalesComponent implements OnInit, OnDestroy {
         poll_interval: this.scaleConfig.poll_interval,
       };
 
-      const protocol = this.protocols.find(
-        (p) => p.code === this.scaleConfig.protocol
-      );
-      const connectionType = protocol?.connection_type || protocol?.type;
-
-      if (
-        connectionType === 'TCP' ||
-        this.scaleConfig.protocol === 'MODBUS_TCP'
-      ) {
-        data.conn_params = {
-          ip: this.scaleConfig.conn_params.ip,
-          port: this.scaleConfig.conn_params.port,
-        };
-      } else if (
-        connectionType === 'RTU' ||
-        this.scaleConfig.protocol === 'MODBUS_RTU'
-      ) {
-        data.conn_params = {
-          com_port: this.scaleConfig.conn_params.com_port,
-          baud_rate: this.scaleConfig.conn_params.baud_rate,
-          data_bits: this.scaleConfig.conn_params.data_bits,
-          stop_bits: this.scaleConfig.conn_params.stop_bits,
-          parity: this.scaleConfig.conn_params.parity,
-          unit_id: this.scaleConfig.conn_params.unit_id,
-        };
-      } else {
-        data.conn_params = this.scaleConfig.conn_params || {};
-      }
+      data.conn_params = { ...this.scaleConfig.conn_params };
 
       for (let i = 1; i <= 5; i++) {
         const channel = this.scaleConfig[`data_${i}`];
         if (channel && channel.is_used) {
           data[`data_${i}`] = {
-            name: channel.name || '',
-            start_register: channel.start_register || 0,
-            num_registers: channel.num_registers || 1,
-            data_type: channel.data_type || 'int32',
-            function_code: channel.function_code || 3,
-            byte_order: channel.byte_order || 'big_endian',
+            ...channel,
             is_used: true,
           };
         } else {
@@ -1206,5 +1176,16 @@ export class ScalesComponent implements OnInit, OnDestroy {
       protocol?.type === 'MODBUS_RTU' ||
       protocol?.type === ProtocolType.MODBUS_RTU
     );
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

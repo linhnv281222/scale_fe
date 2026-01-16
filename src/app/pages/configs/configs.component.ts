@@ -16,6 +16,8 @@ export class ConfigsComponent implements OnInit {
   pageSize = 20;
   total = 0;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Modal for managing fields of a module
   isFieldsModalVisible = false;
@@ -368,5 +370,16 @@ export class ConfigsComponent implements OnInit {
       );
     }
     return filtered;
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

@@ -26,6 +26,8 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
   pageSize = 20;
   total = 0;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Scales list for filter
   scales: Scale[] = [];
@@ -156,5 +158,16 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
     this.pageSize = size;
     this.pageIndex = 1;
     this.loadHistoricalData();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

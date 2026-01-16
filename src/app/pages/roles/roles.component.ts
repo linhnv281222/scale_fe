@@ -23,6 +23,8 @@ export class RolesComponent implements OnInit {
   saving = false;
   selectedRole: Role | null = null;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   dataRole: any = {
     name: '',
@@ -290,5 +292,16 @@ export class RolesComponent implements OnInit {
     this.pageIndex = event.page;
     this.pageSize = event.size;
     this.loadRoles();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

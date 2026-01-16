@@ -27,6 +27,8 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
   pageSize = 20;
   total = 0;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Dynamic column headers from first item's dataValues
   dataColumn1Name: string = '';
@@ -381,6 +383,17 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
+    }
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
     }
   }
 }

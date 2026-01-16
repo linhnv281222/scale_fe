@@ -21,6 +21,8 @@ export class PermissionsComponent implements OnInit {
   saving = false;
   selectedPermission: Permission | null = null;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   dataPermission: any = {};
 
@@ -248,5 +250,16 @@ export class PermissionsComponent implements OnInit {
     this.pageIndex = event.page;
     this.pageSize = event.size;
     this.loadPermissions();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

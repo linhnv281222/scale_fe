@@ -39,6 +39,9 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
   dataLocation: any = {};
 
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
+
   filterFields: FilterField[] = [
     {
       key: 'code',
@@ -571,8 +574,19 @@ export class LocationsComponent implements OnInit, OnDestroy {
   // }
 
   // onPageSizeChange(size: number): void {
-  //   this.pageSize = size;
-  //   this.pageIndex = 1;
-  //   this.loadLocations();
+  //   this.pageSize = size; 
+  //   this.pageIndex = 1; 
+  //   this.loadLocations(); 
   // }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
+  }
 }

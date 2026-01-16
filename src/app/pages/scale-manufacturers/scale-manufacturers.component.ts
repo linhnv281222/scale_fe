@@ -23,6 +23,8 @@ export class ScaleManufacturersComponent implements OnInit {
   saving = false;
   selectedManufacturer: ScaleManufacturer | null = null;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
@@ -358,5 +360,16 @@ export class ScaleManufacturersComponent implements OnInit {
       return value === null || value === undefined;
     }
     return value === null || value === undefined || value === '';
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

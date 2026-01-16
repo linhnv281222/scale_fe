@@ -19,6 +19,8 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
   pageSize = 20;
   total = 0;
   filterData: any = {};
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
 
   // Threshold for warning (minutes without data)
   WARNING_THRESHOLD_MINUTES = 5; // 5 minutes
@@ -184,5 +186,16 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
   onReset(): void {
     this.filterData = {};
     this.loadConnectionStatuses();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }

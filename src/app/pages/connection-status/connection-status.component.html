@@ -1,30 +1,61 @@
 <div class="flex h-full bg-gray-50 dark:bg-gray-900">
-  <!-- Filter Sidebar -->
-  <aside
-    class="flex flex-col w-64 bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+  <as-split
+    direction="horizontal"
+    [disabled]="!sidebarVisible"
+    [gutterSize]="8"
+    [useTransition]="true"
+    [unit]="'percent'"
+    [gutterColor]="'transparent'"
+    [gutterDblClickDuration]="300"
+    (dragEnd)="onSplitDragEnd($event)"
+    class="h-full"
   >
-    <div
-      class="flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+    <!-- Filter Sidebar -->
+    <as-split-area
+      [size]="sidebarVisible ? sidebarSize : 0"
+      [minSize]="sidebarVisible ? 15 : 0"
+      [maxSize]="sidebarVisible ? 40 : 0"
+      [visible]="sidebarVisible"
     >
-      <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-        {{ "filter.title" | translate }}
-      </h3>
-    </div>
-    <div class="flex-1 min-h-0 p-3">
-      <app-filter-sidebar
-        [fields]="filterFields"
-        (search)="onSearch($event)"
-        (reset)="onReset()"
-      ></app-filter-sidebar>
-    </div>
-  </aside>
+      <aside
+        class="flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+      >
+        <div
+          class="flex items-center justify-between flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
+            {{ "filter.title" | translate }}
+          </h3>
+          <!-- Toggle Sidebar Button in Sidebar Header -->
+          <button
+            nz-button
+            nzType="text"
+            nzShape="circle"
+            (click)="toggleSidebar()"
+            class="flex items-center justify-center w-6 h-6 flex-shrink-0"
+            nz-tooltip
+            [nzTooltipTitle]="'common.collapse' | translate"
+          >
+            <span nz-icon nzType="left" nzTheme="outline"></span>
+          </button>
+        </div>
+        <div class="flex-1 min-h-0 p-3">
+          <app-filter-sidebar
+            [fields]="filterFields"
+            (search)="onSearch($event)"
+            (reset)="onReset()"
+          ></app-filter-sidebar>
+        </div>
+      </aside>
+    </as-split-area>
 
-  <!-- Main Content -->
-  <main class="flex-1 overflow-y-auto">
-    <div class="p-1">
-      <!-- Table Container -->
+    <!-- Main Content -->
+    <as-split-area [size]="sidebarVisible ? 100 - sidebarSize : 100">
+      <main class="flex-1 h-full overflow-y-auto">
+        <div class="p-1">
+          <!-- Table Container -->
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+        class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
       >
     <!-- Table Header -->
     <div
@@ -133,7 +164,7 @@
     <!-- Pagination -->
     <div
       *ngIf="connectionStatuses.length > 0"
-      class="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      class="bg-white border-t border-gray-200 dark:border-gray-700 dark:bg-gray-800"
     >
       <app-pagination
         [total]="total"
@@ -143,7 +174,9 @@
         (goToChange)="onPaginationChange($event)"
       ></app-pagination>
     </div>
-  </div>
+      </div>
     </div>
-  </main>
+      </main>
+    </as-split-area>
+  </as-split>
 </div>

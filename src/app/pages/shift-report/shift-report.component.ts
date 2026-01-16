@@ -74,12 +74,15 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   chartOptions: any = {};
   isChartExpanded = false;
   ratioStatisticHeader = '';
+  sidebarVisible = true;
+  sidebarSize = 15; // Percentage
   overviewDisplay: {
     directionKey: string;
     directionLabel: string;
     badgeClass: string;
     items: { key: string; label: string; value: number | null; unit: string }[];
   }[] = [];
+  dataFieldSummaries: { [key: string]: { value: string; aggregation: string; name: string; unit: string; used: boolean } } = {};
 
   private getDataFieldDisplayName(
     dataKey: string,
@@ -427,7 +430,14 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           overviewData = apiData.overview;
         }
 
-        let dataFieldNames = apiData?.dataFieldNames || {};
+        // Ưu tiên lấy dataFieldNames đúng theo các cấu trúc response khác nhau
+        let dataFieldNames =
+          apiData?.dataFieldNames ||
+          apiData?.data?.dataFieldNames ||
+          (Array.isArray(apiData?.data) && apiData.data[0]
+            ? apiData.data[0].dataFieldNames
+            : {}) ||
+          {};
         if (
           (!dataFieldNames || Object.keys(dataFieldNames).length === 0) &&
           rawRows.length > 0
@@ -446,6 +456,15 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             return accumulator;
           }, {});
         }
+
+        // Lấy dataFieldSummaries từ API response
+        this.dataFieldSummaries =
+          apiData?.dataFieldSummaries ||
+          apiData?.data?.dataFieldSummaries ||
+          (Array.isArray(apiData?.data) && apiData.data[0]
+            ? apiData.data[0].dataFieldSummaries
+            : {}) ||
+          {};
 
         if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
           const columnsFromApi = Object.keys(dataFieldNames).map((key) => ({
@@ -1026,5 +1045,20 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
   closeTemplateModal(): void {
     this.isTemplateModalVisible = false;
+  }
+
+  toggleSidebar(): void {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
+
+  hasDataFieldSummaries(): boolean {
+    return this.dataFieldSummaries && Object.keys(this.dataFieldSummaries).length > 0;
+  }
+
+  onSplitDragEnd(event: any): void {
+    if (event.sizes && event.sizes.length > 0) {
+      const firstSize = event.sizes[0];
+      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+    }
   }
 }
