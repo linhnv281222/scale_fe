@@ -901,89 +901,1000 @@ Response 200:
 }
 
 ===============================================
-7. persistence-monitoring-controller
+7. Quản lý thông tin ca
 ===============================================
 
---------------------------------------
-GET - /monitoring/persistence/metrics
--------------------------------------
+GET - /api/v1/shift - Lấy danh sách
+response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "code": "Ca1",
+      "name": "Ca 1",
+      "start_time": "00:00:00",
+      "end_time": "12:00:00",
+      "is_active": true,
+      "created_at": "2025-12-29T15:09:14.677787Z",
+      "created_by": "admin",
+      "updated_at": "2025-12-29T15:09:14.677787Z",
+      "updated_by": "admin"
+    },
+    {
+      "id": 2,
+      "code": "Ca2",
+      "name": "Ca 2",
+      "start_time": "12:00:00",
+      "end_time": "23:59:00",
+      "is_active": true,
+      "created_at": "2025-12-29T15:09:37.939549Z",
+      "created_by": "admin",
+      "updated_at": "2025-12-29T15:09:37.939549Z",
+      "updated_by": "admin"
+    }
+  ]
+}
+
+GET - /api/v1/shifts/{id} - Lấy thông tin chi tiết Ca
+response:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "code": "Ca1",
+    "name": "Ca 1",
+    "start_time": "00:00:00",
+    "end_time": "12:00:00",
+    "is_active": true,
+    "created_at": "2025-12-29T15:09:14.677787Z",
+    "created_by": "admin",
+    "updated_at": "2025-12-29T15:09:14.677787Z",
+    "updated_by": "admin"
+  }
+}
+
+POST - /api/v1/shifts - Thêm mới ca
+payload:
+{
+  "code": "Ca2",
+  "name": "Ca 2",
+  "start_time": "12:00:00",
+  "end_time": "23:59:00",
+  "is_active": true
+}
 
 response:
 {
   "success": true,
   "data": {
-    "additionalProp1": {},
-    "additionalProp2": {},
-    "additionalProp3": {}
-  },
-  "message": "string",
-  "error": "string"
+    "id": 2,
+    "code": "Ca2",
+    "name": "Ca 2",
+    "start_time": "12:00:00",
+    "end_time": "23:59:00",
+    "is_active": true,
+    "created_at": "2025-12-29T22:09:37.9395492+07:00",
+    "created_by": "admin",
+    "updated_at": "2025-12-29T22:09:37.9395492+07:00",
+    "updated_by": "admin"
+  }
 }
 
-----------------------------------------
-GET - /monitoring/persistence/health
----------------------------------------
+PUT - /api/v1/shifts/{id} - Cập nhật ca
+payload: {
+    "name": "Ca 2",
+  "start_time": "12:00:00",
+  "end_time": "23:59:00",
+  "is_active": true
+}
+
 
 response:
 {
   "success": true,
   "data": {
-    "additionalProp1": {},
-    "additionalProp2": {},
-    "additionalProp3": {}
-  },
-  "message": "string",
-  "error": "string"
+    "id": 2,
+    "code": "Ca2",
+    "name": "Ca 2",
+    "start_time": "12:00:00",
+    "end_time": "23:59:00",
+    "is_active": true,
+    "created_at": "2025-12-29T22:09:37.9395492+07:00",
+    "created_by": "admin",
+    "updated_at": "2025-12-29T22:09:37.9395492+07:00",
+    "updated_by": "admin"
+  }
 }
 
-=============================================
-8.Reports - Report and statistics APIs
-=============================================
+DELETE - /api/v1/shifts/{id} - Xóa ca
 
-------------------------------------------------------
-POST - /reports/generate - Report and statistics APIs
-------------------------------------------------------
+{
+  "success": true,
+  "message": "Delete success",
+  "error": null
+}
 
+===============================================
+8. Giám sát hoạt động
+===============================================
+
+GET - /api/v1/scales/current-states - Lấy dữ liệu danh sách data hiện tại
+queryparam:
+mảng scale_ids, status.
+Filter cân ở component này sẽ là select multi. Dữ liệu thì lấy từ API get danh sách cân và get all.
+response:
+{
+  "success": true,
+  "data": [
+    {
+      "scaleId": 1,
+      "scaleName": "Cân 11",
+      "status": "ONLINE",
+      "lastTime": "2025-12-26T04:02:22.683584Z",
+      "dataValues": {
+        "data_1": {
+          "value": "0",
+          "name": "Weight",
+          "used": true
+        },
+        "data_2": {
+          "value": "0",
+          "name": "Status",
+          "used": true
+        }
+      }
+    },
+    {
+      "scaleId": 2,
+      "scaleName": "Cân 12",
+      "status": "ONLINE",
+      "lastTime": "2025-12-26T04:02:22.727731Z",
+      "dataValues": {
+        "data_1": {
+          "value": "0",
+          "name": "Weight",
+          "used": true
+        },
+        "data_2": {
+          "value": "0",
+          "name": "Status",
+          "used": true
+        }
+      }
+    }
+  ]
+}
+
+WEBSOCKET: /topic/all-scales-data
+  // WEBSOCKET
+  private stompClient!: Client;
+  private stompSubscription!: StompSubscription;
+  private dataPerMinuteSubscription!: StompSubscription;
+  private isReconnecting: boolean = false;
+  private reconnectTimeout: any = null;
+  private readonly RECONNECT_DELAY: number = 5000;
+  private username: string = '';
+  private pendingRequests = new Map<string, (result: any) => void>();
+
+   // WEBSOCKET
+  private async connectWebSocket(): Promise<void> {
+    try {
+      const token = await this.keycloakService.getToken();
+      const socketUrl = `${environment.api_end_point}/ws`;
+
+      console.log('[WebSocket] Đang kết nối đến:', socketUrl);
+
+      this.stompClient = new Client({
+        webSocketFactory: () => new SockJS(socketUrl),
+        connectHeaders: {
+          Authorization: `Bearer ${token}`,
+          clientType: 'public',
+        },
+        reconnectDelay: 0, // Tắt auto-reconnect của STOMP, dùng custom reconnect logic
+        heartbeatIncoming: 10000, // 10 giây
+        heartbeatOutgoing: 10000, // 10 giây
+        onConnect: (frame) => {
+          console.log('[WebSocket] ✅ Kết nối thành công:', frame);
+          this.isConnectWebsocket = true;
+          this.isReconnecting = false;
+          if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+          }
+          if (this.isConnectWebsocket && this.machineId) {
+            this.subscribeToResponseTopic();
+            this.getWarningMahineStopped();
+          }
+          this.cdr.markForCheck();
+        },
+        onStompError: (error) => {
+          console.error('[WebSocket] ❌ STOMP error:', error);
+          this.cdr.markForCheck();
+        },
+        onWebSocketClose: (event) => {
+          console.warn(
+            '[WebSocket] ⚠️ WebSocket đã đóng:',
+            event.code,
+            event.reason
+          );
+          // Chỉ reconnect nếu không phải là close code bình thường (1000)
+          if (event.code !== 1000) {
+            // Nếu đang reconnect, reset flag để có thể reconnect lại
+            if (this.isReconnecting) {
+              this.isReconnecting = false;
+            }
+            this.handleReconnect();
+          }
+          this.cdr.markForCheck();
+        },
+        onWebSocketError: (error) => {
+          console.error('[WebSocket] ❌ WebSocket error:', error);
+          // Nếu đang reconnect, reset flag để có thể reconnect lại
+          if (this.isReconnecting) {
+            this.isReconnecting = false;
+          }
+          this.handleReconnect();
+          this.cdr.markForCheck();
+        },
+        onDisconnect: (frame) => {
+          console.warn('[WebSocket] ⚠️ Disconnected:', frame);
+          this.cdr.markForCheck();
+        },
+      });
+      this.stompClient.activate();
+    } catch (error) {
+      console.error('[WebSocket] ❌ Lỗi khi khởi tạo kết nối:', error);
+      this.cdr.markForCheck();
+    }
+  }
+
+  public requestDataFromServer(dataIds: string[]): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const correlationId = uuidv4();
+      const payload: RequestPayload = {
+        correlation_id: correlationId,
+        user_request: this.username,
+        machine_codes: dataIds,
+      };
+
+      //
+      this.pendingRequests.set(correlationId, resolve);
+      this.stompClient.publish({
+        destination: '/app/request-to-read',
+        body: JSON.stringify(payload),
+      });
+    });
+  }
+
+  private handleReconnect(): void {
+    if (this.isReconnecting) {
+      return;
+    }
+    this.isReconnecting = true;
+    console.log(
+      '[WebSocket] 🔄 Bắt đầu reconnect sau',
+      this.RECONNECT_DELAY,
+      'ms...'
+    );
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+    this.reconnectTimeout = setTimeout(async () => {
+      try {
+        console.log('[WebSocket] 🔄 Đang thử reconnect...');
+
+        // Cleanup client cũ hoàn toàn
+        if (this.stompClient) {
+          try {
+            // Unsubscribe chỉ khi WebSocket còn connected
+            if (this.stompSubscription && this.stompClient.connected) {
+              try {
+                this.stompSubscription.unsubscribe();
+              } catch (unsubError) {
+                console.warn('[WebSocket] ⚠️ Lỗi khi unsubscribe:', unsubError);
+              }
+            }
+            if (this.dataPerMinuteSubscription && this.stompClient.connected) {
+              try {
+                this.dataPerMinuteSubscription.unsubscribe();
+              } catch (unsubError) {
+                console.warn('[WebSocket] ⚠️ Lỗi khi unsubscribe:', unsubError);
+              }
+            }
+            // Clear subscription references
+            this.stompSubscription = null as any;
+            this.dataPerMinuteSubscription = null as any;
+            // Deactivate chỉ khi client đang active
+            if (this.stompClient.active) {
+              try {
+                await this.stompClient.deactivate();
+                // Đợi một chút để đảm bảo cleanup hoàn tất
+                await new Promise((resolve) => setTimeout(resolve, 100));
+              } catch (deactivateError) {
+                console.warn(
+                  '[WebSocket] ⚠️ Lỗi khi deactivate:',
+                  deactivateError
+                );
+              }
+            }
+          } catch (cleanupError) {
+            console.warn(
+              '[WebSocket] ⚠️ Lỗi khi cleanup client cũ:',
+              cleanupError
+            );
+          }
+          this.stompClient = null as any;
+        }
+
+        // Tạo lại connection hoàn toàn
+        await this.connectWebSocket();
+      } catch (error) {
+        console.error('[WebSocket] ❌ Lỗi khi reconnect:', error);
+        this.isReconnecting = false;
+        this.handleReconnect();
+      }
+    }, this.RECONNECT_DELAY);
+  }
+
+  Đây là code mẫu 1 đoạn code kết nối websocket ở angular. Bạn có thể dựa vào đây để viết.
+  Mục tiêu của websocket này thì khi có sự kiện websocket thì sẽ gọi lại API /api/v1/scales/current-states để lấy dữ liệu mới nhất.
+  Nhưng mà hệ thống hiện tại không sử dụng keycloak nên bạn cứ bỏ đi nhé. Sử dụng token của tính năng login hiện tại.
+
+===============================================
+9. Báo cáo kết quả cân/ca
+===============================================
+
+POST - /api/v1/reports/interval - Lấy dữ liệu báo cáo kết quả cân, ca.
 payload:
 {
   "scaleIds": [
-    0
   ],
-  "dataField": "string",
-  "method": "SUM",
-  "fromDate": "2025-12-28",
-  "toDate": "2025-12-28",
-  "interval": "HOUR"
+  "fromDate": "2025-12-20",
+  "toDate": "2025-12-29",
+  "fromTime": "2025-12-20T14:14:36.461Z",
+  "toTime": "2025-12-29T14:14:36.461Z",
+  "interval": "HOUR",
+  "aggregationByField": {
+    "data_1": "ABS",
+    "data_2": "SUM"
+  }
 }
 
+response:
+"success": true,
+  "data": {
+    "interval": "DAY",
+    "fromDate": "2025-12-20",
+    "toDate": "2025-12-29",
+    "dataFieldNames": {
+      "data_5": "Data 5",
+      "data_2": "Status",
+      "data_1": "Weight",
+      "data_4": "Data 4",
+      "data_3": "Data 3"
+    },
+    "aggregationByField": {
+      "data_5": "ABS",
+      "data_2": "SUM",
+      "data_1": "ABS",
+      "data_4": "ABS",
+      "data_3": "ABS"
+    },
+    "rows": [
+      {
+        "scale": {
+          "id": 1,
+          "name": "Cân 11",
+          "model": "IND570",
+          "location": {
+            "id": 1,
+            "code": "WS_01",
+            "name": "Xưởng A"
+          },
+          "is_active": true,
+          "created_at": "2025-12-24T07:11:45.002195Z",
+          "created_by": "admin",
+          "updated_at": "2025-12-25T07:48:44.222954Z",
+          "updated_by": "admin"
+        },
+        "period": "2025-12-25",
+        "recordCount": 1048,
+        "data_values": {
+          "data_5": {
+            "value": "0",
+            "name": "Data 5",
+            "used": false
+          },
+          "data_2": {
+            "value": "3438",
+            "name": "Status",
+            "used": true
+          },
+          "data_1": {
+            "value": "131075",
+            "name": "Weight",
+            "used": true
+          },
+          "data_4": {
+            "value": "0",
+            "name": "Data 4",
+            "used": false
+          },
+          "data_3": {
+            "value": "0",
+            "name": "Data 3",
+            "used": false
+          }
+        }
+      },
+      {
+        "scale": {
+          "id": 1,
+          "name": "Cân 11",
+          "model": "IND570",
+          "location": {
+            "id": 1,
+            "code": "WS_01",
+            "name": "Xưởng A"
+          },
+          "is_active": true,
+          "created_at": "2025-12-24T07:11:45.002195Z",
+          "created_by": "admin",
+          "updated_at": "2025-12-25T07:48:44.222954Z",
+          "updated_by": "admin"
+        },
+        "period": "2025-12-26",
+        "recordCount": 20,
+        "data_values": {
+          "data_5": {
+            "value": "0",
+            "name": "Data 5",
+            "used": false
+          },
+          "data_2": {
+            "value": "0",
+            "name": "Status",
+            "used": true
+          },
+          "data_1": {
+            "value": "0",
+            "name": "Weight",
+            "used": true
+          },
+          "data_4": {
+            "value": "0",
+            "name": "Data 4",
+            "used": false
+          },
+          "data_3": {
+            "value": "0",
+            "name": "Data 3",
+            "used": false
+          }
+        }
+      }
+    ]
+  }
+
+Tôi đang không hiểu lắm phần
+ "aggregationByField": {
+    "data_1": "ABS",
+    "data_2": "SUM"
+  }
+
+  Nhưng nói chung là màn báo cáo kết quả cân sẽ phải có các trường filter
+  - Khoảng thời gian
+  - Cân (Chọn multi từ danh sách của API danh sách cân)
+  - Interval tôi không biết trường gì nhưng mong là bạn hiểu là trường gì khi đọc dự án này
+  Mặc định trường này có các giá trị SHIFT, HOUR, DAY, WEEK, MONTH, YEAR kiểu như trong khoảng thời gian này
+  thì cân sẽ phải tổng hợp theo giờ, ngày, tháng,... SHIFT là của báo cáo ca rồi không cần đưa vào.
+  - Tiếp theo là phần
+   "aggregationByField": {
+    "data_1": "ABS",
+    "data_2": "SUM"
+  }
+  Tôi không biết filter phần này kiểu gì nhưng kiểu như mỗi loại data config.
+  Các data_1, data_2,... này lấy từ config của cân ấy. thì sẽ có loại tổng hợp dữ liệu khác nhau.
+  Hiện tại mặc định có 4 giá trị mặc định ABS SUM MAX AVG. Bạn làm sao mà làm cho phần filter này hợp lý là được theo ý hiểu của bạn với dự án này.
+
+Đây là 1 dòng dữ liệu
+ {
+        "scale": {
+          "id": 1,
+          "name": "Cân 11",
+          "model": "IND570",
+          "location": {
+            "id": 1,
+            "code": "WS_01",
+            "name": "Xưởng A"
+          },
+          "is_active": true,
+          "created_at": "2025-12-24T07:11:45.002195Z",
+          "created_by": "admin",
+          "updated_at": "2025-12-25T07:48:44.222954Z",
+          "updated_by": "admin"
+        },
+        "period": "2025-12-25",
+        "recordCount": 1048,
+        "data_values": {
+          "data_5": {
+            "value": "0",
+            "name": "Data 5",
+            "used": false
+          },
+          "data_2": {
+            "value": "3438",
+            "name": "Status",
+            "used": true
+          },
+          "data_1": {
+            "value": "131075",
+            "name": "Weight",
+            "used": true
+          },
+          "data_4": {
+            "value": "0",
+            "name": "Data 4",
+            "used": false
+          },
+          "data_3": {
+            "value": "0",
+            "name": "Data 3",
+            "used": false
+          }
+        }
+      },
+
+Như vậy thì bảng dữ liệu của bảng này gồm các cột:
+STT, Tên cân, mã cân, vị trí, thời gian (period), và 5 cột data
+ "data_values": {
+          "data_5": {
+            "value": "0",
+            "name": "Data 5",
+            "used": false
+          },
+          "data_2": {
+            "value": "3438",
+            "name": "Status",
+            "used": true
+          },
+          "data_1": {
+            "value": "131075",
+            "name": "Weight",
+            "used": true
+          },
+          "data_4": {
+            "value": "0",
+            "name": "Data 4",
+            "used": false
+          },
+          "data_3": {
+            "value": "0",
+            "name": "Data 3",
+            "used": false
+          }
+        }
+
+        Mỗi cột data thì sẽ dựa theo name của data. Ví dụ cột tiếp theo là data_1 thì title sẽ là WEIGHT, giá trị là giá trị của key value.
+        Cột nào có used là false thì cột đó của dòng đó không có giá trị.
+Ngoài ra trang này có 1 chart line thì chart này tôi nghĩ bạn cứ vẽ theo giá trị của data_1 Weight đi bởi vì project này chưa rõ ràng.
+
+Tiếp theo là history. Ở trang này sẽ có history của cân. Khi click vào dòng cân nào thì sẽ hiển thị bảng dữ liệu lịch sử của cân đó.
+API như sau:
+GET - /api/v1/scales/history - Lịch sử cân
+Queryparam: scaleId của cân, startTime, endTime lấy từ filter khoảng thời gian của trang, page, size để phân trang.
 response:
 {
   "success": true,
   "data": {
-    "reportName": "string",
-    "method": "string",
-    "dataField": "string",
-    "interval": "string",
-    "dataPoints": [
+    "content": [
       {
-        "time": "string",
-        "value": 0
+        "scaleId": 1,
+        "scaleName": "Cân 11",
+        "createdAt": "2025-12-26T04:02:22.722209Z",
+        "lastTime": "2025-12-26T04:02:22.683584Z",
+        "data1": "0",
+        "data2": "0",
+        "dataValues": {
+          "data_1": {
+            "value": "0",
+            "name": "Weight",
+            "used": true
+          },
+          "data_2": {
+            "value": "0",
+            "name": "Status",
+            "used": true
+          },
+          "data_3": {
+            "value": null,
+            "name": "Data 3",
+            "used": false
+          },
+          "data_4": {
+            "value": null,
+            "name": "Data 4",
+            "used": false
+          },
+          "data_5": {
+            "value": null,
+            "name": "Data 5",
+            "used": false
+          }
+        }
+      },
+      {
+        "scaleId": 1,
+        "scaleName": "Cân 11",
+        "createdAt": "2025-12-26T04:02:12.693954Z",
+        "lastTime": "2025-12-26T04:02:12.651847Z",
+        "data1": "0",
+        "data2": "0",
+        "dataValues": {
+          "data_1": {
+            "value": "0",
+            "name": "Weight",
+            "used": true
+          },
+          "data_2": {
+            "value": "0",
+            "name": "Status",
+            "used": true
+          },
+          "data_3": {
+            "value": null,
+            "name": "Data 3",
+            "used": false
+          },
+          "data_4": {
+            "value": null,
+            "name": "Data 4",
+            "used": false
+          },
+          "data_5": {
+            "value": null,
+            "name": "Data 5",
+            "used": false
+          }
+        }
       }
-    ]
-  },
-  "message": "string",
-  "error": "string"
+    ],
+    "pageable": {
+      "pageNumber": 0,
+      "pageSize": 2,
+      "sort": {
+        "empty": false,
+        "sorted": true,
+        "unsorted": false
+      },
+      "offset": 0,
+      "paged": true,
+      "unpaged": false
+    },
+    "last": false,
+    "totalPages": 534,
+    "totalElements": 1068,
+    "size": 2,
+    "number": 0,
+    "sort": {
+      "empty": false,
+      "sorted": true,
+      "unsorted": false
+    },
+    "numberOfElements": 2,
+    "first": true,
+    "empty": false
+  }
 }
 
--------------------------------------------------
-POST - /reports/aggregate-daily - Trigger daily aggregation
+Table tôi nghĩ giống với table history vừa xóa bên component activity-monitoring.
+Có Tên cân, Thời gian dữ liệu gần nhất, data value của 5 cột nhưng cột nào có used: true thì mới hiển thị data.
+Ngoài ra bảng này có phân trang vì có tới "totalElements": 1068 bản ghi. Bạn đọc pagination để phân trang cho hợp lý nhé.
 
-response:
+===============================================
+10. Xuất báo cáo
+===============================================
+
+POST - /api/v1/reports/BCSL/export - Xuất báo cáo Ca
+param: reportCode: BCSL, format: WORD
+payload:
 {
-  "success": true,
-  "data": "string",
-  "message": "string",
-  "error": "string"
+  "type": "WORD",
+  "scaleIds": [
+    1, 2
+  ],
+  "startTime": "2025-12-20T14:46:00.468Z",
+  "endTime": "2025-12-29T14:46:00.468Z",
+  "dataFields": [
+    "data_1", "data_2", "data_3", "data_4", "data_5"
+  ],
+  "aggregationMethod": "SUM",
+  "aggregationByField": {
+    "data_3": "AVG",
+    "data_1": "AVG",
+    "data_2": "SUM"
+  },
+  "intervalReport": true,
+  "timeInterval": "SHIFT",
+  "locationIds": [
+    1
+  ],
+  "activeOnly": true,
+  "reportTitle": "string",
+  "reportCode": "BCSL",
+  "preparedBy": "Nguyễn Mạnh Hùng"
 }
+response: base64 WORD
+scaleIds thì lấy ở filter, startTime, endTime, location cũng vậy.
+  "aggregationByField": {
+    "data_3": "AVG",
+    "data_1": "AVG",
+    "data_2": "SUM"
+  },
+
+Phần này thì filter theo columns. timeInterval cũng có filter Khoảng thời gian tổng hợp rồi.
+Còn lại thì mặc định như payload trên.
+
+  // Xác nhận và download file
+  async onHandleConfirmExportOptions() {
+    if (!this.selectedTemplateForExport) {
+      return;
+    }
+
+    this.spin = true;
+    this.isShowModalExportOptions = false;
+
+    const candidateIds = Array.from(this.setOfCheckedId);
+    const isSingleFile = candidateIds.length === 1;
+
+    try {
+      const res = await this.__sailorService.exportSailorBasedOnTemplate(
+        candidateIds,
+        this.selectedTemplateForExport.templateCode,
+        this.exportLanguage,
+        this.exportCase,
+      );
+
+      if (!res) {
+        this.__notification.notificationError(
+          'Không nhận được dữ liệu từ server',
+        );
+        return;
+      }
+
+      let blob: Blob;
+      if (res instanceof Blob) {
+        if (!isSingleFile) {
+          blob = new Blob([res], { type: 'application/zip' });
+        } else {
+          const originalFileName =
+            this.selectedTemplateForExport.fileName ||
+            this.selectedTemplateForExport.name ||
+            '';
+          const fileExtension = this.getFileExtension(originalFileName);
+          blob = new Blob([res], { type: this.getBlobType(fileExtension) });
+        }
+      } else {
+        let base64String = '';
+        if (typeof res === 'string') {
+          try {
+            const jsonData = JSON.parse(res);
+            base64String =
+              jsonData.base64 ||
+              jsonData.data ||
+              jsonData.file ||
+              jsonData.content ||
+              '';
+          } catch {
+            base64String = res;
+          }
+        } else if (res && typeof res === 'object') {
+          base64String =
+            res.base64 ||
+            res.data ||
+            res.file ||
+            res.content ||
+            res.fileBase64 ||
+            '';
+
+          if (!base64String && res.result) {
+            base64String = res.result.base64 || res.result.data || '';
+          }
+        }
+
+        if (!base64String) {
+          this.__notification.notificationError(
+            'Không tìm thấy dữ liệu base64 trong response',
+          );
+          return;
+        }
+
+        const byteCharacters = atob(base64String);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+
+        // Xác định loại file dựa trên fileName
+        const originalFileName =
+          this.selectedTemplateForExport.fileName ||
+          this.selectedTemplateForExport.name ||
+          '';
+        const fileExtension = this.getFileExtension(originalFileName);
+
+        let blobType: string;
+        if (!isSingleFile) {
+          blobType = 'application/zip';
+        } else {
+          blobType = this.getBlobType(fileExtension);
+        }
+
+        blob = new Blob([byteArray], { type: blobType });
+      }
+
+      let fileName =
+        this.selectedTemplateForExport.fileName ||
+        this.selectedTemplateForExport.name ||
+        `template_${this.selectedTemplateForExport.templateCode}_${Date.now()}`;
+
+      // Xác định extension dựa trên fileName gốc hoặc số lượng file
+      const originalFileName =
+        this.selectedTemplateForExport.fileName ||
+        this.selectedTemplateForExport.name ||
+        '';
+      let extension: string;
+      if (!isSingleFile) {
+        extension = '.zip';
+      } else {
+        extension = this.getFileExtension(originalFileName);
+      }
+
+      if (!fileName.toLowerCase().endsWith(extension)) {
+        fileName = fileName + extension;
+      }
+
+      saveAs(blob, fileName);
+      this.__notification.notificationSuccess('Xuất biểu mẫu thành công');
+    } catch (error: any) {
+      if (error.error && typeof error.error === 'object') {
+        this.__notification.notificationError(
+          error.error.result?.message ||
+            error.error.message ||
+            'Lỗi không xác định',
+        );
+      } else if (error.error && typeof error.error === 'string') {
+        try {
+          const json = JSON.parse(error.error);
+          this.__notification.notificationError(
+            json.result?.message || json.message || 'Lỗi không xác định',
+          );
+        } catch {
+          this.__notification.notificationError(
+            error.error || 'Đã có lỗi xảy ra',
+          );
+        }
+      } else {
+        this.__notification.notificationError(
+          'Đã có lỗi xảy ra, vui lòng thử lại',
+        );
+      }
+    } finally {
+      this.spin = false;
+      this.selectedTemplateForExport = null;
+    }
+  }
+
+  // Helper function để lấy extension từ fileName
+  private getFileExtension(fileName: string): string {
+    if (!fileName) return '.docx';
+    const lowerFileName = fileName.toLowerCase();
+    if (lowerFileName.endsWith('.pdf')) return '.pdf';
+    if (lowerFileName.endsWith('.docx')) return '.docx';
+    if (lowerFileName.endsWith('.doc')) return '.doc';
+    if (lowerFileName.endsWith('.xlsx')) return '.xlsx';
+    return '.docx'; // default
+  }
+
+  // Helper function để lấy MIME type từ extension
+  private getBlobType(extension: string): string {
+    switch (extension.toLowerCase()) {
+      case '.pdf':
+        return 'application/pdf';
+      case '.docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case '.doc':
+        return 'application/msword';
+      case '.xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      default:
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+  }
 
 
+    /**
+   * Export template với POST request
+   * @param sailorIds - mảng ID
+   * @param templateId
+   * @param language - 'vietnamese' hoặc 'english'
+   * @param fontCase - 'lowercase' hoặc 'uppercase'
+   * @returns Promise với response chứa base64 docx hoặc zip
+   */
+  exportSailorBasedOnTemplate(
+    sailorIds: number[],
+    templateCode: any,
+    language: string = 'vietnamese',
+    fontCase: string = 'lowercase',
+  ) {
+    const params = new URLSearchParams();
+    params.append('language', language);
+    params.append('case', fontCase);
+
+    return this.baseService.postFileZip(
+      `api/sailors/export/${templateCode}?${params.toString()}`,
+      sailorIds,
+    );
+  }
+
+
+   // Method dành riêng cho download file zip (blob response)
+  async postFileZip(url: string, data: any): Promise<any> {
+    try {
+      let response = await firstValueFrom(
+        this.http.post<Blob>(`${this.path}/${url}`, data, {
+          headers: new HttpHeaders({
+            'Content-Type': 'application/json',
+            Accept: 'application/zip, application/octet-stream, */*',
+            'Access-Control-Allow-Origin': '*',
+            'Accept-language': this.accpetLanguage,
+          }),
+          responseType: 'blob' as 'json',
+          observe: 'response',
+        }),
+      );
+
+      if (response?.status == 200 && response?.body) {
+        this.loader.stop();
+        return response.body;
+      } else {
+        throw new Error(`Error downloading file`);
+      }
+    } catch (error: any) {
+      this.loader.stop();
+      if (error.error) {
+        if (error.error instanceof Blob) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const errorText = JSON.parse(reader.result as string);
+              if (errorText.result) {
+                this.toast.error(errorText.result.message, 'Thông báo');
+              }
+            } catch (e) {
+              this.toast.error('Có lỗi xảy ra khi tải file', 'Thông báo');
+            }
+          };
+          reader.readAsText(error.error);
+        } else if (error.error.result) {
+          this.toast.error(error.error.result.message, 'Thông báo');
+        } else {
+          this.toast.error(
+            ` Kết nối không ổn định, vui lòng thử lại`,
+            'Thông báo',
+          );
+        }
+      } else {
+        this.toast.error(
+          ` Kết nối không ổn định, vui lòng thử lại`,
+          'Thông báo',
+        );
+      }
+      throw error;
+    }
+  }
+
+
+Đây là 1 API demo cho xuất file có dạng docx và các dạng khác. Bạn cứ sử dụng lại cái này cũng được nhưng phải custom theo project hiện tại.
+Còn button xuất file thì bạn có thể thêm 1 nút bên trên nút tìm kiếm ở phần filter bên trái nhé.

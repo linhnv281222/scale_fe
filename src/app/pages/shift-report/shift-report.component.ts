@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { saveAs } from 'file-saver';
 import * as moment from 'moment';
+import { NzFormatEmitEvent, NzTreeNodeOptions } from 'ng-zorro-antd/tree';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import {
@@ -50,13 +51,9 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   dataColumns: { key: string; name: string }[] = [];
 
   selectedScaleIds: number[] = [];
-  allScalesChecked = false;
-  indeterminate = false;
-  scaleCheckboxOptions: Array<{
-    label: string;
-    value: number;
-    checked: boolean;
-  }> = [];
+  scaleTreeNodes: NzTreeNodeOptions[] = [];
+  expandKeys: string[] = [];
+  checkedKeys: string[] = [];
 
   filterData: any = {
     dateRange: null,
@@ -82,7 +79,15 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     badgeClass: string;
     items: { key: string; label: string; value: number | null; unit: string }[];
   }[] = [];
-  dataFieldSummaries: { [key: string]: { value: string; aggregation: string; name: string; unit: string; used: boolean } } = {};
+  dataFieldSummaries: {
+    [key: string]: {
+      value: string;
+      aggregation: string;
+      name: string;
+      unit: string;
+      used: boolean;
+    };
+  } = {};
 
   private getDataFieldDisplayName(
     dataKey: string,
@@ -268,15 +273,49 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     try {
       const data = await this.scaleService.getScales();
       this.scales = Array.isArray(data) ? data : data?.data ?? [];
-      this.updateScaleOptions();
-      if (this.scales.length > 0 && this.selectedScaleIds.length === 0) {
-        this.allScalesChecked = true;
-        this.updateAllScalesChecked();
-      }
+      this.buildScaleTreeNodes();
       await this.loadScaleConfigs();
     } catch (error) {
       this.scales = [];
     }
+  }
+
+  private buildScaleTreeNodes(): void {
+    const scaleChildren = this.scales
+      .filter((scale) => scale.id !== undefined)
+      .map((scale) => ({
+        key: String(scale.id!),
+        title: scale.name || `Scale ${scale.id}`,
+        isLeaf: true,
+        origin: scale,
+      }));
+
+    const allNode: NzTreeNodeOptions = {
+      key: 'all',
+      title: 'Tất cả',
+      children: scaleChildren,
+      isLeaf: false,
+      expanded: true,
+    };
+
+    this.scaleTreeNodes = [allNode];
+    this.expandKeys = ['all'];
+
+    // Set default: select all scales
+    if (this.scales.length > 0 && this.selectedScaleIds.length === 0) {
+      this.selectedScaleIds = this.scales
+        .filter((scale) => scale.id !== undefined)
+        .map((scale) => scale.id!);
+      this.filterData.scaleIds = [...this.selectedScaleIds];
+    }
+
+    // Set checkedKeys to show checked state (all + all scale ids)
+    this.checkedKeys = [
+      'all',
+      ...this.scales
+        .filter((scale) => scale.id !== undefined)
+        .map((scale) => String(scale.id!)),
+    ];
   }
 
   async loadScaleConfigs(): Promise<void> {
@@ -323,50 +362,71 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.dataColumns = columns;
   }
 
-  updateScaleOptions(): void {
-    this.scaleCheckboxOptions = this.scales
-      .filter((scale) => scale.id !== undefined)
-      .map((scale) => ({
-        label: scale.name || `Scale ${scale.id}`,
-        value: scale.id!,
-        checked: this.selectedScaleIds.includes(scale.id!),
-      }));
-  }
-
-  updateAllScalesChecked(): void {
-    this.indeterminate = false;
-    if (this.allScalesChecked) {
-      this.scaleCheckboxOptions = this.scaleCheckboxOptions.map((option) => ({
-        ...option,
-        checked: true,
-      }));
-    } else {
-      this.scaleCheckboxOptions = this.scaleCheckboxOptions.map((option) => ({
-        ...option,
-        checked: false,
-      }));
+  onScaleTreeCheck(event: NzFormatEmitEvent): void {
+    if (event.eventName !== 'check') {
+      return;
     }
-    this.syncSelectedScaleIdsFromOptions();
-  }
 
-  updateSingleScaleChecked(): void {
-    if (this.scaleCheckboxOptions.every((option) => !option.checked)) {
-      this.allScalesChecked = false;
-      this.indeterminate = false;
-    } else if (this.scaleCheckboxOptions.every((option) => option.checked)) {
-      this.allScalesChecked = true;
-      this.indeterminate = false;
-    } else {
-      this.indeterminate = true;
+    const checkedKeys = event.checkedKeys || [];
+    let scaleIds: number[] = [];
+
+    // Update checkedKeys for display
+    this.checkedKeys = checkedKeys.map((key: any) => {
+      if (typeof key === 'string') {
+        return key;
+      }
+      if (key && typeof key === 'object' && key.key) {
+        return key.key;
+      }
+      return String(key);
+    });
+
+    if (Array.isArray(checkedKeys)) {
+      const checkedIds = checkedKeys
+        .map((key: any) => {
+          if (typeof key === 'string') {
+            // Skip 'all' key
+            if (key === 'all') {
+              return null;
+            }
+            const id = Number(key);
+            return !isNaN(id) ? id : null;
+          }
+          if (key && typeof key === 'object' && key.key) {
+            if (key.key === 'all') {
+              return null;
+            }
+            const id = Number(key.key);
+            return !isNaN(id) ? id : null;
+          }
+          if (typeof key === 'number') {
+            return key;
+          }
+          return null;
+        })
+        .filter((id: number | null) => id !== null && !isNaN(id)) as number[];
+
+      scaleIds = [...new Set(checkedIds)];
     }
-    this.syncSelectedScaleIdsFromOptions();
-  }
 
-  syncSelectedScaleIdsFromOptions(): void {
-    this.selectedScaleIds = this.scaleCheckboxOptions
-      .filter((option) => option.checked)
-      .map((option) => option.value);
+    // Check if "all" is checked
+    const allChecked = checkedKeys.some((key: any) => {
+      const keyValue = typeof key === 'string' ? key : key?.key;
+      return keyValue === 'all';
+    });
+
+    if (allChecked) {
+      // Select all scales
+      scaleIds = this.scales
+        .filter((scale) => scale.id !== undefined)
+        .map((scale) => scale.id!);
+    }
+
+    this.selectedScaleIds = scaleIds;
     this.filterData.scaleIds = [...this.selectedScaleIds];
+
+    // Reload report data when scale selection changes
+    this.loadReportData();
   }
 
   async loadReportData(): Promise<void> {
@@ -582,22 +642,10 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           rows: rawRows,
         };
 
-        const paginationData = apiData.data || apiData;
-        this.total =
-          paginationData.total_elements ??
-          paginationData.totalElements ??
-          paginationData.total ??
-          rawRows.length ??
-          0;
-        this.pageIndex =
-          (paginationData.page ??
-            paginationData.pageNumber ??
-            this.pageIndex - 1) + 1;
-        this.pageSize =
-          paginationData.size ??
-          paginationData.pageSize ??
-          this.pageSize ??
-          rawRows.length;
+        const paginationData = apiData.data.data || apiData;
+        this.total = paginationData.total_elements ?? 0;
+        this.pageIndex = paginationData.page + 1;
+        this.pageSize = paginationData.size;
 
         this.prepareOverviewDisplay();
         this.prepareChartData();
@@ -869,7 +917,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       }
       if (filters.locationIds !== undefined) {
         this.filterData.locationIds = filters.locationIds;
-        this.updateScaleOptions();
+        this.buildScaleTreeNodes();
       }
     }
     this.loadReportData();
@@ -892,7 +940,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     this.pageIndex = 1;
     this.pageSize = 20;
     this.total = 0;
-    this.updateScaleOptions();
+    this.buildScaleTreeNodes();
   }
 
   onPaginationChange(event: { page: number; size: number }): void {
@@ -1052,13 +1100,16 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   }
 
   hasDataFieldSummaries(): boolean {
-    return this.dataFieldSummaries && Object.keys(this.dataFieldSummaries).length > 0;
+    return (
+      this.dataFieldSummaries && Object.keys(this.dataFieldSummaries).length > 0
+    );
   }
 
   onSplitDragEnd(event: any): void {
     if (event.sizes && event.sizes.length > 0) {
       const firstSize = event.sizes[0];
-      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+      this.sidebarSize =
+        typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
     }
   }
 }

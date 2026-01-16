@@ -40,35 +40,42 @@
           </button>
         </div>
 
-        <!-- Scale Checkbox List -->
-        <div
-          class="flex-shrink-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
-          style="max-height: 40%"
-        >
-          <label
-            nz-checkbox
-            [(ngModel)]="allScalesChecked"
-            (ngModelChange)="updateAllScalesChecked()"
-            [nzIndeterminate]="indeterminate"
-            class="mb-2"
-          >
-            {{ "reports.selectAllScales" | translate }}
-          </label>
-
-          <nz-divider />
-
-          <div class="space-y-2">
-            <label
-              *ngFor="let option of scaleCheckboxOptions"
-              nz-checkbox
-              [(ngModel)]="option.checked"
-              (ngModelChange)="updateSingleScaleChecked()"
-              class="block"
-            >
-              {{ option.label }}
-            </label>
-          </div>
-        </div>
+         <!-- Scale Tree List -->
+         <div
+           class="flex-shrink-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
+           style="max-height: 40%"
+         >
+           <nz-tree
+             [nzData]="scaleTreeNodes"
+             nzCheckable
+             nzMultiple
+             nzShowIcon
+             [nzExpandedKeys]="expandKeys"
+             [nzCheckedKeys]="checkedKeys"
+             (nzCheckBoxChange)="onScaleTreeCheck($event)"
+           >
+             <ng-template #multiExpandedIconTpl let-node let-origin="origin">
+               @if (!origin.isLeaf) {
+               <span
+                 nz-icon
+                 [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
+                 class="ant-tree-switcher-line-icon"
+               ></span>
+               } @else {
+               <span
+                 nz-icon
+                 nzType="file"
+                 class="ant-tree-switcher-line-icon"
+               ></span>
+               }
+             </ng-template>
+             <ng-template #nzTreeTemplate let-node>
+               <span class="d-flex" style="align-items: baseline">
+                 <span [innerHTML]="node.title"></span>
+               </span>
+             </ng-template>
+           </nz-tree>
+         </div>
 
         <!-- Detailed Filter: 100% remaining height, scroll body, search button fixed -->
         <div class="detailed-filter-container">
