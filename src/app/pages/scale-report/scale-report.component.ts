@@ -98,7 +98,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     };
   } = {};
   sidebarVisible = true;
-  sidebarSize = 320; // Pixel
+  sidebarSize = 260; // Pixel
 
   toggleSidebar(): void {
     this.sidebarVisible = !this.sidebarVisible;
