@@ -45,7 +45,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
   selectedScale: Scale | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage (scales có tree nên cần rộng hơn)
+  sidebarSize = 260; // Pixel (scales có tree nên cần rộng hơn)
 
   isConfigModalVisible = false;
   savingConfig = false;
@@ -212,7 +212,7 @@ export class ScalesComponent implements OnInit, OnDestroy {
     private pageActionService: PageActionService,
     private translate: TranslateService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadLocations();

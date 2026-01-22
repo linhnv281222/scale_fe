@@ -29,7 +29,7 @@ export class LicensesComponent implements OnInit, OnDestroy {
   selectedLicense: License | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];

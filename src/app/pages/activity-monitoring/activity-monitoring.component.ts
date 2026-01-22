@@ -28,7 +28,7 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
   total = 0;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Dynamic column headers from first item's dataValues
   dataColumn1Name: string = '';
@@ -74,7 +74,7 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
     private activityMonitoringService: ActivityMonitoringService,
     private scaleService: ScaleService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadScales();

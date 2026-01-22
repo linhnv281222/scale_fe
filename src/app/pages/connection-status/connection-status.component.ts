@@ -20,7 +20,7 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
   total = 0;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Threshold for warning (minutes without data)
   WARNING_THRESHOLD_MINUTES = 5; // 5 minutes
@@ -49,7 +49,7 @@ export class ConnectionStatusComponent implements OnInit, OnDestroy {
   constructor(
     private connectionStatusService: ConnectionStatusService,
     private pageActionService: PageActionService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadConnectionStatuses();

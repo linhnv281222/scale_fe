@@ -24,7 +24,7 @@ export class UsersComponent implements OnInit {
   selectedUser: User | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Form data
   dataUser: any = {
@@ -69,7 +69,7 @@ export class UsersComponent implements OnInit {
     private userService: UserService,
     private roleService: RoleService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadRoles();

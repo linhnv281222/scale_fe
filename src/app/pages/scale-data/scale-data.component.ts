@@ -27,7 +27,7 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
   total = 0;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Scales list for filter
   scales: Scale[] = [];
@@ -52,7 +52,7 @@ export class ScaleDataComponent implements OnInit, OnDestroy {
     private scaleService: ScaleService,
     private scaleDataService: ScaleDataService,
     private pageActionService: PageActionService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadScales();

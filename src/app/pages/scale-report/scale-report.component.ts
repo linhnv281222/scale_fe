@@ -98,7 +98,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     };
   } = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 320; // Pixel
 
   toggleSidebar(): void {
     this.sidebarVisible = !this.sidebarVisible;
@@ -115,6 +115,12 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       const firstSize = event.sizes[0];
       this.sidebarSize =
         typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+      // Ensure sidebar size stays within bounds
+      if (this.sidebarSize < 250) {
+        this.sidebarSize = 250;
+      } else if (this.sidebarSize > 500) {
+        this.sidebarSize = 500;
+      }
     }
   }
 
@@ -224,7 +230,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     private locationService: LocationService,
     private templateService: TemplateService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const today = moment();
@@ -323,7 +329,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           if (config) {
             this.initializeAggregationFields(config);
           }
-        } catch (error) {}
+        } catch (error) { }
       }
     } else {
       const firstScaleId = selectedScaleIds[0];
@@ -333,7 +339,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         if (config) {
           this.initializeAggregationFields(config);
         }
-      } catch (error) {}
+      } catch (error) { }
     }
   }
 
@@ -346,7 +352,7 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
       if (channel && channel.is_used) {
         const dataKey = `data_${i}`;
         const dataName = channel.name ?? `Data ${i}`;
-        aggregation[dataKey] = dataKey === 'data_1' ? 'SUM' : 'ABS';
+        aggregation[dataKey] = dataKey === 'data_1' ? 'ABS' : 'AVG';
         columns.push({ key: dataKey, name: dataName });
       }
     }
@@ -517,27 +523,53 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
         }
 
         if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
-          const apiColumns = Object.keys(dataFieldNames).map((key) => ({
-            key,
-            name: this.getDataFieldDisplayName(key, dataFieldNames),
-          }));
+          const apiColumns = Object.keys(dataFieldNames)
+            .filter((key) => {
+              const fieldInfo = dataFieldNames[key];
+              const name = fieldInfo?.name?.trim() || '';
+              if (name) {
+                return true;
+              }
+              if (rawRows.length > 0) {
+                const firstRow = rawRows[0];
+                const firstDataValues: any = firstRow.data_values || {};
+                const dataValue = firstDataValues[key];
+                return dataValue?.used === true;
+              }
+              return false;
+            })
+            .map((key) => ({
+              key,
+              name: this.getDataFieldDisplayName(key, dataFieldNames),
+            }));
           if (this.dataColumns.length > 0) {
-            this.dataColumns = this.dataColumns.map((column) => {
-              const apiColumn = apiColumns.find(
-                (apiCol) => apiCol.key === column.key
-              );
-              return apiColumn ? { ...column, name: apiColumn.name } : column;
-            });
+            this.dataColumns = this.dataColumns
+              .filter((column) => {
+                return apiColumns.some(
+                  (apiColumn) => apiColumn.key === column.key
+                );
+              })
+              .map((column) => {
+                const apiColumn = apiColumns.find(
+                  (apiCol) => apiCol.key === column.key
+                );
+                return apiColumn ? { ...column, name: apiColumn.name } : column;
+              });
           } else {
             this.dataColumns = apiColumns;
           }
         } else if (this.dataColumns.length === 0 && rawRows.length > 0) {
           const firstRow = rawRows[0];
           const firstDataValues: any = firstRow.data_values || {};
-          this.dataColumns = Object.keys(firstDataValues).map((key) => ({
-            key,
-            name: this.getDataFieldDisplayName(key, dataFieldNames),
-          }));
+          this.dataColumns = Object.keys(firstDataValues)
+            .filter((key) => {
+              const dataValue = firstDataValues[key];
+              return dataValue?.used === true;
+            })
+            .map((key) => ({
+              key,
+              name: this.getDataFieldDisplayName(key, dataFieldNames),
+            }));
         }
 
         this.ratioStatisticHeader = this.buildRatioStatisticHeader(
@@ -800,35 +832,18 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
     this.chartOptions = {
       backgroundColor: 'transparent',
       tooltip: {
-        trigger: 'item',
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+        },
         backgroundColor: isDark ? '#1f2937' : '#ffffff',
         borderColor: isDark ? '#374151' : '#e5e7eb',
         textStyle: {
           color: textColor,
         },
         formatter: (params: any) => {
-          if (params.componentType === 'markPoint') {
-            const value = params.value;
-            if (value === null || value === undefined || isNaN(value)) {
-              return `
-                <div>
-                  <div><strong>${
-                    periods[params.dataIndex] || params.name || ''
-                  }</strong></div>
-                  <div>${data1Name}: -</div>
-                </div>
-              `;
-            }
-            const period = periods[params.dataIndex] || params.name || '';
-            return `
-              <div>
-                <div><strong>${period}</strong></div>
-                <div>${data1Name}: ${formatNumber(value)}</div>
-              </div>
-            `;
-          }
-          const period = params.axisValue || periods[params.dataIndex] || '';
-          const tooltipValue = params.value;
+          const tooltipParameter = params[0];
+          const tooltipValue = tooltipParameter.value;
           if (
             tooltipValue === null ||
             tooltipValue === undefined ||
@@ -836,15 +851,17 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           ) {
             return `
               <div>
-                <div><strong>${period}</strong></div>
-                <div>${params.seriesName}: -</div>
+                <div><strong>${tooltipParameter.axisValue}</strong></div>
+                <div>${tooltipParameter.seriesName}: -</div>
               </div>
             `;
           }
           return `
             <div>
-              <div><strong>${period}</strong></div>
-              <div>${params.seriesName}: ${formatNumber(tooltipValue)}</div>
+              <div><strong>${tooltipParameter.axisValue}</strong></div>
+              <div>${tooltipParameter.seriesName}: ${formatNumber(
+            tooltipValue
+          )}</div>
             </div>
           `;
         },
@@ -898,59 +915,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
           type: 'line',
           smooth: true,
           data: values,
-          lineStyle: {
-            color: '#3b82f6',
-            width: 2,
-          },
           itemStyle: {
             color: '#3b82f6',
-          },
-          symbol: 'none',
-          showSymbol: false,
-          areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [
-                {
-                  offset: 0,
-                  color: 'rgba(59, 130, 246, 0.3)',
-                },
-                {
-                  offset: 1,
-                  color: 'rgba(59, 130, 246, 0.05)',
-                },
-              ],
-            },
-          },
-          markPoint: {
-            data: values
-              .map((value, index) => {
-                if (value === null || value === undefined || isNaN(value)) {
-                  return null;
-                }
-                return {
-                  coord: [index, value],
-                  itemStyle: {
-                    color: 'red',
-                    borderColor: '#ffffff',
-                    borderWidth: 2,
-                  },
-                  symbolSize: 60,
-                  label: {
-                    show: true,
-                    position: 'inside',
-                    formatter: formatLargeNumber(value),
-                    color: '#ffffff',
-                    fontSize: 10,
-                    fontWeight: 'bold',
-                  },
-                };
-              })
-              .filter((item) => item !== null),
           },
         },
       ],
@@ -1195,9 +1161,8 @@ export class ScaleReportComponent implements OnInit, OnDestroy {
 
       const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
       const toDate = moment(dateRange[1]).format('YYYY-MM-DD');
-      const fileName = `${
-        template.templateCode || 'Bao_cao'
-      }_${fromDate}_${toDate}.docx`;
+      const fileName = `${template.templateCode || 'Bao_cao'
+        }_${fromDate}_${toDate}.docx`;
 
       saveAs(blob, fileName);
       this.toastr.success('Xuất báo cáo thành công', 'Thành công');

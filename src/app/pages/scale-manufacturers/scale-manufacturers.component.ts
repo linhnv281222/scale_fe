@@ -24,7 +24,7 @@ export class ScaleManufacturersComponent implements OnInit {
   selectedManufacturer: ScaleManufacturer | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
@@ -52,7 +52,7 @@ export class ScaleManufacturersComponent implements OnInit {
   constructor(
     private scaleManufacturerService: ScaleManufacturerService,
     private configService: ConfigService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // this.loadConfigs();

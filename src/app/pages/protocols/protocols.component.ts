@@ -25,7 +25,7 @@ export class ProtocolsComponent implements OnInit {
   selectedProtocol: Protocol | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
@@ -67,7 +67,7 @@ export class ProtocolsComponent implements OnInit {
     private protocolService: ProtocolService,
     private configService: ConfigService,
     private translate: TranslateService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // this.loadConfigs();
@@ -159,7 +159,7 @@ export class ProtocolsComponent implements OnInit {
     this.isViewMode = true;
     this.isEditMode = false;
     this.selectedProtocol = protocol;
-    
+
     // Load full protocol details
     if (protocol.id) {
       const fullProtocol = await this.protocolService.getProtocolById(protocol.id);
@@ -206,7 +206,7 @@ export class ProtocolsComponent implements OnInit {
     this.isEditMode = true;
     this.isViewMode = false;
     this.selectedProtocol = protocol;
-    
+
     // Load full protocol details
     if (protocol.id) {
       const fullProtocol = await this.protocolService.getProtocolById(protocol.id);
@@ -280,9 +280,9 @@ export class ProtocolsComponent implements OnInit {
       } else {
         const created = await this.protocolService.createProtocol(data);
         if (created) {
-      this.isModalVisible = false;
-      this.isViewMode = false;
-      await this.loadProtocols();
+          this.isModalVisible = false;
+          this.isViewMode = false;
+          await this.loadProtocols();
         }
       }
     } catch (error) {

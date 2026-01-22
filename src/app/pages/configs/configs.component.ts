@@ -17,7 +17,7 @@ export class ConfigsComponent implements OnInit {
   total = 0;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Modal for managing fields of a module
   isFieldsModalVisible = false;
@@ -44,7 +44,7 @@ export class ConfigsComponent implements OnInit {
     },
   ];
 
-  constructor(private configApiService: ConfigApiService) {}
+  constructor(private configApiService: ConfigApiService) { }
 
   ngOnInit(): void {
     this.loadModules();
@@ -339,9 +339,8 @@ export class ConfigsComponent implements OnInit {
   // Getter for delete field message
   get deleteFieldMessage(): string {
     if (!this.fieldToDelete) return '';
-    return `Bạn có chắc chắn muốn xóa trường "${
-      this.fieldToDelete.displayName || this.fieldToDelete.fieldKey
-    }"?`;
+    return `Bạn có chắc chắn muốn xóa trường "${this.fieldToDelete.displayName || this.fieldToDelete.fieldKey
+      }"?`;
   }
 
   onPageIndexChange(page: number): void {

@@ -46,7 +46,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     templateType: null,
   };
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   filterFields: FilterField[] = [
     {
@@ -203,7 +203,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
         }
       } catch (error) {
         console.error('Error loading template detail:', error);
-    }
+      }
     }
 
     this.isModalVisible = true;
@@ -236,7 +236,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
 
     this.saving = true;
     try {
-        const formData = new FormData();
+      const formData = new FormData();
       formData.append('file', this.selectedFiles[0]); // Only take first file
       formData.append('templateCode', this.importForm.value.templateCode);
       formData.append('templateName', this.importForm.value.templateName);
@@ -257,7 +257,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
         this.toastr.success('Nhập biểu mẫu thành công', 'Thành công');
         this.isImportModalVisible = false;
         this.selectedFiles = [];
-      await this.loadTemplates();
+        await this.loadTemplates();
       }
     } catch (error: any) {
       const errorMessage =
@@ -366,7 +366,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   confirmDelete(template: ReportTemplateImport): void {
     // Use archive instead of delete
     this.confirmArchive(template);
-      }
+  }
 
   async onDeleteConfirmed(): Promise<void> {
     // Use archive instead
@@ -381,10 +381,9 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   // Getter for delete message
   get deleteMessage(): string {
     if (!this.templateToDelete) return '';
-    return `Bạn có chắc chắn muốn xóa biểu mẫu "${
-      this.templateToDelete.originalFilename ||
+    return `Bạn có chắc chắn muốn xóa biểu mẫu "${this.templateToDelete.originalFilename ||
       this.templateToDelete.templateCode
-    }"?`;
+      }"?`;
   }
 
   onPaginationChange(event: { page: number; size: number }): void {
@@ -407,10 +406,9 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   // Getter for archive message
   get archiveMessage(): string {
     if (!this.templateToArchive) return '';
-    return `Bạn có chắc chắn muốn lưu trữ biểu mẫu "${
-      this.templateToArchive.originalFilename ||
+    return `Bạn có chắc chắn muốn lưu trữ biểu mẫu "${this.templateToArchive.originalFilename ||
       this.templateToArchive.templateCode
-    }"?`;
+      }"?`;
   }
 
   toggleSidebar(): void {

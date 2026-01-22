@@ -26,7 +26,7 @@ export class ShiftsComponent implements OnInit {
   selectedShift: Shift | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   // Dynamic form and table
   formFields: DynamicFormField[] = [];
@@ -58,7 +58,7 @@ export class ShiftsComponent implements OnInit {
   constructor(
     private shiftService: ShiftService,
     private configService: ConfigService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // this.loadConfigs();
@@ -166,19 +166,19 @@ export class ShiftsComponent implements OnInit {
           startTime: fullShift.startTime
             ? moment(fullShift.startTime, 'HH:mm').toDate()
             : fullShift.start_time
-            ? moment(fullShift.start_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(fullShift.start_time, 'HH:mm:ss').toDate()
+              : null,
           endTime: fullShift.endTime
             ? moment(fullShift.endTime, 'HH:mm').toDate()
             : fullShift.end_time
-            ? moment(fullShift.end_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(fullShift.end_time, 'HH:mm:ss').toDate()
+              : null,
           is_active:
             fullShift.is_active !== undefined
               ? fullShift.is_active
               : fullShift.isActive !== undefined
-              ? fullShift.isActive
-              : true,
+                ? fullShift.isActive
+                : true,
         };
       } else {
         this.dataShift = {
@@ -186,19 +186,19 @@ export class ShiftsComponent implements OnInit {
           startTime: shift.startTime
             ? moment(shift.startTime, 'HH:mm').toDate()
             : shift.start_time
-            ? moment(shift.start_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(shift.start_time, 'HH:mm:ss').toDate()
+              : null,
           endTime: shift.endTime
             ? moment(shift.endTime, 'HH:mm').toDate()
             : shift.end_time
-            ? moment(shift.end_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(shift.end_time, 'HH:mm:ss').toDate()
+              : null,
           is_active:
             shift.is_active !== undefined
               ? shift.is_active
               : shift.isActive !== undefined
-              ? shift.isActive
-              : true,
+                ? shift.isActive
+                : true,
         };
       }
     } else {
@@ -207,19 +207,19 @@ export class ShiftsComponent implements OnInit {
         startTime: shift.startTime
           ? moment(shift.startTime, 'HH:mm').toDate()
           : shift.start_time
-          ? moment(shift.start_time, 'HH:mm:ss').toDate()
-          : null,
+            ? moment(shift.start_time, 'HH:mm:ss').toDate()
+            : null,
         endTime: shift.endTime
           ? moment(shift.endTime, 'HH:mm').toDate()
           : shift.end_time
-          ? moment(shift.end_time, 'HH:mm:ss').toDate()
-          : null,
+            ? moment(shift.end_time, 'HH:mm:ss').toDate()
+            : null,
         is_active:
           shift.is_active !== undefined
             ? shift.is_active
             : shift.isActive !== undefined
-            ? shift.isActive
-            : true,
+              ? shift.isActive
+              : true,
       };
     }
     this.isModalVisible = true;
@@ -240,19 +240,19 @@ export class ShiftsComponent implements OnInit {
           startTime: fullShift.startTime
             ? moment(fullShift.startTime, 'HH:mm').toDate()
             : fullShift.start_time
-            ? moment(fullShift.start_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(fullShift.start_time, 'HH:mm:ss').toDate()
+              : null,
           endTime: fullShift.endTime
             ? moment(fullShift.endTime, 'HH:mm').toDate()
             : fullShift.end_time
-            ? moment(fullShift.end_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(fullShift.end_time, 'HH:mm:ss').toDate()
+              : null,
           is_active:
             fullShift.is_active !== undefined
               ? fullShift.is_active
               : fullShift.isActive !== undefined
-              ? fullShift.isActive
-              : true,
+                ? fullShift.isActive
+                : true,
         };
       } else {
         this.dataShift = {
@@ -260,19 +260,19 @@ export class ShiftsComponent implements OnInit {
           startTime: shift.startTime
             ? moment(shift.startTime, 'HH:mm').toDate()
             : shift.start_time
-            ? moment(shift.start_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(shift.start_time, 'HH:mm:ss').toDate()
+              : null,
           endTime: shift.endTime
             ? moment(shift.endTime, 'HH:mm').toDate()
             : shift.end_time
-            ? moment(shift.end_time, 'HH:mm:ss').toDate()
-            : null,
+              ? moment(shift.end_time, 'HH:mm:ss').toDate()
+              : null,
           is_active:
             shift.is_active !== undefined
               ? shift.is_active
               : shift.isActive !== undefined
-              ? shift.isActive
-              : true,
+                ? shift.isActive
+                : true,
         };
       }
     } else {
@@ -281,19 +281,19 @@ export class ShiftsComponent implements OnInit {
         startTime: shift.startTime
           ? moment(shift.startTime, 'HH:mm').toDate()
           : shift.start_time
-          ? moment(shift.start_time, 'HH:mm:ss').toDate()
-          : null,
+            ? moment(shift.start_time, 'HH:mm:ss').toDate()
+            : null,
         endTime: shift.endTime
           ? moment(shift.endTime, 'HH:mm').toDate()
           : shift.end_time
-          ? moment(shift.end_time, 'HH:mm:ss').toDate()
-          : null,
+            ? moment(shift.end_time, 'HH:mm:ss').toDate()
+            : null,
         is_active:
           shift.is_active !== undefined
             ? shift.is_active
             : shift.isActive !== undefined
-            ? shift.isActive
-            : true,
+              ? shift.isActive
+              : true,
       };
     }
     this.isModalVisible = true;

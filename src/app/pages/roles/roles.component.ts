@@ -24,7 +24,7 @@ export class RolesComponent implements OnInit {
   selectedRole: Role | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   dataRole: any = {
     name: '',
@@ -56,7 +56,7 @@ export class RolesComponent implements OnInit {
     private roleService: RoleService,
     private permissionService: PermissionService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadRoles();

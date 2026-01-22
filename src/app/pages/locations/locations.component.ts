@@ -40,7 +40,7 @@ export class LocationsComponent implements OnInit, OnDestroy {
   dataLocation: any = {};
 
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   filterFields: FilterField[] = [
     {
@@ -64,7 +64,7 @@ export class LocationsComponent implements OnInit, OnDestroy {
     private pageActionService: PageActionService,
     private cdr: ChangeDetectorRef,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // this.loadConfigs();
@@ -574,9 +574,9 @@ export class LocationsComponent implements OnInit, OnDestroy {
   // }
 
   // onPageSizeChange(size: number): void {
-  //   this.pageSize = size; 
-  //   this.pageIndex = 1; 
-  //   this.loadLocations(); 
+  //   this.pageSize = size;
+  //   this.pageIndex = 1;
+  //   this.loadLocations();
   // }
 
   toggleSidebar(): void {
@@ -586,7 +586,14 @@ export class LocationsComponent implements OnInit, OnDestroy {
   onSplitDragEnd(event: any): void {
     if (event.sizes && event.sizes.length > 0) {
       const firstSize = event.sizes[0];
-      this.sidebarSize = typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+      this.sidebarSize =
+        typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+      // Ensure sidebar size stays within bounds
+      if (this.sidebarSize < 250) {
+        this.sidebarSize = 250;
+      } else if (this.sidebarSize > 500) {
+        this.sidebarSize = 500;
+      }
     }
   }
 }

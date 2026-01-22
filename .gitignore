@@ -40,3 +40,13 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Electron build artifacts
+/release
+/build
+/dist-electron-*
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm

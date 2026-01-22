@@ -22,7 +22,7 @@ export class PermissionsComponent implements OnInit {
   selectedPermission: Permission | null = null;
   filterData: any = {};
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
 
   dataPermission: any = {};
 
@@ -55,7 +55,7 @@ export class PermissionsComponent implements OnInit {
   constructor(
     private permissionService: PermissionService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadPermissions();

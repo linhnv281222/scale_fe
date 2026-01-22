@@ -70,3 +70,13 @@
   padding: 4px 0;
   margin: 0 !important;
 }
+
+/* Overview Summary - Remove hover effects */
+.overview-chip {
+  transition: none !important;
+}
+
+.overview-chip:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}

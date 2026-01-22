@@ -72,7 +72,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   isChartExpanded = false;
   ratioStatisticHeader = '';
   sidebarVisible = true;
-  sidebarSize = 15; // Percentage
+  sidebarSize = 260; // Pixel
   overviewDisplay: {
     directionKey: string;
     directionLabel: string;
@@ -182,7 +182,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     private shiftService: ShiftService,
     private templateService: TemplateService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const today = moment();
@@ -328,7 +328,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           if (config) {
             this.initializeAggregationFields(config);
           }
-        } catch (error) {}
+        } catch (error) { }
       }
     } else {
       const firstScaleIdentifier = selectedScaleIdentifiers[0];
@@ -340,7 +340,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         if (config) {
           this.initializeAggregationFields(config);
         }
-      } catch (error) {}
+      } catch (error) { }
     }
   }
 
@@ -528,29 +528,55 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           {};
 
         if (dataFieldNames && Object.keys(dataFieldNames).length > 0) {
-          const columnsFromApi = Object.keys(dataFieldNames).map((key) => ({
-            key,
-            name: this.getDataFieldDisplayName(key, dataFieldNames),
-          }));
+          const columnsFromApi = Object.keys(dataFieldNames)
+            .filter((key) => {
+              const fieldInfo = dataFieldNames[key];
+              const name = fieldInfo?.name?.trim() || '';
+              if (name) {
+                return true;
+              }
+              if (rawRows.length > 0) {
+                const firstRow = rawRows[0];
+                const firstDataValues: any = firstRow.data_values || {};
+                const dataValue = firstDataValues[key];
+                return dataValue?.used === true;
+              }
+              return false;
+            })
+            .map((key) => ({
+              key,
+              name: this.getDataFieldDisplayName(key, dataFieldNames),
+            }));
           if (this.dataColumns.length > 0) {
-            this.dataColumns = this.dataColumns.map((column) => {
-              const matchingApiColumn = columnsFromApi.find(
-                (apiColumn) => apiColumn.key === column.key
-              );
-              return matchingApiColumn
-                ? { ...column, name: matchingApiColumn.name }
-                : column;
-            });
+            this.dataColumns = this.dataColumns
+              .filter((column) => {
+                return columnsFromApi.some(
+                  (apiColumn) => apiColumn.key === column.key
+                );
+              })
+              .map((column) => {
+                const matchingApiColumn = columnsFromApi.find(
+                  (apiColumn) => apiColumn.key === column.key
+                );
+                return matchingApiColumn
+                  ? { ...column, name: matchingApiColumn.name }
+                  : column;
+              });
           } else {
             this.dataColumns = columnsFromApi;
           }
         } else if (this.dataColumns.length === 0 && rawRows.length > 0) {
           const firstRow = rawRows[0];
           const firstDataValues: any = firstRow.data_values || {};
-          this.dataColumns = Object.keys(firstDataValues).map((key) => ({
-            key,
-            name: this.getDataFieldDisplayName(key, dataFieldNames),
-          }));
+          this.dataColumns = Object.keys(firstDataValues)
+            .filter((key) => {
+              const dataValue = firstDataValues[key];
+              return dataValue?.used === true;
+            })
+            .map((key) => ({
+              key,
+              name: this.getDataFieldDisplayName(key, dataFieldNames),
+            }));
         }
 
         this.ratioStatisticHeader = this.buildRatioStatisticHeader(
@@ -1064,9 +1090,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
       const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
       const toDate = moment(dateRange[1]).format('YYYY-MM-DD');
-      const fileName = `${
-        template.templateCode || 'Bao_cao'
-      }_${fromDate}_${toDate}.docx`;
+      const fileName = `${template.templateCode || 'Bao_cao'
+        }_${fromDate}_${toDate}.docx`;
 
       saveAs(blob, fileName);
       this.toastr.success('Xuất báo cáo thành công', 'Thành công');
@@ -1111,6 +1136,12 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
       const firstSize = event.sizes[0];
       this.sidebarSize =
         typeof firstSize === 'number' ? firstSize : parseFloat(firstSize);
+      // Ensure sidebar size stays within bounds
+      if (this.sidebarSize < 250) {
+        this.sidebarSize = 250;
+      } else if (this.sidebarSize > 500) {
+        this.sidebarSize = 500;
+      }
     }
   }
 }

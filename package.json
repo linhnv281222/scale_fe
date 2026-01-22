@@ -1,6 +1,7 @@
 {
   "name": "project-base",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
     "start": "node --max_old_space_size=6044 ./node_modules/@angular/cli/bin/ng serve",
@@ -10,7 +11,16 @@
     "build:prod": "ng build --configuration production --base-href=/scale/",
     "build:dev": "ng build --configuration development --base-href=/scale/",
     "watch": "ng build --watch --configuration production",
-    "test": "ng test"
+    "test": "ng test",
+    "electron": "electron .",
+    "electron:build:angular": "ng build --configuration production --base-href=./",
+    "electron:fix:basehref": "powershell -Command \"if (Test-Path 'dist/scale/index.html') { (Get-Content 'dist/scale/index.html') -replace 'base href=\\\"/\\\"', 'base href=\\\"./\\\"' | Set-Content 'dist/scale/index.html' }\"",
+    "electron:inject:api": "node scripts/inject-api-endpoint-electron.js",
+    "electron:dev": "npm run electron:fix:basehref && electron .",
+    "electron:build": "npm run electron:fix:basehref && npx electron-builder",
+    "electron:build:win": "npm run electron:fix:basehref && npx electron-builder --win",
+    "electron:build:win:portable": "npm run electron:fix:basehref && npx electron-builder --win portable",
+    "electron:build:win:nsis": "npm run electron:build:angular && npm run electron:fix:basehref && npx electron-builder --win nsis"
   },
   "private": true,
   "dependencies": {
@@ -67,13 +77,15 @@
     "zone.js": "~0.14.10"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^18.2.19",
+    "@angular-devkit/build-angular": "^18.2.21",
     "@angular/cli": "~18.2.19",
     "@angular/compiler-cli": "^18.2.13",
     "@types/file-saver": "^2.0.5",
     "@types/jasmine": "~4.3.0",
     "@types/moment": "^2.13.0",
     "autoprefixer": "^10.4.22",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
     "jasmine-core": "~4.5.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.1.0",
@@ -83,5 +95,58 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
     "typescript": "~5.4.5"
+  },
+  "build": {
+    "appId": "com.scale.management",
+    "productName": "Scale Management System",
+    "electronVersion": "40.0.0",
+    "directories": {
+      "output": "dist-electron-1.0.0",
+      "buildResources": "build"
+    },
+    "npmRebuild": false,
+    "files": [
+      "dist/scale/**/*",
+      "electron/**/*",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "dist/scale",
+        "to": "app",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Scale Management System",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    }
   }
 }

@@ -4,7 +4,7 @@
     [disabled]="!sidebarVisible"
     [gutterSize]="8"
     [useTransition]="true"
-    [unit]="'percent'"
+    [unit]="'pixel'"
     [gutterColor]="'transparent'"
     [gutterDblClickDuration]="300"
     (dragEnd)="onSplitDragEnd($event)"
@@ -13,8 +13,8 @@
     <!-- Left Sidebar: Location Tree + Filter -->
     <as-split-area
       [size]="sidebarVisible ? sidebarSize : 0"
-      [minSize]="sidebarVisible ? 15 : 0"
-      [maxSize]="sidebarVisible ? 40 : 0"
+      [minSize]="sidebarVisible ? 250 : 0"
+      [maxSize]="sidebarVisible ? 500 : 0"
       [visible]="sidebarVisible"
     >
       <aside
@@ -40,69 +40,71 @@
             <span nz-icon nzType="left" nzTheme="outline"></span>
           </button>
         </div>
-    <div
-      class="flex-1 min-h-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
-    >
-      <nz-tree
-        *ngIf="openTree"
-        [nzData]="nodes"
-        [nzSearchValue]="searchValue"
-        nzCheckable
-        nzMultiple
-        nzShowIcon
-        [nzExpandedKeys]="expandKeys"
-        (nzClick)="nzEvent($event)"
-        (nzExpandChange)="nzEvent($event)"
-        (nzCheckBoxChange)="nzEvent($event)"
-      >
-        <ng-template #multiExpandedIconTpl let-node let-origin="origin">
-          @if (!origin.isLeaf) {
-          <span
-            nz-icon
-            [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
-            class="ant-tree-switcher-line-icon"
-          ></span>
-          } @else {
-          <span
-            nz-icon
-            nzType="file"
-            class="ant-tree-switcher-line-icon"
-          ></span>
-          }
-        </ng-template>
-        <ng-template #nzTreeTemplate let-node>
-          <span class="d-flex" style="align-items: baseline">
-            @if (node.icon) {
-            <img
-              style="width: 14px; height: 14px; margin-right: 8px"
-              [src]="node.icon"
-            />
-            }
+        <div
+          class="flex-1 min-h-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
+        >
+          <nz-tree
+            *ngIf="openTree"
+            [nzData]="nodes"
+            [nzSearchValue]="searchValue"
+            nzCheckable
+            nzMultiple
+            nzShowIcon
+            [nzExpandedKeys]="expandKeys"
+            (nzClick)="nzEvent($event)"
+            (nzExpandChange)="nzEvent($event)"
+            (nzCheckBoxChange)="nzEvent($event)"
+          >
+            <ng-template #multiExpandedIconTpl let-node let-origin="origin">
+              @if (!origin.isLeaf) {
+              <span
+                nz-icon
+                [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
+                class="ant-tree-switcher-line-icon"
+              ></span>
+              } @else {
+              <span
+                nz-icon
+                nzType="file"
+                class="ant-tree-switcher-line-icon"
+              ></span>
+              }
+            </ng-template>
+            <ng-template #nzTreeTemplate let-node>
+              <span class="d-flex" style="align-items: baseline">
+                @if (node.icon) {
+                <img
+                  style="width: 14px; height: 14px; margin-right: 8px"
+                  [src]="node.icon"
+                />
+                }
 
-            <span [innerHTML]="node.title"></span>
-          </span>
-        </ng-template>
-      </nz-tree>
-    </div>
+                <span [innerHTML]="node.title"></span>
+              </span>
+            </ng-template>
+          </nz-tree>
+        </div>
 
-    <!-- Detailed Filter: max 50% height, scroll body, search button fixed in component -->
-    <div class="pt-3 pb-3 pl-3 sidebar-filter">
-      <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200">
-        {{ "filter.title" | translate }}
-      </h3>
-      <div class="filter-scroll">
-        <app-filter-sidebar
-          [fields]="filterFields"
-          (search)="onSearch($event)"
-          (reset)="onReset()"
-        ></app-filter-sidebar>
-      </div>
-    </div>
+        <!-- Detailed Filter: max 50% height, scroll body, search button fixed in component -->
+        <div class="pt-3 pb-3 pl-3 sidebar-filter">
+          <h3
+            class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+          >
+            {{ "filter.title" | translate }}
+          </h3>
+          <div class="filter-scroll">
+            <app-filter-sidebar
+              [fields]="filterFields"
+              (search)="onSearch($event)"
+              (reset)="onReset()"
+            ></app-filter-sidebar>
+          </div>
+        </div>
       </aside>
     </as-split-area>
 
     <!-- Main Content -->
-    <as-split-area [size]="sidebarVisible ? 100 - sidebarSize : 100">
+    <as-split-area [size]="'*'">
       <main class="flex-1 overflow-y-auto h-full">
         <div class="p-1">
           <!-- Page Title, Summary Badges and Add Button -->
@@ -121,283 +123,285 @@
               >
                 <span nz-icon nzType="right" nzTheme="outline"></span>
               </button>
-          <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200">
-            {{ "scales.title" | translate }}
-          </h2>
-          <div class="flex items-center gap-2">
-            <div
-              class="px-3 py-1 text-xs font-semibold transition-all border-2 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/70"
-              [ngClass]="{
-                'text-gray-800 bg-blue-100 border-blue-300 dark:text-blue-100 dark:bg-blue-900/60 dark:border-blue-600':
-                  filterData.isActive === undefined ||
-                  filterData.isActive === null,
-                'text-gray-600 bg-blue-50 border-blue-200 dark:text-blue-200 dark:bg-blue-900/30 dark:border-blue-700':
-                  filterData.isActive !== undefined &&
-                  filterData.isActive !== null
-              }"
-              (click)="filterByStatus(null)"
-              [nzTooltipTitle]="'common.tooltips.filter' | translate"
-              nz-tooltip
-            >
-              Tổng số cân:
-              <span class="ml-1">{{ totalScales }}</span>
+              <h2
+                class="text-base font-semibold text-gray-900 dark:text-gray-200"
+              >
+                {{ "scales.title" | translate }}
+              </h2>
+              <div class="flex items-center gap-2">
+                <div
+                  class="px-3 py-1 text-xs font-semibold transition-all border-2 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/70"
+                  [ngClass]="{
+                    'text-gray-800 bg-blue-100 border-blue-300 dark:text-blue-100 dark:bg-blue-900/60 dark:border-blue-600':
+                      filterData.isActive === undefined ||
+                      filterData.isActive === null,
+                    'text-gray-600 bg-blue-50 border-blue-200 dark:text-blue-200 dark:bg-blue-900/30 dark:border-blue-700':
+                      filterData.isActive !== undefined &&
+                      filterData.isActive !== null
+                  }"
+                  (click)="filterByStatus(null)"
+                  [nzTooltipTitle]="'common.tooltips.filter' | translate"
+                  nz-tooltip
+                >
+                  Tổng số cân:
+                  <span class="ml-1">{{ totalScales }}</span>
+                </div>
+                <div
+                  class="px-3 py-1 text-xs font-semibold transition-all border-2 rounded-full cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/70"
+                  [ngClass]="{
+                    'text-green-800 bg-green-100 border-green-300 dark:text-green-100 dark:bg-green-900/60 dark:border-green-600':
+                      filterData.isActive === true,
+                    'text-green-600 bg-green-50 border-green-200 dark:text-green-200 dark:bg-green-900/30 dark:border-green-700':
+                      filterData.isActive !== true
+                  }"
+                  (click)="filterByStatus(true)"
+                  [nzTooltipTitle]="'common.tooltips.filter' | translate"
+                  nz-tooltip
+                >
+                  Đang hoạt động:
+                  <span class="ml-1">{{ activeScales }}</span>
+                </div>
+                <div
+                  class="px-3 py-1 text-xs font-semibold transition-all border-2 rounded-full cursor-pointer hover:bg-red-200 dark:hover:bg-red-900/70"
+                  [ngClass]="{
+                    'text-red-800 bg-red-100 border-red-300 dark:text-red-100 dark:bg-red-900/60 dark:border-red-600':
+                      filterData.isActive === false,
+                    'text-red-600 bg-red-50 border-red-200 dark:text-red-200 dark:bg-red-900/30 dark:border-red-700':
+                      filterData.isActive !== false
+                  }"
+                  (click)="filterByStatus(false)"
+                  [nzTooltipTitle]="'common.tooltips.filter' | translate"
+                  nz-tooltip
+                >
+                  Không hoạt động:
+                  <span class="ml-1">{{ inactiveScales }}</span>
+                </div>
+              </div>
             </div>
-            <div
-              class="px-3 py-1 text-xs font-semibold transition-all border-2 rounded-full cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/70"
-              [ngClass]="{
-                'text-green-800 bg-green-100 border-green-300 dark:text-green-100 dark:bg-green-900/60 dark:border-green-600':
-                  filterData.isActive === true,
-                'text-green-600 bg-green-50 border-green-200 dark:text-green-200 dark:bg-green-900/30 dark:border-green-700':
-                  filterData.isActive !== true
-              }"
-              (click)="filterByStatus(true)"
-              [nzTooltipTitle]="'common.tooltips.filter' | translate"
-              nz-tooltip
+            <button
+              nz-button
+              nzType="primary"
+              (click)="openAddModal()"
+              class="flex items-center gap-2"
             >
-              Đang hoạt động:
-              <span class="ml-1">{{ activeScales }}</span>
-            </div>
-            <div
-              class="px-3 py-1 text-xs font-semibold transition-all border-2 rounded-full cursor-pointer hover:bg-red-200 dark:hover:bg-red-900/70"
-              [ngClass]="{
-                'text-red-800 bg-red-100 border-red-300 dark:text-red-100 dark:bg-red-900/60 dark:border-red-600':
-                  filterData.isActive === false,
-                'text-red-600 bg-red-50 border-red-200 dark:text-red-200 dark:bg-red-900/30 dark:border-red-700':
-                  filterData.isActive !== false
-              }"
-              (click)="filterByStatus(false)"
-              [nzTooltipTitle]="'common.tooltips.filter' | translate"
-              nz-tooltip
+              <span nz-icon nzType="plus" nzTheme="outline"></span>
+              <span>{{ "common.addNew" | translate }}</span>
+            </button>
+          </div>
+
+          <!-- Table Container -->
+          <div
+            class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+          >
+            <!-- Table -->
+            <nz-table
+              #basicTable
+              [nzData]="scales"
+              [nzLoading]="loading"
+              [nzShowPagination]="false"
+              [nzNoResult]="noResultTemplate"
+              class="w-full"
+              [nzScroll]="{ x: 'auto', y: 'calc(100vh - 175px)' }"
             >
-              Không hoạt động:
-              <span class="ml-1">{{ inactiveScales }}</span>
+              <thead>
+                <tr>
+                  <th
+                    nzWidth="50px"
+                    nzLeft
+                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    STT
+                  </th>
+                  <th
+                    nzWidth="150px"
+                    nzLeft
+                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "scales.name" | translate }}
+                  </th>
+                  <th
+                    nzWidth="120px"
+                    nzLeft
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "scales.model" | translate }}
+                  </th>
+                  <th
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "scales.location" | translate }}
+                  </th>
+                  <th
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "scales.protocol" | translate }}
+                  </th>
+                  <th
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "scales.connection" | translate }}
+                  </th>
+                  <th
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "common.status" | translate }}
+                  </th>
+                  <th
+                    nzWidth="120px"
+                    nzRight
+                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "common.actions" | translate }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let scale of scales; let i = index"
+                  class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <td nzLeft class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">{{
+                      i + 1
+                    }}</span>
+                  </td>
+                  <td nzLeft class="px-3 !py-2 whitespace-nowrap">
+                    <span
+                      class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                      >{{ scale.name }}</span
+                    >
+                  </td>
+                  <td nzLeft class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">{{
+                      scale.model
+                    }}</span>
+                  </td>
+                  <td class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">{{
+                      scale.location_name
+                    }}</span>
+                  </td>
+                  <td class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">{{
+                      scale.scale_config?.protocol
+                    }}</span>
+                  </td>
+                  <td class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">
+                      <ng-container
+                        *ngIf="
+                          scale.scale_config?.conn_params?.ip &&
+                          scale.scale_config?.conn_params?.port
+                        "
+                      >
+                        {{ scale.scale_config?.conn_params?.ip }}:{{
+                          scale.scale_config?.conn_params?.port
+                        }}
+                      </ng-container>
+                      <span
+                        *ngIf="
+                          !scale.scale_config?.conn_params?.ip ||
+                          !scale.scale_config?.conn_params?.port
+                        "
+                        >-</span
+                      >
+                    </span>
+                  </td>
+                  <td class="px-3 !py-2 whitespace-nowrap">
+                    <span
+                      *ngIf="scale.is_active === true"
+                      class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-800 bg-green-100 border border-green-200 rounded-full dark:bg-green-900 dark:text-green-200 dark:border-green-700"
+                    >
+                      {{ "common.active" | translate }}
+                    </span>
+                    <span
+                      *ngIf="scale.is_active === false"
+                      class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-800 bg-red-100 border border-red-200 rounded-full dark:bg-red-900 dark:text-red-200 dark:border-red-700"
+                    >
+                      {{ "common.inactive" | translate }}
+                    </span>
+                    <span
+                      *ngIf="scale.is_active === undefined"
+                      class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-800 bg-gray-100 border border-gray-200 rounded-full dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700"
+                    >
+                      -
+                    </span>
+                  </td>
+                  <td nzRight class="px-3 !py-2 whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-1">
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                        (click)="viewScale(scale)"
+                        [nzTooltipTitle]="'common.view' | translate"
+                        nz-tooltip
+                      >
+                        <span
+                          nz-icon
+                          nzType="eye"
+                          nzTheme="outline"
+                          class="text-base"
+                        ></span>
+                      </button>
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        nz-tooltip
+                        [nzTooltipTitle]="'common.edit' | translate"
+                        (click)="openEditModal(scale)"
+                        class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <span
+                          nz-icon
+                          nzType="edit"
+                          nzTheme="outline"
+                          class="text-base"
+                        ></span>
+                      </button>
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                        (click)="confirmDelete(scale)"
+                        [nzTooltipTitle]="'common.delete' | translate"
+                        nz-tooltip
+                      >
+                        <span
+                          nz-icon
+                          nzType="delete"
+                          nzTheme="outline"
+                          class="text-base"
+                        ></span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </nz-table>
+
+            <ng-template #noResultTemplate>
+              <app-no-data type="noData"></app-no-data>
+            </ng-template>
+
+            <!-- Pagination -->
+            <div
+              *ngIf="scales.length > 0"
+              class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+            >
+              <app-pagination
+                [total]="total"
+                [currentPage]="pageIndex"
+                [currentSize]="pageSize"
+                (emitPage)="onPaginationChange($event)"
+                (goToChange)="onPaginationChange($event)"
+              ></app-pagination>
             </div>
           </div>
         </div>
-        <button
-          nz-button
-          nzType="primary"
-          (click)="openAddModal()"
-          class="flex items-center gap-2"
-        >
-          <span nz-icon nzType="plus" nzTheme="outline"></span>
-          <span>{{ "common.addNew" | translate }}</span>
-        </button>
-      </div>
-
-      <!-- Table Container -->
-      <div
-        class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
-      >
-        <!-- Table -->
-        <nz-table
-          #basicTable
-          [nzData]="scales"
-          [nzLoading]="loading"
-          [nzShowPagination]="false"
-          [nzNoResult]="noResultTemplate"
-          class="w-full"
-          [nzScroll]="{ x: 'auto', y: 'calc(100vh - 175px)' }"
-        >
-          <thead>
-            <tr>
-              <th
-                nzWidth="50px"
-                nzLeft
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                STT
-              </th>
-              <th
-                nzWidth="150px"
-                nzLeft
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.name" | translate }}
-              </th>
-              <th
-                nzWidth="120px"
-                nzLeft
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.model" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.location" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.protocol" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "scales.connection" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "common.status" | translate }}
-              </th>
-              <th
-                nzWidth="120px"
-                nzRight
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "common.actions" | translate }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let scale of scales; let i = index"
-              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <td nzLeft class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  i + 1
-                }}</span>
-              </td>
-              <td nzLeft class="px-3 !py-2 whitespace-nowrap">
-                <span
-                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
-                  >{{ scale.name }}</span
-                >
-              </td>
-              <td nzLeft class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  scale.model
-                }}</span>
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  scale.location_name
-                }}</span>
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  scale.scale_config?.protocol
-                }}</span>
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">
-                  <ng-container
-                    *ngIf="
-                      scale.scale_config?.conn_params?.ip &&
-                      scale.scale_config?.conn_params?.port
-                    "
-                  >
-                    {{ scale.scale_config?.conn_params?.ip }}:{{
-                      scale.scale_config?.conn_params?.port
-                    }}
-                  </ng-container>
-                  <span
-                    *ngIf="
-                      !scale.scale_config?.conn_params?.ip ||
-                      !scale.scale_config?.conn_params?.port
-                    "
-                    >-</span
-                  >
-                </span>
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <span
-                  *ngIf="scale.is_active === true"
-                  class="inline-flex items-center px-2 py-1 text-xs font-medium text-green-800 bg-green-100 border border-green-200 rounded-full dark:bg-green-900 dark:text-green-200 dark:border-green-700"
-                >
-                  {{ "common.active" | translate }}
-                </span>
-                <span
-                  *ngIf="scale.is_active === false"
-                  class="inline-flex items-center px-2 py-1 text-xs font-medium text-red-800 bg-red-100 border border-red-200 rounded-full dark:bg-red-900 dark:text-red-200 dark:border-red-700"
-                >
-                  {{ "common.inactive" | translate }}
-                </span>
-                <span
-                  *ngIf="scale.is_active === undefined"
-                  class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-800 bg-gray-100 border border-gray-200 rounded-full dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700"
-                >
-                  -
-                </span>
-              </td>
-              <td nzRight class="px-3 !py-2 whitespace-nowrap">
-                <div class="flex items-center justify-center gap-1">
-                  <button
-                    nz-button
-                    nzType="text"
-                    nzSize="small"
-                    class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
-                    (click)="viewScale(scale)"
-                    [nzTooltipTitle]="'common.view' | translate"
-                    nz-tooltip
-                  >
-                    <span
-                      nz-icon
-                      nzType="eye"
-                      nzTheme="outline"
-                      class="text-base"
-                    ></span>
-                  </button>
-                  <button
-                    nz-button
-                    nzType="text"
-                    nzSize="small"
-                    nz-tooltip
-                    [nzTooltipTitle]="'common.edit' | translate"
-                    (click)="openEditModal(scale)"
-                    class="flex items-center justify-center w-8 h-8 text-gray-600 transition-colors rounded dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  >
-                    <span
-                      nz-icon
-                      nzType="edit"
-                      nzTheme="outline"
-                      class="text-base"
-                    ></span>
-                  </button>
-                  <button
-                    nz-button
-                    nzType="text"
-                    nzSize="small"
-                    class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-                    (click)="confirmDelete(scale)"
-                    [nzTooltipTitle]="'common.delete' | translate"
-                    nz-tooltip
-                  >
-                    <span
-                      nz-icon
-                      nzType="delete"
-                      nzTheme="outline"
-                      class="text-base"
-                    ></span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </nz-table>
-
-        <ng-template #noResultTemplate>
-          <app-no-data type="noData"></app-no-data>
-        </ng-template>
-
-        <!-- Pagination -->
-        <div
-          *ngIf="scales.length > 0"
-          class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
-        >
-          <app-pagination
-            [total]="total"
-            [currentPage]="pageIndex"
-            [currentSize]="pageSize"
-            (emitPage)="onPaginationChange($event)"
-            (goToChange)="onPaginationChange($event)"
-          ></app-pagination>
-        </div>
-      </div>
-    </div>
       </main>
     </as-split-area>
   </as-split>

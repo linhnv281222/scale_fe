@@ -63,7 +63,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private scaleService: ScaleService,
     private scaleDataService: ScaleDataService,
     private connectionStatusService: ConnectionStatusService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadScales();
@@ -278,8 +278,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         textStyle: { color: textColor },
       },
       legend: {
+        type: 'scroll',
         orient: 'horizontal',
-        bottom: '5%',
+        bottom: 0,
         left: 'center',
         textStyle: { color: textColor, fontSize: 10 },
       },
@@ -354,8 +355,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         textStyle: { color: textColor },
       },
       legend: {
+        type: 'scroll',
         orient: 'horizontal',
-        bottom: '5%',
+        bottom: 0,
         left: 'center',
         textStyle: { color: textColor, fontSize: 10 },
       },

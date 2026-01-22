@@ -4,7 +4,7 @@
     [disabled]="!sidebarVisible"
     [gutterSize]="8"
     [useTransition]="true"
-    [unit]="'percent'"
+    [unit]="'pixel'"
     [gutterColor]="'transparent'"
     [gutterDblClickDuration]="300"
     (dragEnd)="onSplitDragEnd($event)"
@@ -13,8 +13,8 @@
     <!-- Filter Sidebar -->
     <as-split-area
       [size]="sidebarVisible ? sidebarSize : 0"
-      [minSize]="sidebarVisible ? 15 : 0"
-      [maxSize]="sidebarVisible ? 40 : 0"
+      [minSize]="sidebarVisible ? 250 : 0"
+      [maxSize]="sidebarVisible ? 500 : 0"
       [visible]="sidebarVisible"
     >
       <aside
@@ -51,7 +51,7 @@
     </as-split-area>
 
     <!-- Main Content -->
-    <as-split-area [size]="sidebarVisible ? 100 - sidebarSize : 100">
+    <as-split-area [size]="'*'">
       <main class="flex-1 overflow-y-auto h-full">
         <div class="p-1">
           <!-- Page Title and Add Button -->
@@ -70,7 +70,9 @@
               >
                 <span nz-icon nzType="right" nzTheme="outline"></span>
               </button>
-              <h2 class="text-base font-semibold text-gray-900 dark:text-gray-200 whitespace-nowrap">
+              <h2
+                class="text-base font-semibold text-gray-900 dark:text-gray-200 whitespace-nowrap"
+              >
                 {{ "users.title" | translate }}
               </h2>
             </div>
@@ -80,180 +82,171 @@
               (click)="openAddModal()"
               class="flex items-center gap-2 flex-shrink-0"
             >
-          <span nz-icon nzType="plus" nzTheme="outline"></span>
-          <span>{{ "common.addNew" | translate }}</span>
-        </button>
-      </div>
+              <span nz-icon nzType="plus" nzTheme="outline"></span>
+              <span>{{ "common.addNew" | translate }}</span>
+            </button>
+          </div>
 
-      <!-- Table Container -->
-      <div
-        class="overflow-hidden bg-white border border-gray-200 rounded dark:bg-gray-800 dark:border-gray-700"
-      >
-        <nz-table
-          #basicTable
-          [nzData]="users"
-          [nzLoading]="loading"
-          [nzShowPagination]="false"
-          [nzFrontPagination]="false"
-          [nzNoResult]="noResultTemplate"
-          [nzScroll]="{ x: 'auto', y: 'calc(100vh - 203px)' }"
-          class="w-full"
-        >
-          <thead>
-            <tr>
-              <th
-                nzWidth="50px"
-                nzLeft
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                STT
-              </th>
-              <th
-                nzWidth="150px"
-                nzLeft
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "users.username" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "users.fullName" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "common.status" | translate }}
-              </th>
-              <th
-                class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "users.roles" | translate }}
-              </th>
-              <th
-                nzWidth="120px"
-                nzRight
-                class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
-              >
-                {{ "common.actions" | translate }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let user of users; let i = index"
-              class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+          <!-- Table Container -->
+          <div
+            class="overflow-hidden bg-white border border-gray-200 rounded dark:bg-gray-800 dark:border-gray-700"
+          >
+            <nz-table
+              #basicTable
+              [nzData]="users"
+              [nzLoading]="loading"
+              [nzShowPagination]="false"
+              [nzFrontPagination]="false"
+              [nzNoResult]="noResultTemplate"
+              [nzScroll]="{ x: 'auto', y: 'calc(100vh - 203px)' }"
+              class="w-full"
             >
-              <td
-                nzLeft
-                class="px-3 !py-2 whitespace-nowrap"
-              >
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  (pageIndex - 1) * pageSize + i + 1
-                }}</span>
-              </td>
-              <td
-                nzLeft
-                class="px-3 !py-2 whitespace-nowrap"
-              >
-                <span
-                  class="text-sm font-medium text-gray-900 dark:text-gray-100"
-                  >{{ user.username }}</span
+              <thead>
+                <tr>
+                  <th
+                    nzWidth="50px"
+                    nzLeft
+                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    STT
+                  </th>
+                  <th
+                    nzWidth="150px"
+                    nzLeft
+                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "users.username" | translate }}
+                  </th>
+                  <th
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "users.fullName" | translate }}
+                  </th>
+                  <th
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "common.status" | translate }}
+                  </th>
+                  <th
+                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "users.roles" | translate }}
+                  </th>
+                  <th
+                    nzWidth="120px"
+                    nzRight
+                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                  >
+                    {{ "common.actions" | translate }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let user of users; let i = index"
+                  class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  user.fullName
-                }}</span>
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <span [ngClass]="getStatusClass(user.status)">
-                  {{ getStatusLabel(user.status) | translate }}
-                </span>
-              </td>
-              <td class="px-3 !py-2 whitespace-nowrap">
-                <span class="text-sm text-gray-900 dark:text-white">{{
-                  getRoleNames(user)
-                }}</span>
-              </td>
-              <td
-                nzRight
-                class="px-3 !py-2 whitespace-nowrap"
-              >
-                <div class="flex items-center justify-center gap-2">
-                  <button
-                    nz-button
-                    nzType="text"
-                    nzSize="small"
-                    class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
-                    (click)="viewUser(user)"
-                    [nzTooltipTitle]="'common.view' | translate"
-                    nz-tooltip
-                  >
+                  <td nzLeft class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">{{
+                      (pageIndex - 1) * pageSize + i + 1
+                    }}</span>
+                  </td>
+                  <td nzLeft class="px-3 !py-2 whitespace-nowrap">
                     <span
-                      nz-icon
-                      nzType="eye"
-                      nzTheme="outline"
-                      class="text-base"
-                    ></span>
-                  </button>
-                  <button
-                    nz-button
-                    nzType="text"
-                    nzSize="small"
-                    class="flex items-center justify-center w-8 h-8 text-blue-600 transition-colors rounded dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                    (click)="openEditModal(user)"
-                    [nzTooltipTitle]="'common.edit' | translate"
-                    nz-tooltip
-                  >
-                    <span
-                      nz-icon
-                      nzType="edit"
-                      nzTheme="outline"
-                      class="text-base"
-                    ></span>
-                  </button>
-                  <button
-                    nz-button
-                    nzType="text"
-                    nzSize="small"
-                    class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-                    (click)="confirmDelete(user)"
-                    [nzTooltipTitle]="'common.delete' | translate"
-                    nz-tooltip
-                  >
-                    <span
-                      nz-icon
-                      nzType="delete"
-                      nzTheme="outline"
-                      class="text-base"
-                    ></span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </nz-table>
+                      class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                      >{{ user.username }}</span
+                    >
+                  </td>
+                  <td class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">{{
+                      user.fullName
+                    }}</span>
+                  </td>
+                  <td class="px-3 !py-2 whitespace-nowrap">
+                    <span [ngClass]="getStatusClass(user.status)">
+                      {{ getStatusLabel(user.status) | translate }}
+                    </span>
+                  </td>
+                  <td class="px-3 !py-2 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-white">{{
+                      getRoleNames(user)
+                    }}</span>
+                  </td>
+                  <td nzRight class="px-3 !py-2 whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-2">
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        class="flex items-center justify-center w-8 h-8 text-teal-600 transition-colors rounded dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                        (click)="viewUser(user)"
+                        [nzTooltipTitle]="'common.view' | translate"
+                        nz-tooltip
+                      >
+                        <span
+                          nz-icon
+                          nzType="eye"
+                          nzTheme="outline"
+                          class="text-base"
+                        ></span>
+                      </button>
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        class="flex items-center justify-center w-8 h-8 text-blue-600 transition-colors rounded dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                        (click)="openEditModal(user)"
+                        [nzTooltipTitle]="'common.edit' | translate"
+                        nz-tooltip
+                      >
+                        <span
+                          nz-icon
+                          nzType="edit"
+                          nzTheme="outline"
+                          class="text-base"
+                        ></span>
+                      </button>
+                      <button
+                        nz-button
+                        nzType="text"
+                        nzSize="small"
+                        class="flex items-center justify-center w-8 h-8 text-red-600 transition-colors rounded dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                        (click)="confirmDelete(user)"
+                        [nzTooltipTitle]="'common.delete' | translate"
+                        nz-tooltip
+                      >
+                        <span
+                          nz-icon
+                          nzType="delete"
+                          nzTheme="outline"
+                          class="text-base"
+                        ></span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </nz-table>
 
-        <ng-template #noResultTemplate>
-          <nz-empty></nz-empty>
-        </ng-template>
+            <ng-template #noResultTemplate>
+              <nz-empty></nz-empty>
+            </ng-template>
 
-        <!-- Pagination -->
-        <div
-          *ngIf="users.length > 0"
-          class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
-        >
-          <app-pagination
-            [total]="total"
-            [currentPage]="pageIndex"
-            [currentSize]="pageSize"
-            (emitPage)="onPaginationChange($event)"
-            (goToChange)="onPaginationChange($event)"
-          ></app-pagination>
+            <!-- Pagination -->
+            <div
+              *ngIf="users.length > 0"
+              class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+            >
+              <app-pagination
+                [total]="total"
+                [currentPage]="pageIndex"
+                [currentSize]="pageSize"
+                (emitPage)="onPaginationChange($event)"
+                (goToChange)="onPaginationChange($event)"
+              ></app-pagination>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
       </main>
     </as-split-area>
   </as-split>
