@@ -1,39 +1,5 @@
 /* Scale Report Component Styles */
 
-/* Default row hover for entire row (used mainly by non-fixed cells) */
-tbody tr:hover td {
-  background-color: #f9fafb; /* hover:bg-gray-50 */
-}
-
-.dark tbody tr:hover td,
-[data-theme="dark"] tbody tr:hover td {
-  background-color: #374151; /* dark:hover:bg-gray-700 */
-}
-
-/* Selected row - apply to all td cells */
-tbody tr td.selected-row {
-  background-color: #dbeafe !important; /* bg-blue-50 */
-}
-
-tbody tr:hover td.selected-row {
-  background-color: #dbeafe !important; /* Slightly darker blue on hover */
-}
-
-.dark tbody tr td.selected-row,
-[data-theme="dark"] tbody tr td.selected-row {
-  background-color: rgba(30, 58, 138, 0.2) !important; /* dark:bg-blue-900/20 */
-}
-
-.dark tbody tr:hover td.selected-row,
-[data-theme="dark"] tbody tr:hover td.selected-row {
-  background-color: rgba(
-    30,
-    58,
-    138,
-    0.3
-  ) !important; /* Slightly darker on hover */
-}
-
 /* Zebra rows for middle cells (exclude fixed sticky columns) */
 .report-row:nth-child(odd) td:not(.fixed-cell) {
   background-color: #ffffff;
@@ -65,6 +31,56 @@ tbody tr:hover td.selected-row {
 :host-context(.dark) .report-row:hover td:not(.fixed-cell),
 :host-context([data-theme="dark"]) .report-row:hover td:not(.fixed-cell) {
   background-color: #1e3a8a !important;
+}
+
+/* Selected row - non-fixed cells */
+.report-row td.selected-row:not(.fixed-cell) {
+  background-color: #dbeafe !important; /* bg-blue-50 */
+}
+
+.report-row:hover td.selected-row:not(.fixed-cell) {
+  background-color: #dbeafe !important;
+}
+
+:host-context(.dark) .report-row td.selected-row:not(.fixed-cell),
+:host-context([data-theme="dark"])
+  .report-row
+  td.selected-row:not(.fixed-cell) {
+  background-color: #1e40af !important; /* dark:bg-blue-800 */
+}
+
+:host-context(.dark) .report-row:hover td.selected-row:not(.fixed-cell),
+:host-context([data-theme="dark"])
+  .report-row:hover
+  td.selected-row:not(.fixed-cell) {
+  background-color: #1e3a8a !important;
+}
+
+/* Selected row - fixed cells (override yellow background) */
+.report-row td.fixed-cell.selected-row {
+  background-color: #dbeafe !important; /* bg-blue-50 */
+}
+
+.report-row:hover td.fixed-cell.selected-row {
+  background-color: #dbeafe !important;
+}
+
+:host-context(.dark) .report-row td.fixed-cell.selected-row,
+:host-context([data-theme="dark"]) .report-row td.fixed-cell.selected-row {
+  background-color: #1e40af !important; /* dark:bg-blue-800 */
+}
+
+:host-context(.dark) .report-row:hover td.fixed-cell.selected-row,
+:host-context([data-theme="dark"])
+  .report-row:hover
+  td.fixed-cell.selected-row {
+  background-color: #1e3a8a !important;
+}
+
+/* Selected row - ensure text is white on dark theme for all cells */
+:host-context(.dark) .report-row td.selected-row span,
+:host-context([data-theme="dark"]) .report-row td.selected-row span {
+  color: #ffffff !important;
 }
 
 /* Detailed filter: 100% remaining height, scrollable content, search button fixed */
