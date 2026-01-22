@@ -748,9 +748,7 @@
               class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
             >
               <span>{{ "reports.history" | translate }}</span>
-              <span
-                class="text-xs font-normal text-gray-500 dark:text-gray-400"
-              >
+              <span class="text-xs font-normal text-black dark:text-white">
                 ({{ selectedRow.scale.name }} -
                 {{ selectedRow.period | date : "dd/MM/yyyy" }})
               </span>
@@ -760,7 +758,7 @@
               nzType="text"
               nzSize="small"
               (click)="closeHistorySection()"
-              class="flex items-center gap-1"
+              class="flex items-center gap-1 text-black dark:text-white"
             >
               <span nz-icon nzType="close" nzTheme="outline"></span>
             </button>
