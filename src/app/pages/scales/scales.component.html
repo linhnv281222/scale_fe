@@ -282,8 +282,8 @@
                     }}</span>
                   </td>
                   <td class="px-3 !py-2 whitespace-nowrap">
-                    <span class="text-sm text-gray-900 dark:text-white">{{
-                      scale.scale_config?.protocol
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{
+                      scale.scale_config?.protocol || scale.protocol_name || scale.protocol_code || '-'
                     }}</span>
                   </td>
                   <td class="px-3 !py-2 whitespace-nowrap">
@@ -298,10 +298,21 @@
                           scale.scale_config?.conn_params?.port
                         }}
                       </ng-container>
+                      <ng-container
+                        *ngIf="
+                          !scale.scale_config?.conn_params?.ip &&
+                          scale.scale_config?.conn_params?.com_port
+                        "
+                      >
+                        {{ scale.scale_config?.conn_params?.com_port }}
+                        <span *ngIf="scale.scale_config?.conn_params?.baud_rate" class="text-xs text-gray-400">
+                          ({{ scale.scale_config?.conn_params?.baud_rate }})
+                        </span>
+                      </ng-container>
                       <span
                         *ngIf="
-                          !scale.scale_config?.conn_params?.ip ||
-                          !scale.scale_config?.conn_params?.port
+                          !scale.scale_config?.conn_params?.ip &&
+                          !scale.scale_config?.conn_params?.com_port
                         "
                         >-</span
                       >
@@ -662,7 +673,25 @@
                     nzValue="MODBUS_RTU"
                     [nzLabel]="'scales.modbusRtu' | translate"
                   ></nz-option>
-                  <nz-option nzValue="SERIAL" nzLabel="SERIAL"></nz-option>
+                  <nz-option
+                    nzValue="SIEMENS_S7"
+                    [nzLabel]="'scales.siemensS7' | translate"
+                  ></nz-option>
+                  <nz-option
+                    nzValue="SABUS"
+                    nzLabel="SABUS ASCII"
+                  ></nz-option>
+                  <nz-option
+                    nzValue="SBUS"
+                    nzLabel="S-Bus (Frame)"
+                  ></nz-option>
+                  <ng-container *ngFor="let p of protocols">
+                    <nz-option
+                      *ngIf="p.code !== 'MODBUS_TCP' && p.code !== 'MODBUS_RTU' && p.code !== 'SIEMENS_S7' && p.code !== 'SABUS' && p.code !== 'SBUS'"
+                      [nzValue]="p.code || p.type"
+                      [nzLabel]="p.name"
+                    ></nz-option>
+                  </ng-container>
                 </nz-select>
               </div>
               <div>
@@ -697,32 +726,11 @@
               <h4
                 class="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200"
               >
-                {{ "scales.connectionParameters" | translate }}
+                {{ "scales.connectionParameters" | translate }} ({{ scaleConfig.protocol }})
               </h4>
 
-              <!-- Common Connection Params -->
-              <div class="mb-2">
-                <div>
-                  <label
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    ID
-                  </label>
-                  <nz-input-group>
-                    <input
-                      type="text"
-                      nz-input
-                      nzSize="small"
-                      [(ngModel)]="scaleConfig.conn_params.id"
-                      class="w-full"
-                      [disabled]="isViewMode"
-                    />
-                  </nz-input-group>
-                </div>
-              </div>
-
               <!-- MODBUS_TCP Connection Params -->
-              <div *ngIf="isModbusTcp()" class="grid grid-cols-2 gap-2">
+              <div *ngIf="isModbusTcp()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -761,10 +769,46 @@
                     />
                   </nz-input-group>
                 </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.unitId" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.unit_id"
+                      placeholder="1"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.responseTimeout" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.response_timeout_ms"
+                      placeholder="5000"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
               </div>
 
               <!-- MODBUS_RTU Connection Params -->
-              <div *ngIf="isModbusRtu()" class="grid grid-cols-2 gap-2">
+              <div *ngIf="isModbusRtu()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -849,22 +893,11 @@
                     [(ngModel)]="scaleConfig.conn_params.parity"
                     class="w-full"
                     [nzDropdownMatchSelectWidth]="false"
-                    [nzShowSearch]="true"
-                    [nzAllowClear]="true"
                     [nzDisabled]="isViewMode"
                   >
-                    <nz-option
-                      nzValue="none"
-                      [nzLabel]="'scales.parityNone' | translate"
-                    ></nz-option>
-                    <nz-option
-                      nzValue="even"
-                      [nzLabel]="'scales.parityEven' | translate"
-                    ></nz-option>
-                    <nz-option
-                      nzValue="odd"
-                      [nzLabel]="'scales.parityOdd' | translate"
-                    ></nz-option>
+                    <nz-option nzValue="NONE" nzLabel="NONE"></nz-option>
+                    <nz-option nzValue="EVEN" nzLabel="EVEN"></nz-option>
+                    <nz-option nzValue="ODD" nzLabel="ODD"></nz-option>
                   </nz-select>
                 </div>
                 <div>
@@ -879,6 +912,437 @@
                       nz-input
                       nzSize="small"
                       [(ngModel)]="scaleConfig.conn_params.unit_id"
+                      placeholder="1"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.responseTimeout" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.response_timeout_ms"
+                      placeholder="3000"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
+              <!-- SIEMENS_S7 Connection Params -->
+              <div *ngIf="isSiemensS7()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.ipAddress" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.ip"
+                      placeholder="192.168.1.20"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.port" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.port"
+                      placeholder="102"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.controllerType" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig.conn_params.controller_type"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option nzValue="S7_1200" nzLabel="S7-1200"></nz-option>
+                    <nz-option nzValue="S7_1500" nzLabel="S7-1500"></nz-option>
+                    <nz-option nzValue="S7_300" nzLabel="S7-300"></nz-option>
+                    <nz-option nzValue="S7_400" nzLabel="S7-400"></nz-option>
+                  </nz-select>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.rack" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.rack"
+                      placeholder="0"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.slot" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.slot"
+                      placeholder="1"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.connectTimeout" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.connect_timeout_ms"
+                      placeholder="5000"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.readTimeout" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.read_timeout_ms"
+                      placeholder="5000"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
+              <!-- SABUS ASCII Connection Params -->
+              <div *ngIf="isSabus()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.comPort" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.com_port"
+                      placeholder="COM5"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.baudRate" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.baud_rate"
+                      placeholder="9600"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.dataBits" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.data_bits"
+                      placeholder="8"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.stopBits" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.stop_bits"
+                      placeholder="1"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.parity" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig.conn_params.parity"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option nzValue="NONE" nzLabel="NONE"></nz-option>
+                    <nz-option nzValue="EVEN" nzLabel="EVEN"></nz-option>
+                    <nz-option nzValue="ODD" nzLabel="ODD"></nz-option>
+                  </nz-select>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.deviceId" | translate }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.device_id"
+                      placeholder="07"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.deviceIdWidth" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.device_id_width"
+                      placeholder="2"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.responseTimeout" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.response_timeout_ms"
+                      placeholder="3000"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.reconnectDelay" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.reconnect_delay_ms"
+                      placeholder="5000"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.offlineThreshold" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.offline_threshold_ms"
+                      placeholder="60000"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.commandPrefix" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.command_prefix"
+                      placeholder="!"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.commandTerminator" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.command_terminator"
+                      placeholder="\r"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
+              <!-- SBUS Connection Params -->
+              <div *ngIf="isSbus()" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.comPort" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.com_port"
+                      placeholder="COM4"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.baudRate" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.baud_rate"
+                      placeholder="9600"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{ "scales.deviceId" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig.conn_params.device_id"
                       placeholder="1"
                       class="w-full"
                       [disabled]="isViewMode"
@@ -934,11 +1398,13 @@
               *ngIf="expandedChannels[channelNum]"
               class="p-2 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700"
             >
-              <div class="grid grid-cols-5 gap-2">
+              <!-- MODBUS (TCP / RTU) Channel Config -->
+              <div
+                *ngIf="isModbusTcp() || isModbusRtu()"
+                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              >
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ "scales.channelName" | translate }}
                   </label>
                   <nz-input-group>
@@ -947,68 +1413,30 @@
                       nz-input
                       nzSize="small"
                       [(ngModel)]="scaleConfig['data_' + channelNum].name"
-                      [placeholder]="
-                        'scales.channelNamePlaceholder' | translate
-                      "
+                      [placeholder]="'scales.channelNamePlaceholder' | translate"
                       class="w-full"
                       [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    {{ "scales.unit" | translate }}
-                  </label>
-                  <nz-input-group>
-                    <input
-                      type="text"
-                      nz-input
-                      nzSize="small"
-                      [(ngModel)]="scaleConfig['data_' + channelNum].unit"
-                      class="w-full"
-                      [disabled]="isViewMode"
-                    />
-                  </nz-input-group>
-                </div>
-                <div>
-                  <label
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    {{ "scales.dataType" | translate }}
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.functionCode" | translate }}
                   </label>
                   <nz-select
-                    [(ngModel)]="scaleConfig['data_' + channelNum].data_type"
+                    [(ngModel)]="scaleConfig['data_' + channelNum].function_code"
                     class="w-full"
                     [nzDropdownMatchSelectWidth]="false"
-                    [nzPlaceHolder]="'scales.selectDataType' | translate"
-                    [nzShowSearch]="true"
-                    [nzAllowClear]="true"
                     [nzDisabled]="isViewMode"
                   >
-                    <nz-option
-                      nzValue="Integer"
-                      [nzLabel]="'scales.integer' | translate"
-                    ></nz-option>
-                    <nz-option
-                      nzValue="Float"
-                      [nzLabel]="'scales.float' | translate"
-                    ></nz-option>
-                    <nz-option
-                      nzValue="Double"
-                      [nzLabel]="'scales.double' | translate"
-                    ></nz-option>
-                    <nz-option
-                      nzValue="Boolean"
-                      [nzLabel]="'scales.boolean' | translate"
-                    ></nz-option>
+                    <nz-option [nzValue]="1" nzLabel="01 - Read Coils"></nz-option>
+                    <nz-option [nzValue]="2" nzLabel="02 - Read Discrete Inputs"></nz-option>
+                    <nz-option [nzValue]="3" nzLabel="03 - Read Holding Registers"></nz-option>
+                    <nz-option [nzValue]="4" nzLabel="04 - Read Input Registers"></nz-option>
                   </nz-select>
                 </div>
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ "scales.startRegister" | translate }}
                   </label>
                   <nz-input-group>
@@ -1016,21 +1444,15 @@
                       type="number"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="
-                        scaleConfig['data_' + channelNum].start_register
-                      "
-                      [placeholder]="
-                        'scales.startRegisterPlaceholder' | translate
-                      "
+                      [(ngModel)]="scaleConfig['data_' + channelNum].start_registers"
+                      placeholder="0"
                       class="w-full"
                       [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>
                 <div>
-                  <label
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ "scales.numRegisters" | translate }}
                   </label>
                   <nz-input-group>
@@ -1038,16 +1460,274 @@
                       type="number"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="
-                        scaleConfig['data_' + channelNum].num_registers
-                      "
-                      [placeholder]="
-                        'scales.numRegistersPlaceholder' | translate
-                      "
+                      [(ngModel)]="scaleConfig['data_' + channelNum].num_registers"
+                      placeholder="2"
                       class="w-full"
                       [disabled]="isViewMode"
                     />
                   </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.dataType" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig['data_' + channelNum].data_type"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option nzValue="FLOAT32" nzLabel="FLOAT32"></nz-option>
+                    <nz-option nzValue="FLOAT64" nzLabel="FLOAT64"></nz-option>
+                    <nz-option nzValue="INT16" nzLabel="INT16"></nz-option>
+                    <nz-option nzValue="UINT16" nzLabel="UINT16"></nz-option>
+                    <nz-option nzValue="INT32" nzLabel="INT32"></nz-option>
+                    <nz-option nzValue="UINT32" nzLabel="UINT32"></nz-option>
+                    <nz-option nzValue="INT64" nzLabel="INT64"></nz-option>
+                    <nz-option nzValue="UINT64" nzLabel="UINT64"></nz-option>
+                    <nz-option nzValue="BOOLEAN" nzLabel="BOOLEAN"></nz-option>
+                  </nz-select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.byteOrder" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig['data_' + channelNum].byte_order"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option nzValue="BIG_ENDIAN" [nzLabel]="'scales.bigEndian' | translate"></nz-option>
+                    <nz-option nzValue="LITTLE_ENDIAN" [nzLabel]="'scales.littleEndian' | translate"></nz-option>
+                  </nz-select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.wordOrder" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig['data_' + channelNum].word_order"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option nzValue="BIG_ENDIAN" [nzLabel]="'scales.bigEndian' | translate"></nz-option>
+                    <nz-option nzValue="LITTLE_ENDIAN" [nzLabel]="'scales.littleEndian' | translate"></nz-option>
+                  </nz-select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.decimalPlaces" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].decimal_places"
+                      placeholder="2"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
+              <!-- SIEMENS_S7 Channel Config -->
+              <div
+                *ngIf="isSiemensS7()"
+                class="grid grid-cols-1 sm:grid-cols-3 gap-2"
+              >
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.channelName" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].name"
+                      [placeholder]="'scales.channelNamePlaceholder' | translate"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.tagAddress" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].tag_address"
+                      placeholder="%DB1:0:REAL"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.decimalPlaces" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].decimal_places"
+                      placeholder="2"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
+              <!-- SABUS ASCII Channel Config -->
+              <div
+                *ngIf="isSabus()"
+                class="grid grid-cols-1 sm:grid-cols-3 gap-2"
+              >
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.channelName" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].name"
+                      placeholder="Instantaneous Flow / Accumulated Total"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.command" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].command"
+                      placeholder="FL hoặc NT"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.decimalPlaces" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="number"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].decimal_places"
+                      placeholder="2"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+              </div>
+
+              <!-- SBUS Channel Config -->
+              <div
+                *ngIf="isSbus()"
+                class="grid grid-cols-2 sm:grid-cols-5 gap-2"
+              >
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.channelName" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].name"
+                      [placeholder]="'scales.channelNamePlaceholder' | translate"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.command" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].command"
+                      placeholder="READ_WEIGHT"
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.payload" | translate }}
+                  </label>
+                  <nz-input-group>
+                    <input
+                      type="text"
+                      nz-input
+                      nzSize="small"
+                      [(ngModel)]="scaleConfig['data_' + channelNum].payload"
+                      placeholder=""
+                      class="w-full"
+                      [disabled]="isViewMode"
+                    />
+                  </nz-input-group>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.mode" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig['data_' + channelNum].mode"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option nzValue="ASCII" nzLabel="ASCII"></nz-option>
+                    <nz-option nzValue="HEX" nzLabel="HEX"></nz-option>
+                  </nz-select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ "scales.responseType" | translate }}
+                  </label>
+                  <nz-select
+                    [(ngModel)]="scaleConfig['data_' + channelNum].response_type"
+                    class="w-full"
+                    [nzDropdownMatchSelectWidth]="false"
+                    [nzDisabled]="isViewMode"
+                  >
+                    <nz-option nzValue="FLOAT32" nzLabel="FLOAT32"></nz-option>
+                    <nz-option nzValue="FLOAT64" nzLabel="FLOAT64"></nz-option>
+                    <nz-option nzValue="INT16" nzLabel="INT16"></nz-option>
+                    <nz-option nzValue="UINT16" nzLabel="UINT16"></nz-option>
+                    <nz-option nzValue="INT32" nzLabel="INT32"></nz-option>
+                    <nz-option nzValue="UINT32" nzLabel="UINT32"></nz-option>
+                  </nz-select>
                 </div>
               </div>
             </div>

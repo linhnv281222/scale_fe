@@ -41,7 +41,9 @@ export class ProtocolsComponent implements OnInit {
   protocolTypeLabels: { [key: string]: string } = {
     [ProtocolType.MODBUS_TCP]: 'scales.modbusTcp',
     [ProtocolType.MODBUS_RTU]: 'scales.modbusRtu',
+    [ProtocolType.SIEMENS_S7]: 'scales.siemensS7',
     [ProtocolType.SABUS]: 'scales.sabus',
+    [ProtocolType.SBUS]: 'scales.sbus',
   };
 
   filterFields: FilterField[] = [
