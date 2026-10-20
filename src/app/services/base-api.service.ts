@@ -17,14 +17,16 @@ export class BaseApiService {
     private toastr: ToastrService
   ) {}
 
-  private getHeaders(): HttpHeaders {
+  private getHeaders(url?: string): HttpHeaders {
     const token = localStorage.getItem('token');
     const language = localStorage.getItem('language') || 'vi_VN';
+    const isAuthEndpoint =
+      url && (url.includes('auth/login') || url.includes('auth/refresh'));
 
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept-Language': language,
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(!isAuthEndpoint && token ? { Authorization: `Bearer ${token}` } : {}),
     });
   }
 
@@ -36,6 +38,9 @@ export class BaseApiService {
   }
 
   private handleError(error: any): Observable<never> {
+    if (error?.status === 401 || error?.status === 403) {
+      return throwError(() => error);
+    }
     if (error.error?.result?.message) {
       this.toastr.error(error.error.result.message, 'Lỗi');
     } else if (error.error?.message) {
@@ -75,7 +80,7 @@ export class BaseApiService {
 
     return this.http
       .get<T>(this.buildUrl(url), {
-        headers: this.getHeaders(),
+        headers: this.getHeaders(url),
         params: httpParams,
       })
       .pipe(
@@ -87,7 +92,7 @@ export class BaseApiService {
   post<T>(url: string, data: any): Observable<T> {
     return this.http
       .post<T>(this.buildUrl(url), data, {
-        headers: this.getHeaders(),
+        headers: this.getHeaders(url),
       })
       .pipe(
         map((response: any) => {
@@ -111,7 +116,7 @@ export class BaseApiService {
   put<T>(url: string, data: any): Observable<T> {
     return this.http
       .put<T>(this.buildUrl(url), data, {
-        headers: this.getHeaders(),
+        headers: this.getHeaders(url),
       })
       .pipe(
         map((response: any) => {
@@ -135,7 +140,7 @@ export class BaseApiService {
   patch<T>(url: string, data: any): Observable<T> {
     return this.http
       .patch<T>(this.buildUrl(url), data, {
-        headers: this.getHeaders(),
+        headers: this.getHeaders(url),
       })
       .pipe(
         map((response: any) => {
@@ -159,7 +164,7 @@ export class BaseApiService {
   delete<T>(url: string): Observable<T> {
     return this.http
       .delete<T>(this.buildUrl(url), {
-        headers: this.getHeaders(),
+        headers: this.getHeaders(url),
       })
       .pipe(
         map((response: any) => {

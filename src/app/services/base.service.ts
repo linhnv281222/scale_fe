@@ -16,14 +16,16 @@ export class BaseService {
     private toast: ToastrService
   ) {}
 
-  private getHeaders(): HttpHeaders {
+  private getHeaders(url?: string): HttpHeaders {
     const token = localStorage.getItem('token');
     const language = localStorage.getItem('language') || 'vi_VN';
+    const isAuthEndpoint =
+      url && (url.includes('auth/login') || url.includes('auth/refresh'));
 
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept-Language': language,
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(!isAuthEndpoint && token ? { Authorization: `Bearer ${token}` } : {}),
     });
   }
 
@@ -47,7 +49,7 @@ export class BaseService {
 
       let response = await firstValueFrom(
         this.http.get<any>(this.buildUrl(url), {
-          headers: this.getHeaders(),
+          headers: this.getHeaders(url),
           params: httpParams,
           observe: 'response',
         })
@@ -66,6 +68,9 @@ export class BaseService {
         throw new Error(response?.body?.message || response?.body?.error || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
+      if (error?.status === 401 || error?.status === 403) {
+        throw error;
+      }
       let errorMessage = 'Kết nối không ổn định, vui lòng thử lại';
       if (error.error?.result?.message) {
         errorMessage = error.error.result.message;
@@ -88,7 +93,7 @@ export class BaseService {
     try {
       let response = await firstValueFrom(
         this.http.post<any>(this.buildUrl(url), data, {
-          headers: this.getHeaders(),
+          headers: this.getHeaders(url),
           observe: 'response',
         })
       );
@@ -106,6 +111,9 @@ export class BaseService {
         throw new Error(response?.body?.message || response?.body?.error || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
+      if (error?.status === 401 || error?.status === 403) {
+        throw error;
+      }
       let errorMessage = 'Kết nối không ổn định, vui lòng thử lại';
       if (error.error?.result?.message) {
         errorMessage = error.error.result.message;
@@ -128,7 +136,7 @@ export class BaseService {
     try {
       let response = await firstValueFrom(
         this.http.put<any>(this.buildUrl(url), data, {
-          headers: this.getHeaders(),
+          headers: this.getHeaders(url),
           observe: 'response',
         })
       );
@@ -146,6 +154,9 @@ export class BaseService {
         throw new Error(response?.body?.message || response?.body?.error || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
+      if (error?.status === 401 || error?.status === 403) {
+        throw error;
+      }
       let errorMessage = 'Kết nối không ổn định, vui lòng thử lại';
       if (error.error?.result?.message) {
         errorMessage = error.error.result.message;
@@ -168,7 +179,7 @@ export class BaseService {
     try {
       let response = await firstValueFrom(
         this.http.patch<any>(this.buildUrl(url), data, {
-          headers: this.getHeaders(),
+          headers: this.getHeaders(url),
           observe: 'response',
         })
       );
@@ -186,6 +197,9 @@ export class BaseService {
         throw new Error(response?.body?.message || response?.body?.error || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
+      if (error?.status === 401 || error?.status === 403) {
+        throw error;
+      }
       let errorMessage = 'Kết nối không ổn định, vui lòng thử lại';
       if (error.error?.result?.message) {
         errorMessage = error.error.result.message;
@@ -208,7 +222,7 @@ export class BaseService {
     try {
       let response = await firstValueFrom(
         this.http.delete<any>(this.buildUrl(url), {
-          headers: this.getHeaders(),
+          headers: this.getHeaders(url),
           observe: 'response',
         })
       );
@@ -229,6 +243,9 @@ export class BaseService {
         throw new Error(response?.body?.message || response?.body?.error || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
+      if (error?.status === 401 || error?.status === 403) {
+        throw error;
+      }
       let errorMessage = 'Kết nối không ổn định, vui lòng thử lại';
       if (error.error?.result?.message) {
         errorMessage = error.error.result.message;
@@ -274,6 +291,9 @@ export class BaseService {
         throw new Error(response?.body?.message || response?.body?.error || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
+      if (error?.status === 401) {
+        throw error;
+      }
       // Xử lý error message từ nhiều format khác nhau
       let errorMessage = 'Kết nối không ổn định, vui lòng thử lại';
       if (error.error?.result?.message) {
@@ -320,6 +340,9 @@ export class BaseService {
         throw new Error(response?.body?.message || response?.body?.error || 'Có lỗi xảy ra');
       }
     } catch (error: any) {
+      if (error?.status === 401) {
+        throw error;
+      }
       // Xử lý error message từ nhiều format khác nhau
       let errorMessage = 'Kết nối không ổn định, vui lòng thử lại';
       if (error.error?.result?.message) {

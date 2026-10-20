@@ -56,9 +56,7 @@ export class AuthService {
   async refreshToken(): Promise<boolean> {
     try {
       const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        this.clearAuthData();
-        this.router.navigate(['/login']);
+      if (!refreshToken || this.isTokenExpired(refreshToken)) {
         return false;
       }
 
@@ -73,28 +71,27 @@ export class AuthService {
           return true;
         }
       }
-      this.clearAuthData();
-      this.router.navigate(['/login']);
       return false;
     } catch (error) {
-      this.clearAuthData();
-      this.router.navigate(['/login']);
       return false;
     }
   }
 
   async logout(): Promise<void> {
     try {
-      await this.baseService.postData('auth/logout', {});
+      const token = this.getToken();
+      if (token) {
+        await this.baseService.postData('auth/logout', {});
+      }
     } catch (error) {
-      // Nếu API logout fail, vẫn clear local data
+      // Nếu API logout fail (vd token đã hết hạn), vẫn clear local data
     } finally {
       this.clearAuthData();
       this.router.navigate(['/login']);
     }
   }
 
-  private clearAuthData(): void {
+  clearAuthData(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('tokenType');
@@ -105,8 +102,35 @@ export class AuthService {
     this.userPermissionService.clearPermissions();
   }
 
+  isTokenExpired(token: string): boolean {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return false;
+      }
+      const payload = JSON.parse(atob(parts[1]));
+      if (payload.exp) {
+        return payload.exp * 1000 < Date.now();
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    const token = this.getToken();
+    if (!token) {
+      return false;
+    }
+    // Nếu access token đã hết hạn, kiểm tra refresh token
+    if (this.isTokenExpired(token)) {
+      const refreshToken = this.getRefreshToken();
+      if (!refreshToken || this.isTokenExpired(refreshToken)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   getCurrentUser(): User | null {

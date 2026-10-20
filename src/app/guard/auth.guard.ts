@@ -20,10 +20,12 @@ export class AuthGuard {
     | Promise<boolean | UrlTree>
     | boolean
     | UrlTree {
-    // Check if user is authenticated (has token)
+    // Check if user is authenticated (has token and valid session)
     if (this.authService.isAuthenticated()) {
       return true;
     } else {
+      // Clear any stale/expired auth data
+      this.authService.clearAuthData();
       // Redirect to login page if not authenticated
       // If the requested URL is root path '/', don't set returnUrl to avoid redirect loop
       const returnUrl = state.url === '/' ? '/dashboard' : state.url;
