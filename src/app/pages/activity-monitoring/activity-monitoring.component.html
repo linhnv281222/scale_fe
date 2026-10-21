@@ -1,4 +1,4 @@
-<div class="flex h-full bg-gray-50 dark:bg-gray-900">
+<div class="flex h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
   <as-split
     direction="horizontal"
     [disabled]="!sidebarVisible"
@@ -20,26 +20,26 @@
       <aside
         class="flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
       >
+        <!-- Sidebar Main Header -->
         <div
-          class="flex items-center justify-between flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+          class="flex items-center justify-between flex-shrink-0 px-3.5 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/70"
         >
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-            {{ "filter.title" | translate }}
-          </h3>
-          <!-- Toggle Sidebar Button in Sidebar Header -->
-          <button
-            nz-button
-            nzType="text"
-            nzShape="circle"
-            (click)="toggleSidebar()"
-            class="flex items-center justify-center w-6 h-6 flex-shrink-0"
-            nz-tooltip
-            [nzTooltipTitle]="'common.collapse' | translate"
-          >
-            <span nz-icon nzType="left" nzTheme="outline"></span>
-          </button>
+          <div class="flex items-center gap-2">
+            <span
+              nz-icon
+              nzType="filter"
+              nzTheme="outline"
+              class="text-blue-600 dark:text-blue-400 text-base"
+            ></span>
+            <h3
+              class="text-sm font-bold text-gray-900 dark:text-gray-100 m-0 uppercase tracking-wide"
+            >
+              {{ "reports.filters" | translate }}
+            </h3>
+          </div>
         </div>
-        <div class="flex-1 min-h-0 p-3">
+
+        <div class="flex-1 min-h-0 p-3 overflow-y-auto">
           <app-filter-sidebar
             [fields]="filterFields"
             (search)="onSearch($event)"
@@ -51,66 +51,99 @@
 
     <!-- Main Content -->
     <as-split-area [size]="'*'">
-      <main class="flex-1 overflow-y-auto h-full">
-        <div class="p-1 space-y-4">
-          <!-- Current Activity Data Table -->
-          <div
-            class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
-          >
-            <!-- Table Header -->
-            <div
-              class="px-3 !py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-            >
-              <div class="flex items-center justify-between">
+      <main
+        class="relative flex flex-col h-full overflow-hidden p-2.5 gap-2.5 bg-gray-50 dark:bg-gray-900"
+      >
+        <!-- Page Header: Title + Sidebar Toggle Button -->
+        <div class="flex-shrink-0">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <!-- Single Toggle Sidebar Button (Collapse & Expand) -->
+              <button
+                nz-button
+                nzType="text"
+                nzShape="circle"
+                (click)="toggleSidebar()"
+                class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full hover:bg-gray-200/70 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
+                nz-tooltip
+                [nzTooltipTitle]="
+                  (sidebarVisible ? 'common.collapse' : 'common.expand')
+                    | translate
+                "
+              >
+                <span
+                  nz-icon
+                  [nzType]="sidebarVisible ? 'menu-fold' : 'menu-unfold'"
+                  nzTheme="outline"
+                  class="text-base"
+                ></span>
+              </button>
+              <div class="flex items-center gap-2">
                 <h2
-                  class="text-base font-semibold text-gray-900 dark:text-white"
+                  class="text-base font-bold text-gray-900 dark:text-white whitespace-nowrap m-0"
                 >
                   {{ "activityMonitoring.currentData" | translate }}
                 </h2>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Table -->
+        <!-- Data Table Card -->
+        <div
+          class="flex flex-col flex-1 min-h-0 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 overflow-hidden"
+        >
+          <div class="flex-1 min-h-0 overflow-auto">
             <nz-table
               #basicTable
               [nzData]="activityData"
               [nzLoading]="loading"
               [nzShowPagination]="false"
               [nzNoResult]="noResultTemplate"
+              nzSize="small"
               class="w-full"
             >
-              <thead>
-                <tr class="bg-gray-50 dark:bg-gray-800">
+              <thead style="position: sticky; top: 0; z-index: 10">
+                <tr class="bg-blue-600 dark:bg-blue-700">
                   <th
-                    class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
-                    nzWidth="30px"
+                    nzWidth="50px"
+                    nzAlign="center"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     STT
                   </th>
                   <th
-                    class="px-3 !py-2 !text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                    nzWidth="120px"
+                    nzAlign="center"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "scales.name" | translate }}
                   </th>
                   <th
-                    class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                    nzWidth="120px"
+                    nzAlign="center"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "connectionStatus.status" | translate }}
                   </th>
                   <th
                     *ngIf="dataColumn1Name"
-                    class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                    nzAlign="center"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ dataColumn1Name }}
                   </th>
                   <th
                     *ngIf="dataColumn2Name"
-                    class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                    nzAlign="center"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ dataColumn2Name }}
                   </th>
                   <th
-                    class="px-3 !py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                    nzWidth="180px"
+                    nzAlign="center"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "connectionStatus.lastDataTime" | translate }}
                   </th>
@@ -118,23 +151,37 @@
               </thead>
               <tbody>
                 <tr
-                  *ngFor="let item of activityData; trackBy: trackByScaleId; let i = index"
+                  *ngFor="
+                    let item of activityData;
+                    trackBy: trackByScaleId;
+                    let i = index
+                  "
                   [ngClass]="getRowClass(item)"
+                  class="border-b border-gray-200 dark:border-gray-700 transition-colors"
                 >
-                  <td class="px-3 !py-2 whitespace-nowrap">
-                    <span class="text-sm text-gray-900 dark:text-white">{{
-                      (pageIndex - 1) * pageSize + i + 1
-                    }}</span>
+                  <td
+                    class="!px-2 !py-1 text-center whitespace-nowrap border border-gray-200 dark:border-gray-700"
+                  >
+                    <span class="text-xs text-gray-900 dark:text-white">
+                      {{ (pageIndex - 1) * pageSize + i + 1 }}
+                    </span>
                   </td>
-                  <td class="px-3 !py-2 whitespace-nowrap">
+                  <td
+                    class="!px-2 !py-1 whitespace-nowrap border border-gray-200 dark:border-gray-700 max-w-[240px] overflow-hidden"
+                  >
                     <span
-                      class="text-sm font-medium text-gray-900 dark:text-white"
-                      >{{ item.scaleName || item.scaleId }}</span
+                      class="text-xs font-medium text-gray-900 dark:text-white truncate block w-full"
+                      [title]="item.scaleName || item.scaleId"
+                      nz-tooltip
                     >
+                      {{ item.scaleName || item.scaleId }}
+                    </span>
                   </td>
-                  <td class="px-3 !py-2 whitespace-nowrap">
+                  <td
+                    class="!px-2 !py-1 text-center whitespace-nowrap border border-gray-200 dark:border-gray-700"
+                  >
                     <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                       [ngClass]="getStatusClass(item.status)"
                     >
                       {{ item.status }}
@@ -142,36 +189,48 @@
                   </td>
                   <td
                     *ngIf="dataColumn1Name"
-                    class="px-3 !py-2 whitespace-nowrap"
+                    class="!px-2 !py-1 text-right whitespace-nowrap border border-gray-200 dark:border-gray-700"
                   >
-                    <span class="text-sm text-gray-900 dark:text-white">{{
-                      item.dataValues &&
-                      item.dataValues.data_1 &&
-                      item.dataValues.data_1.value
-                        ? (item.dataValues.data_1.value | number : "0.0-2")
-                        : ""
-                    }}</span>
+                    <span
+                      class="text-xs font-medium text-gray-900 dark:text-white"
+                    >
+                      {{
+                        item.dataValues &&
+                        item.dataValues.data_1 &&
+                        item.dataValues.data_1.value !== null &&
+                        item.dataValues.data_1.value !== undefined
+                          ? (item.dataValues.data_1.value | number: "0.0-2")
+                          : ""
+                      }}
+                    </span>
                   </td>
                   <td
                     *ngIf="dataColumn2Name"
-                    class="px-3 !py-2 whitespace-nowrap"
+                    class="!px-2 !py-1 text-right whitespace-nowrap border border-gray-200 dark:border-gray-700"
                   >
-                    <span class="text-sm text-gray-900 dark:text-white">{{
-                      item.dataValues &&
-                      item.dataValues.data_2 &&
-                      item.dataValues.data_2.value
-                        ? (item.dataValues.data_2.value | number : "0.0-2")
-                        : ""
-                    }}</span>
+                    <span
+                      class="text-xs font-medium text-gray-900 dark:text-white"
+                    >
+                      {{
+                        item.dataValues &&
+                        item.dataValues.data_2 &&
+                        item.dataValues.data_2.value !== null &&
+                        item.dataValues.data_2.value !== undefined
+                          ? (item.dataValues.data_2.value | number: "0.0-2")
+                          : ""
+                      }}
+                    </span>
                   </td>
-                  <td class="px-3 !py-2 whitespace-nowrap">
+                  <td
+                    class="!px-2 !py-1 text-center whitespace-nowrap border border-gray-200 dark:border-gray-700"
+                  >
                     <span
                       [ngClass]="getLastDataTimeClass(item)"
-                      class="text-sm"
+                      class="text-xs font-medium"
                     >
                       {{
                         item.lastTime || item.lastDataTime
-                          | date : "dd/MM/yyyy HH:mm:ss"
+                          | date: "dd/MM/yyyy HH:mm:ss"
                       }}
                     </span>
                   </td>
@@ -182,20 +241,20 @@
             <ng-template #noResultTemplate>
               <nz-empty></nz-empty>
             </ng-template>
+          </div>
 
-            <!-- Pagination -->
-            <div
-              *ngIf="activityData.length > 0"
-              class="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-            >
-              <app-pagination
-                [total]="total"
-                [currentPage]="pageIndex"
-                [currentSize]="pageSize"
-                (emitPage)="onPaginationChange($event)"
-                (goToChange)="onPaginationChange($event)"
-              ></app-pagination>
-            </div>
+          <!-- Pagination -->
+          <div
+            *ngIf="activityData.length > 0 && total > 0"
+            class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+          >
+            <app-pagination
+              [total]="total"
+              [currentPage]="pageIndex"
+              [currentSize]="pageSize"
+              (emitPage)="onPaginationChange($event)"
+              (goToChange)="onPaginationChange($event)"
+            ></app-pagination>
           </div>
         </div>
       </main>
