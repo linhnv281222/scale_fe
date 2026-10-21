@@ -10,7 +10,8 @@ export interface DataValue {
 export interface ActivityMonitoringItem {
   scaleId: number;
   scaleName: string;
-  status: 'ONLINE' | 'OFFLINE' | 'ERROR';
+  shiftId?: number;
+  status: 'ONLINE' | 'OFFLINE' | 'ERROR' | string;
   lastTime: string;
   dataValues: {
     data_1?: DataValue;

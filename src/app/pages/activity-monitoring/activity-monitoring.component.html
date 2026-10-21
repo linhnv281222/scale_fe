@@ -118,7 +118,7 @@
               </thead>
               <tbody>
                 <tr
-                  *ngFor="let item of activityData; let i = index"
+                  *ngFor="let item of activityData; trackBy: trackByScaleId; let i = index"
                   [ngClass]="getRowClass(item)"
                 >
                   <td class="px-3 !py-2 whitespace-nowrap">
