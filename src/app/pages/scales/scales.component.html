@@ -1,4 +1,4 @@
-<div class="flex h-full bg-gray-50 dark:bg-gray-900">
+<div class="flex h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
   <as-split
     direction="horizontal"
     [disabled]="!sidebarVisible"
@@ -20,25 +20,23 @@
       <aside
         class="flex flex-col h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
       >
-        <!-- Location Tree -->
+        <!-- Location Tree Header -->
         <div
-          class="flex items-center justify-between flex-shrink-0 p-3 border-b border-gray-200 dark:border-gray-700"
+          class="flex items-center justify-between flex-shrink-0 px-3.5 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/70"
         >
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-200">
-            {{ "scales.locationTree" | translate }}
-          </h3>
-          <!-- Toggle Sidebar Button in Sidebar Header -->
-          <button
-            nz-button
-            nzType="text"
-            nzShape="circle"
-            (click)="toggleSidebar()"
-            class="flex items-center justify-center w-6 h-6 flex-shrink-0"
-            nz-tooltip
-            [nzTooltipTitle]="'common.collapse' | translate"
-          >
-            <span nz-icon nzType="left" nzTheme="outline"></span>
-          </button>
+          <div class="flex items-center gap-2">
+            <span
+              nz-icon
+              nzType="cluster"
+              nzTheme="outline"
+              class="text-blue-600 dark:text-blue-400 text-base"
+            ></span>
+            <h3
+              class="text-sm font-bold text-gray-900 dark:text-gray-100 m-0 uppercase tracking-wide"
+            >
+              {{ "scales.locationTree" | translate }}
+            </h3>
+          </div>
         </div>
         <div
           class="flex-1 min-h-0 p-3 overflow-y-auto border-b border-gray-200 dark:border-gray-700"
@@ -57,26 +55,26 @@
           >
             <ng-template #multiExpandedIconTpl let-node let-origin="origin">
               @if (!origin.isLeaf) {
-              <span
-                nz-icon
-                [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
-                class="ant-tree-switcher-line-icon"
-              ></span>
+                <span
+                  nz-icon
+                  [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
+                  class="ant-tree-switcher-line-icon"
+                ></span>
               } @else {
-              <span
-                nz-icon
-                nzType="file"
-                class="ant-tree-switcher-line-icon"
-              ></span>
+                <span
+                  nz-icon
+                  nzType="file"
+                  class="ant-tree-switcher-line-icon"
+                ></span>
               }
             </ng-template>
             <ng-template #nzTreeTemplate let-node>
               <span class="d-flex" style="align-items: baseline">
                 @if (node.icon) {
-                <img
-                  style="width: 14px; height: 14px; margin-right: 8px"
-                  [src]="node.icon"
-                />
+                  <img
+                    style="width: 14px; height: 14px; margin-right: 8px"
+                    [src]="node.icon"
+                  />
                 }
 
                 <span [innerHTML]="node.title"></span>
@@ -85,14 +83,26 @@
           </nz-tree>
         </div>
 
-        <!-- Detailed Filter: max 50% height, scroll body, search button fixed in component -->
-        <div class="pt-3 pb-3 pl-3 sidebar-filter">
-          <h3
-            class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-200"
+        <!-- Detailed Filter: flex-1, scroll body, search button fixed in component -->
+        <div class="flex flex-col flex-1 min-h-0 border-t border-gray-200 dark:border-gray-700">
+          <div
+            class="flex items-center justify-between flex-shrink-0 px-3.5 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/70"
           >
-            {{ "filter.title" | translate }}
-          </h3>
-          <div class="filter-scroll">
+            <div class="flex items-center gap-2">
+              <span
+                nz-icon
+                nzType="filter"
+                nzTheme="outline"
+                class="text-blue-600 dark:text-blue-400 text-sm"
+              ></span>
+              <h3
+                class="text-xs font-bold text-gray-900 dark:text-gray-100 m-0 uppercase tracking-wide"
+              >
+                {{ "reports.filters" | translate }}
+              </h3>
+            </div>
+          </div>
+          <div class="flex-1 min-h-0 p-3 overflow-y-auto">
             <app-filter-sidebar
               [fields]="filterFields"
               (search)="onSearch($event)"
@@ -105,29 +115,40 @@
 
     <!-- Main Content -->
     <as-split-area [size]="'*'">
-      <main class="flex-1 overflow-y-auto h-full">
-        <div class="p-1">
-          <!-- Page Title, Summary Badges and Add Button -->
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-4">
-              <!-- Toggle Sidebar Button when sidebar is hidden -->
+      <main
+        class="relative flex flex-col h-full overflow-hidden p-2.5 gap-2.5 bg-gray-50 dark:bg-gray-900"
+      >
+        <!-- Page Header: Title + Sidebar Toggle + Status Badges + Add Button -->
+        <div class="flex-shrink-0">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0 flex-wrap">
+              <!-- Single Toggle Sidebar Button (Collapse & Expand) -->
               <button
-                *ngIf="!sidebarVisible"
                 nz-button
                 nzType="text"
                 nzShape="circle"
                 (click)="toggleSidebar()"
-                class="flex items-center justify-center w-8 h-8 flex-shrink-0"
+                class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full hover:bg-gray-200/70 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
                 nz-tooltip
-                [nzTooltipTitle]="'common.expand' | translate"
+                [nzTooltipTitle]="
+                  (sidebarVisible ? 'common.collapse' : 'common.expand')
+                    | translate
+                "
               >
-                <span nz-icon nzType="right" nzTheme="outline"></span>
+                <span
+                  nz-icon
+                  [nzType]="sidebarVisible ? 'menu-fold' : 'menu-unfold'"
+                  nzTheme="outline"
+                  class="text-base"
+                ></span>
               </button>
-              <h2
-                class="text-base font-semibold text-gray-900 dark:text-gray-200"
-              >
-                {{ "scales.title" | translate }}
-              </h2>
+              <div class="flex items-center gap-2">
+                <h2
+                  class="text-base font-bold text-gray-900 dark:text-white whitespace-nowrap m-0"
+                >
+                  {{ "scales.title" | translate }}
+                </h2>
+              </div>
               <div class="flex items-center gap-2">
                 <div
                   class="px-3 py-1 text-xs font-semibold transition-all border-2 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/70"
@@ -137,7 +158,7 @@
                       filterData.isActive === null,
                     'text-gray-600 bg-blue-50 border-blue-200 dark:text-blue-200 dark:bg-blue-900/30 dark:border-blue-700':
                       filterData.isActive !== undefined &&
-                      filterData.isActive !== null
+                      filterData.isActive !== null,
                   }"
                   (click)="filterByStatus(null)"
                   [nzTooltipTitle]="'common.tooltips.filter' | translate"
@@ -152,7 +173,7 @@
                     'text-green-800 bg-green-100 border-green-300 dark:text-green-100 dark:bg-green-900/60 dark:border-green-600':
                       filterData.isActive === true,
                     'text-green-600 bg-green-50 border-green-200 dark:text-green-200 dark:bg-green-900/30 dark:border-green-700':
-                      filterData.isActive !== true
+                      filterData.isActive !== true,
                   }"
                   (click)="filterByStatus(true)"
                   [nzTooltipTitle]="'common.tooltips.filter' | translate"
@@ -167,7 +188,7 @@
                     'text-red-800 bg-red-100 border-red-300 dark:text-red-100 dark:bg-red-900/60 dark:border-red-600':
                       filterData.isActive === false,
                     'text-red-600 bg-red-50 border-red-200 dark:text-red-200 dark:bg-red-900/30 dark:border-red-700':
-                      filterData.isActive !== false
+                      filterData.isActive !== false,
                   }"
                   (click)="filterByStatus(false)"
                   [nzTooltipTitle]="'common.tooltips.filter' | translate"
@@ -182,74 +203,75 @@
               nz-button
               nzType="primary"
               (click)="openAddModal()"
-              class="flex items-center gap-2"
+              class="flex items-center gap-2 rounded-lg font-medium shadow-sm hover:shadow transition-all"
             >
               <span nz-icon nzType="plus" nzTheme="outline"></span>
               <span>{{ "common.addNew" | translate }}</span>
             </button>
           </div>
+        </div>
 
-          <!-- Table Container -->
-          <div
-            class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
-          >
-            <!-- Table -->
+        <!-- Table Container Card -->
+        <div
+          class="flex flex-col flex-1 min-h-0 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 overflow-hidden"
+        >
+          <div class="flex-1 min-h-0 overflow-auto">
             <nz-table
               #basicTable
               [nzData]="scales"
               [nzLoading]="loading"
               [nzShowPagination]="false"
               [nzNoResult]="noResultTemplate"
+              nzSize="small"
               class="w-full"
-              [nzScroll]="{ x: 'auto', y: 'calc(100vh - 175px)' }"
             >
-              <thead>
-                <tr>
+              <thead style="position: sticky; top: 0; z-index: 10">
+                <tr class="bg-blue-600 dark:bg-blue-700">
                   <th
                     nzWidth="50px"
                     nzLeft
-                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     STT
                   </th>
                   <th
                     nzWidth="150px"
                     nzLeft
-                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "scales.name" | translate }}
                   </th>
                   <th
                     nzWidth="120px"
                     nzLeft
-                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "scales.model" | translate }}
                   </th>
                   <th
-                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "scales.location" | translate }}
                   </th>
                   <th
-                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "scales.protocol" | translate }}
                   </th>
                   <th
-                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "scales.connection" | translate }}
                   </th>
                   <th
-                    class="px-3 !py-2 text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "common.status" | translate }}
                   </th>
                   <th
                     nzWidth="120px"
                     nzRight
-                    class="px-3 !py-2 !text-center text-xs font-semibold tracking-wider text-white uppercase"
+                    class="!px-2 !py-1 text-xs font-semibold text-center text-white uppercase bg-blue-600 border border-white dark:border-gray-600 dark:bg-blue-700"
                   >
                     {{ "common.actions" | translate }}
                   </th>
@@ -282,9 +304,15 @@
                     }}</span>
                   </td>
                   <td class="px-3 !py-2 whitespace-nowrap">
-                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{
-                      scale.scale_config?.protocol || scale.protocol_name || scale.protocol_code || '-'
-                    }}</span>
+                    <span
+                      class="text-sm font-medium text-gray-900 dark:text-white"
+                      >{{
+                        scale.scale_config?.protocol ||
+                          scale.protocol_name ||
+                          scale.protocol_code ||
+                          "-"
+                      }}</span
+                    >
                   </td>
                   <td class="px-3 !py-2 whitespace-nowrap">
                     <span class="text-sm text-gray-900 dark:text-white">
@@ -305,7 +333,10 @@
                         "
                       >
                         {{ scale.scale_config?.conn_params?.com_port }}
-                        <span *ngIf="scale.scale_config?.conn_params?.baud_rate" class="text-xs text-gray-400">
+                        <span
+                          *ngIf="scale.scale_config?.conn_params?.baud_rate"
+                          class="text-xs text-gray-400"
+                        >
                           ({{ scale.scale_config?.conn_params?.baud_rate }})
                         </span>
                       </ng-container>
@@ -398,11 +429,11 @@
               <app-no-data type="noData"></app-no-data>
             </ng-template>
 
-            <!-- Pagination -->
-            <div
-              *ngIf="scales.length > 0"
-              class="border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
-            >
+          <!-- Pagination -->
+          <div
+            *ngIf="scales.length > 0 && total > 0"
+            class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+          >
               <app-pagination
                 [total]="total"
                 [currentPage]="pageIndex"
@@ -677,17 +708,17 @@
                     nzValue="SIEMENS_S7"
                     [nzLabel]="'scales.siemensS7' | translate"
                   ></nz-option>
-                  <nz-option
-                    nzValue="SABUS"
-                    nzLabel="SABUS ASCII"
-                  ></nz-option>
-                  <nz-option
-                    nzValue="SBUS"
-                    nzLabel="S-Bus (Frame)"
-                  ></nz-option>
+                  <nz-option nzValue="SABUS" nzLabel="SABUS ASCII"></nz-option>
+                  <nz-option nzValue="SBUS" nzLabel="S-Bus (Frame)"></nz-option>
                   <ng-container *ngFor="let p of protocols">
                     <nz-option
-                      *ngIf="p.code !== 'MODBUS_TCP' && p.code !== 'MODBUS_RTU' && p.code !== 'SIEMENS_S7' && p.code !== 'SABUS' && p.code !== 'SBUS'"
+                      *ngIf="
+                        p.code !== 'MODBUS_TCP' &&
+                        p.code !== 'MODBUS_RTU' &&
+                        p.code !== 'SIEMENS_S7' &&
+                        p.code !== 'SABUS' &&
+                        p.code !== 'SBUS'
+                      "
                       [nzValue]="p.code || p.type"
                       [nzLabel]="p.name"
                     ></nz-option>
@@ -726,11 +757,16 @@
               <h4
                 class="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200"
               >
-                {{ "scales.connectionParameters" | translate }} ({{ scaleConfig.protocol }})
+                {{ "scales.connectionParameters" | translate }} ({{
+                  scaleConfig.protocol
+                }})
               </h4>
 
               <!-- MODBUS_TCP Connection Params -->
-              <div *ngIf="isModbusTcp()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div
+                *ngIf="isModbusTcp()"
+                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              >
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -808,7 +844,10 @@
               </div>
 
               <!-- MODBUS_RTU Connection Params -->
-              <div *ngIf="isModbusRtu()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div
+                *ngIf="isModbusRtu()"
+                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              >
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -939,7 +978,10 @@
               </div>
 
               <!-- SIEMENS_S7 Connection Params -->
-              <div *ngIf="isSiemensS7()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div
+                *ngIf="isSiemensS7()"
+                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              >
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -1071,7 +1113,10 @@
               </div>
 
               <!-- SABUS ASCII Connection Params -->
-              <div *ngIf="isSabus()" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div
+                *ngIf="isSabus()"
+                class="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              >
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -1167,7 +1212,8 @@
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    {{ "scales.deviceId" | translate }}<span class="ml-1 text-red-500">*</span>
+                    {{ "scales.deviceId" | translate
+                    }}<span class="ml-1 text-red-500">*</span>
                   </label>
                   <nz-input-group>
                     <input
@@ -1292,7 +1338,10 @@
               </div>
 
               <!-- SBUS Connection Params -->
-              <div *ngIf="isSbus()" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div
+                *ngIf="isSbus()"
+                class="grid grid-cols-2 sm:grid-cols-3 gap-2"
+              >
                 <div>
                   <label
                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -1404,7 +1453,9 @@
                 class="grid grid-cols-2 sm:grid-cols-4 gap-2"
               >
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.channelName" | translate }}
                   </label>
                   <nz-input-group>
@@ -1413,30 +1464,50 @@
                       nz-input
                       nzSize="small"
                       [(ngModel)]="scaleConfig['data_' + channelNum].name"
-                      [placeholder]="'scales.channelNamePlaceholder' | translate"
+                      [placeholder]="
+                        'scales.channelNamePlaceholder' | translate
+                      "
                       class="w-full"
                       [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.functionCode" | translate }}
                   </label>
                   <nz-select
-                    [(ngModel)]="scaleConfig['data_' + channelNum].function_code"
+                    [(ngModel)]="
+                      scaleConfig['data_' + channelNum].function_code
+                    "
                     class="w-full"
                     [nzDropdownMatchSelectWidth]="false"
                     [nzDisabled]="isViewMode"
                   >
-                    <nz-option [nzValue]="1" nzLabel="01 - Read Coils"></nz-option>
-                    <nz-option [nzValue]="2" nzLabel="02 - Read Discrete Inputs"></nz-option>
-                    <nz-option [nzValue]="3" nzLabel="03 - Read Holding Registers"></nz-option>
-                    <nz-option [nzValue]="4" nzLabel="04 - Read Input Registers"></nz-option>
+                    <nz-option
+                      [nzValue]="1"
+                      nzLabel="01 - Read Coils"
+                    ></nz-option>
+                    <nz-option
+                      [nzValue]="2"
+                      nzLabel="02 - Read Discrete Inputs"
+                    ></nz-option>
+                    <nz-option
+                      [nzValue]="3"
+                      nzLabel="03 - Read Holding Registers"
+                    ></nz-option>
+                    <nz-option
+                      [nzValue]="4"
+                      nzLabel="04 - Read Input Registers"
+                    ></nz-option>
                   </nz-select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.startRegister" | translate }}
                   </label>
                   <nz-input-group>
@@ -1444,7 +1515,9 @@
                       type="number"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="scaleConfig['data_' + channelNum].start_registers"
+                      [(ngModel)]="
+                        scaleConfig['data_' + channelNum].start_registers
+                      "
                       placeholder="0"
                       class="w-full"
                       [disabled]="isViewMode"
@@ -1452,7 +1525,9 @@
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.numRegisters" | translate }}
                   </label>
                   <nz-input-group>
@@ -1460,7 +1535,9 @@
                       type="number"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="scaleConfig['data_' + channelNum].num_registers"
+                      [(ngModel)]="
+                        scaleConfig['data_' + channelNum].num_registers
+                      "
                       placeholder="2"
                       class="w-full"
                       [disabled]="isViewMode"
@@ -1468,7 +1545,9 @@
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.dataType" | translate }}
                   </label>
                   <nz-select
@@ -1489,7 +1568,9 @@
                   </nz-select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.byteOrder" | translate }}
                   </label>
                   <nz-select
@@ -1498,12 +1579,20 @@
                     [nzDropdownMatchSelectWidth]="false"
                     [nzDisabled]="isViewMode"
                   >
-                    <nz-option nzValue="BIG_ENDIAN" [nzLabel]="'scales.bigEndian' | translate"></nz-option>
-                    <nz-option nzValue="LITTLE_ENDIAN" [nzLabel]="'scales.littleEndian' | translate"></nz-option>
+                    <nz-option
+                      nzValue="BIG_ENDIAN"
+                      [nzLabel]="'scales.bigEndian' | translate"
+                    ></nz-option>
+                    <nz-option
+                      nzValue="LITTLE_ENDIAN"
+                      [nzLabel]="'scales.littleEndian' | translate"
+                    ></nz-option>
                   </nz-select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.wordOrder" | translate }}
                   </label>
                   <nz-select
@@ -1512,12 +1601,20 @@
                     [nzDropdownMatchSelectWidth]="false"
                     [nzDisabled]="isViewMode"
                   >
-                    <nz-option nzValue="BIG_ENDIAN" [nzLabel]="'scales.bigEndian' | translate"></nz-option>
-                    <nz-option nzValue="LITTLE_ENDIAN" [nzLabel]="'scales.littleEndian' | translate"></nz-option>
+                    <nz-option
+                      nzValue="BIG_ENDIAN"
+                      [nzLabel]="'scales.bigEndian' | translate"
+                    ></nz-option>
+                    <nz-option
+                      nzValue="LITTLE_ENDIAN"
+                      [nzLabel]="'scales.littleEndian' | translate"
+                    ></nz-option>
                   </nz-select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.decimalPlaces" | translate }}
                   </label>
                   <nz-input-group>
@@ -1525,7 +1622,9 @@
                       type="number"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="scaleConfig['data_' + channelNum].decimal_places"
+                      [(ngModel)]="
+                        scaleConfig['data_' + channelNum].decimal_places
+                      "
                       placeholder="2"
                       class="w-full"
                       [disabled]="isViewMode"
@@ -1540,7 +1639,9 @@
                 class="grid grid-cols-1 sm:grid-cols-3 gap-2"
               >
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.channelName" | translate }}
                   </label>
                   <nz-input-group>
@@ -1549,14 +1650,18 @@
                       nz-input
                       nzSize="small"
                       [(ngModel)]="scaleConfig['data_' + channelNum].name"
-                      [placeholder]="'scales.channelNamePlaceholder' | translate"
+                      [placeholder]="
+                        'scales.channelNamePlaceholder' | translate
+                      "
                       class="w-full"
                       [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.tagAddress" | translate }}
                   </label>
                   <nz-input-group>
@@ -1564,7 +1669,9 @@
                       type="text"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="scaleConfig['data_' + channelNum].tag_address"
+                      [(ngModel)]="
+                        scaleConfig['data_' + channelNum].tag_address
+                      "
                       placeholder="%DB1:0:REAL"
                       class="w-full"
                       [disabled]="isViewMode"
@@ -1572,7 +1679,9 @@
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.decimalPlaces" | translate }}
                   </label>
                   <nz-input-group>
@@ -1580,7 +1689,9 @@
                       type="number"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="scaleConfig['data_' + channelNum].decimal_places"
+                      [(ngModel)]="
+                        scaleConfig['data_' + channelNum].decimal_places
+                      "
                       placeholder="2"
                       class="w-full"
                       [disabled]="isViewMode"
@@ -1595,7 +1706,9 @@
                 class="grid grid-cols-1 sm:grid-cols-3 gap-2"
               >
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.channelName" | translate }}
                   </label>
                   <nz-input-group>
@@ -1611,7 +1724,9 @@
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.command" | translate }}
                   </label>
                   <nz-input-group>
@@ -1627,7 +1742,9 @@
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.decimalPlaces" | translate }}
                   </label>
                   <nz-input-group>
@@ -1635,7 +1752,9 @@
                       type="number"
                       nz-input
                       nzSize="small"
-                      [(ngModel)]="scaleConfig['data_' + channelNum].decimal_places"
+                      [(ngModel)]="
+                        scaleConfig['data_' + channelNum].decimal_places
+                      "
                       placeholder="2"
                       class="w-full"
                       [disabled]="isViewMode"
@@ -1650,7 +1769,9 @@
                 class="grid grid-cols-2 sm:grid-cols-5 gap-2"
               >
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.channelName" | translate }}
                   </label>
                   <nz-input-group>
@@ -1659,14 +1780,18 @@
                       nz-input
                       nzSize="small"
                       [(ngModel)]="scaleConfig['data_' + channelNum].name"
-                      [placeholder]="'scales.channelNamePlaceholder' | translate"
+                      [placeholder]="
+                        'scales.channelNamePlaceholder' | translate
+                      "
                       class="w-full"
                       [disabled]="isViewMode"
                     />
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.command" | translate }}
                   </label>
                   <nz-input-group>
@@ -1682,7 +1807,9 @@
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.payload" | translate }}
                   </label>
                   <nz-input-group>
@@ -1698,7 +1825,9 @@
                   </nz-input-group>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.mode" | translate }}
                   </label>
                   <nz-select
@@ -1712,11 +1841,15 @@
                   </nz-select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     {{ "scales.responseType" | translate }}
                   </label>
                   <nz-select
-                    [(ngModel)]="scaleConfig['data_' + channelNum].response_type"
+                    [(ngModel)]="
+                      scaleConfig['data_' + channelNum].response_type
+                    "
                     class="w-full"
                     [nzDropdownMatchSelectWidth]="false"
                     [nzDisabled]="isViewMode"

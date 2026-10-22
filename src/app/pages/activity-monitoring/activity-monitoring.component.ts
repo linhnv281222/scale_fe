@@ -51,6 +51,9 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
   private readonly RECONNECT_DELAY: number = 5000;
   isConnectWebsocket = false;
 
+  private isFetchingActivityData = false;
+  private hasPendingActivityDataUpdate = false;
+
   filterFields: FilterField[] = [
     {
       key: 'scale_ids',
@@ -79,7 +82,7 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadScales();
-    this.loadActivityData();
+    this.loadActivityData(true);
     this.connectWebSocket();
   }
 
@@ -106,8 +109,19 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadActivityData(): Promise<void> {
-    this.loading = true;
+  async loadActivityData(isInitial: boolean = false): Promise<void> {
+    if (this.isFetchingActivityData) {
+      if (!isInitial) {
+        this.hasPendingActivityDataUpdate = true;
+      }
+      return;
+    }
+    this.isFetchingActivityData = true;
+
+    if (isInitial || this.activityData.length === 0) {
+      this.loading = true;
+    }
+
     try {
       // Build query params
       const params: any = {};
@@ -119,53 +133,122 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
       }
 
       const result = await this.activityMonitoringService.getCurrentStates(params);
-      this.activityData = result.data || [];
-      this.total = result.total || this.activityData.length;
+      const incomingData: ActivityMonitoringItem[] = result.data || [];
+      this.total = result.total || incomingData.length;
 
-      // Extract column names from first item's dataValues
-      if (this.activityData.length > 0) {
-        const firstItem = this.activityData[0];
-        if (firstItem.dataValues) {
-          this.dataColumn1Name = firstItem.dataValues.data_1?.name || '';
-          this.dataColumn2Name = firstItem.dataValues.data_2?.name || '';
+      // Extract column names from items' dataValues if not yet determined
+      for (const item of incomingData) {
+        if (item.dataValues) {
+          if (!this.dataColumn1Name && item.dataValues.data_1?.name) {
+            this.dataColumn1Name = item.dataValues.data_1.name;
+          }
+          if (!this.dataColumn2Name && item.dataValues.data_2?.name) {
+            this.dataColumn2Name = item.dataValues.data_2.name;
+          }
+          if (this.dataColumn1Name && this.dataColumn2Name) break;
         }
       }
 
-      // Map data for backward compatibility
-      this.activityData = this.activityData.map((item: ActivityMonitoringItem) => ({
-        ...item,
-        lastDataTime: item.lastTime ? new Date(item.lastTime) : undefined,
-        minutesWithoutData: this.getMinutesWithoutData(
-          item.lastTime ? new Date(item.lastTime) : undefined
-        ),
-      }));
+      if (this.activityData.length === 0) {
+        this.activityData = incomingData.map((item: ActivityMonitoringItem) => ({
+          ...item,
+          lastDataTime: item.lastTime ? new Date(item.lastTime) : undefined,
+          minutesWithoutData: this.getMinutesWithoutData(
+            item.lastTime ? new Date(item.lastTime) : undefined
+          ),
+        }));
+      } else {
+        const existingMap = new Map<number, ActivityMonitoringItem>();
+        for (const item of this.activityData) {
+          existingMap.set(item.scaleId, item);
+        }
+
+        const updatedList: ActivityMonitoringItem[] = [];
+
+        for (const incoming of incomingData) {
+          const existing = existingMap.get(incoming.scaleId);
+          if (existing) {
+            // Update in-place only if values changed
+            if (existing.scaleName !== incoming.scaleName) {
+              existing.scaleName = incoming.scaleName;
+            }
+            if (existing.status !== incoming.status) {
+              existing.status = incoming.status;
+            }
+            if (existing.shiftId !== incoming.shiftId) {
+              existing.shiftId = incoming.shiftId;
+            }
+            if (existing.lastTime !== incoming.lastTime) {
+              existing.lastTime = incoming.lastTime;
+              existing.lastDataTime = incoming.lastTime ? new Date(incoming.lastTime) : undefined;
+            }
+            const currentMinutes = this.getMinutesWithoutData(existing.lastDataTime);
+            if (existing.minutesWithoutData !== currentMinutes) {
+              existing.minutesWithoutData = currentMinutes;
+            }
+
+            if (this.hasDataValuesChanged(existing.dataValues, incoming.dataValues)) {
+              existing.dataValues = incoming.dataValues;
+            }
+
+            updatedList.push(existing);
+          } else {
+            updatedList.push({
+              ...incoming,
+              lastDataTime: incoming.lastTime ? new Date(incoming.lastTime) : undefined,
+              minutesWithoutData: this.getMinutesWithoutData(
+                incoming.lastTime ? new Date(incoming.lastTime) : undefined
+              ),
+            });
+          }
+        }
+
+        this.activityData = updatedList;
+      }
     } catch (error) {
       console.error('Error loading activity data:', error);
-      this.activityData = [];
-      this.total = 0;
+      if (isInitial) {
+        this.activityData = [];
+        this.total = 0;
+      }
     } finally {
+      this.isFetchingActivityData = false;
       this.loading = false;
       this.cdr.markForCheck();
+
+      if (this.hasPendingActivityDataUpdate) {
+        this.hasPendingActivityDataUpdate = false;
+        this.loadActivityData(false);
+      }
     }
   }
 
+  private hasDataValuesChanged(oldValues: any, newValues: any): boolean {
+    if (!oldValues && !newValues) return false;
+    if (!oldValues || !newValues) return true;
+    return JSON.stringify(oldValues) !== JSON.stringify(newValues);
+  }
+
+  trackByScaleId(index: number, item: ActivityMonitoringItem): number | string {
+    return item.scaleId ?? index;
+  }
 
   onSearch(filters: any): void {
     this.filterData = filters;
     this.pageIndex = 1;
-    this.loadActivityData();
+    this.loadActivityData(true);
   }
 
   onReset(): void {
     this.filterData = {};
     this.pageIndex = 1;
-    this.loadActivityData();
+    this.loadActivityData(true);
   }
 
   onPaginationChange(event: { page: number; size: number }): void {
     this.pageIndex = event.page;
     this.pageSize = event.size;
-    this.loadActivityData();
+    this.loadActivityData(true);
   }
 
 
@@ -313,7 +396,7 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
       this.stompSubscription = this.stompClient.subscribe('/topic/all-scales-data', (message) => {
         try {
           console.log('[WebSocket] 📨 Nhận được message:', message.body);
-          this.loadActivityData();
+          this.loadActivityData(false);
         } catch (error) {
           console.error('[WebSocket] ❌ Lỗi khi xử lý message:', error);
         }

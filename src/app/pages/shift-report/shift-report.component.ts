@@ -73,6 +73,37 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   ratioStatisticHeader = '';
   sidebarVisible = true;
   sidebarSize = 260; // Pixel
+
+  get columnWidths(): string[] {
+    const fixed = [
+      '50px',
+      '100px',
+      '100px',
+      '90px',
+      '120px',
+      '150px',
+      '150px',
+      '150px',
+    ];
+    const dynamic: string[] = [];
+    (this.dataColumns || []).forEach(() => {
+      dynamic.push('100px', '150px', '150px');
+    });
+    return [...fixed, ...dynamic];
+  }
+
+  get tableScrollX(): string {
+    const fixedWidth = 820;
+    const dynamicWidth = (this.dataColumns?.length || 0) * 400;
+    return `${fixedWidth + dynamicWidth}px`;
+  }
+
+  get tableScrollY(): string {
+    if (this.isChartExpanded && this.chartData.length > 0) {
+      return 'calc(100vh - 515px)';
+    }
+    return 'calc(100vh - 275px)';
+  }
   overviewDisplay: {
     directionKey: string;
     directionLabel: string;
@@ -91,7 +122,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
   private getDataFieldDisplayName(
     dataKey: string,
-    dataFieldNames: any
+    dataFieldNames: any,
   ): string {
     const rawValue = dataFieldNames?.[dataKey];
     if (rawValue && typeof rawValue === 'object') {
@@ -118,11 +149,11 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     const denominatorKey = match[2];
     const numeratorName = this.getDataFieldDisplayName(
       numeratorKey,
-      dataFieldNames
+      dataFieldNames,
     );
     const denominatorName = this.getDataFieldDisplayName(
       denominatorKey,
-      dataFieldNames
+      dataFieldNames,
     );
     return `Thống kê (${numeratorName}/${denominatorName})`;
   }
@@ -181,8 +212,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
     private locationService: LocationService,
     private shiftService: ShiftService,
     private templateService: TemplateService,
-    private toastr: ToastrService
-  ) { }
+    private toastr: ToastrService,
+  ) {}
 
   ngOnInit(): void {
     const today = moment();
@@ -213,7 +244,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
   updateLocationOptions(): void {
     const locationField = this.filterFields.find(
-      (field) => field.key === 'locationIds'
+      (field) => field.key === 'locationIds',
     );
     if (locationField) {
       locationField.options = this.locations.map((location) => ({
@@ -272,7 +303,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   async loadScales(): Promise<void> {
     try {
       const data = await this.scaleService.getScales();
-      this.scales = Array.isArray(data) ? data : data?.data ?? [];
+      this.scales = Array.isArray(data) ? data : (data?.data ?? []);
       this.buildScaleTreeNodes();
       await this.loadScaleConfigs();
     } catch (error) {
@@ -328,19 +359,18 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           if (config) {
             this.initializeAggregationFields(config);
           }
-        } catch (error) { }
+        } catch (error) {}
       }
     } else {
       const firstScaleIdentifier = selectedScaleIdentifiers[0];
       try {
-        const scale = await this.scaleService.getScaleById(
-          firstScaleIdentifier
-        );
+        const scale =
+          await this.scaleService.getScaleById(firstScaleIdentifier);
         const config = scale?.scale_config;
         if (config) {
           this.initializeAggregationFields(config);
         }
-      } catch (error) { }
+      } catch (error) {}
     }
   }
 
@@ -551,12 +581,12 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             this.dataColumns = this.dataColumns
               .filter((column) => {
                 return columnsFromApi.some(
-                  (apiColumn) => apiColumn.key === column.key
+                  (apiColumn) => apiColumn.key === column.key,
                 );
               })
               .map((column) => {
                 const matchingApiColumn = columnsFromApi.find(
-                  (apiColumn) => apiColumn.key === column.key
+                  (apiColumn) => apiColumn.key === column.key,
                 );
                 return matchingApiColumn
                   ? { ...column, name: matchingApiColumn.name }
@@ -581,7 +611,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
         this.ratioStatisticHeader = this.buildRatioStatisticHeader(
           dataFieldNames,
-          rawRows as any[]
+          rawRows as any[],
         );
 
         this.reportRows = rawRows.map((row): FormattedIntervalReportRow => {
@@ -591,10 +621,10 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             ...row,
             formattedData: {},
             directionLabelKey: this.getDirectionLabelKey(
-              (row as any)?.direction
+              (row as any)?.direction,
             ),
             directionBadgeClass: this.getDirectionBadgeClass(
-              (row as any)?.direction
+              (row as any)?.direction,
             ),
             ratioDisplayValue: !isNaN(ratioValueNumber) ? ratioValueNumber : '',
           };
@@ -616,7 +646,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             ) {
               const numValue = parseFloat(startValue.value);
               formattedRow.formattedData[`${column.key}_start`] = !isNaN(
-                numValue
+                numValue,
               )
                 ? numValue
                 : '';
@@ -646,7 +676,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             ) {
               const numValue = parseFloat(dataValue.value);
               formattedRow.formattedData[`${column.key}_data`] = !isNaN(
-                numValue
+                numValue,
               )
                 ? numValue
                 : '';
@@ -813,7 +843,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
 
     const data1Name = this.getDataFieldDisplayName(
       'data_1',
-      (this.reportData as any)?.dataFieldNames
+      (this.reportData as any)?.dataFieldNames,
     );
 
     const formatLargeNumber = (value: number): string => {
@@ -869,8 +899,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
             <div>
               <div><strong>${tooltipParameter.axisValue}</strong></div>
               <div>${tooltipParameter.seriesName}: ${formatNumber(
-            tooltipValue
-          )}</div>
+                tooltipValue,
+              )}</div>
             </div>
           `;
         },
@@ -1008,9 +1038,8 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
   async loadTemplates(): Promise<void> {
     this.templatesLoading = true;
     try {
-      this.templates = await this.templateService.getTemplateImports(
-        'Báo cáo ca'
-      );
+      this.templates =
+        await this.templateService.getTemplateImports('Báo cáo ca');
     } catch (error) {
       this.templates = [];
       this.toastr.error('Không thể tải danh sách biểu mẫu', 'Lỗi');
@@ -1051,7 +1080,7 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
           .filter((identifier) => identifier !== undefined) as number[];
         if (this.filterData.scaleIds && this.filterData.scaleIds.length > 0) {
           scaleIdentifiers = scaleIdentifiers.filter((identifier: number) =>
-            this.filterData.scaleIds.includes(identifier)
+            this.filterData.scaleIds.includes(identifier),
           );
         }
       }
@@ -1084,14 +1113,14 @@ export class ShiftReportComponent implements OnInit, OnDestroy {
         size: this.pageSize,
       };
 
-      const blob = await this.reportService.exportIntervalReportV2(
-        exportPayload
-      );
+      const blob =
+        await this.reportService.exportIntervalReportV2(exportPayload);
 
       const fromDate = moment(dateRange[0]).format('YYYY-MM-DD');
       const toDate = moment(dateRange[1]).format('YYYY-MM-DD');
-      const fileName = `${template.templateCode || 'Bao_cao'
-        }_${fromDate}_${toDate}.docx`;
+      const fileName = `${
+        template.templateCode || 'Bao_cao'
+      }_${fromDate}_${toDate}.docx`;
 
       saveAs(blob, fileName);
       this.toastr.success('Xuất báo cáo thành công', 'Thành công');
