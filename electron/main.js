@@ -3,18 +3,22 @@ const path = require('path');
 
 let mainWindow;
 
+
 function createWindow() {
+  
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1024,
     minHeight: 768,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
       webSecurity: true
     },
+    
     icon: path.join(__dirname, '../assets/icon.ico'), // Sẽ tạo sau nếu cần
     show: false, // Ẩn cửa sổ cho đến khi sẵn sàng
     titleBarStyle: 'default'

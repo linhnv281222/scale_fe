@@ -7,7 +7,7 @@ import {
     IntervalType
 } from '../models/scale-report.model';
 import { BaseService } from './base.service';
-
+import { getApiBaseUrl } from '../shared/config/runtime-config';
 @Injectable({
   providedIn: 'root',
 })
@@ -80,7 +80,7 @@ export class ReportService {
     reportCode?: string;
     preparedBy?: string;
   }): Promise<any> {
-    const url = `${environment.api_end_point}/api/v1/reports/BCSL/export`;
+    const url = `${getApiBaseUrl()}/api/v1/reports/BCSL/export`;
     const token = localStorage.getItem('token');
     const language = localStorage.getItem('language') ?? 'vi_VN';
 
@@ -129,7 +129,7 @@ export class ReportService {
       preparedBy?: string;
     }
   ): Promise<Blob> {
-    const url = `${environment.api_end_point}/api/v1/reports/export`;
+    const url = `${getApiBaseUrl()}/api/v1/reports/export`;
     const token = localStorage.getItem('token');
     const language = localStorage.getItem('language') ?? 'vi_VN';
 
@@ -177,7 +177,7 @@ export class ReportService {
     page?: number;
     size?: number;
   }): Promise<Blob> {
-    const url = `${environment.api_end_point}/api/v1/reports/export/v2`;
+    const url = `${getApiBaseUrl()}/api/v1/reports/export/v2`;
     const token = localStorage.getItem('token');
     const language = localStorage.getItem('language') ?? 'vi_VN';
 

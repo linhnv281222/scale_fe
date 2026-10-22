@@ -1,14 +1,16 @@
+import { getApiBaseUrl } from '../shared/config/runtime-config';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environment/environment';
 
+
 @Injectable({
   providedIn: 'root',
 })
 export class BaseService {
-  private baseUrl = environment.api_end_point || '';
+  private baseUrl = getApiBaseUrl();
   private apiBasePath = '/api/v1';
 
   constructor(

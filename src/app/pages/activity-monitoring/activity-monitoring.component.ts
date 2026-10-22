@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import { Subject } from 'rxjs';
+import { getApiBaseUrl } from '../../shared/config/runtime-config';
 // @ts-ignore
 import * as SockJS from 'sockjs-client';
 import { environment } from 'src/environment/environment';
@@ -242,7 +243,7 @@ export class ActivityMonitoringComponent implements OnInit, OnDestroy {
   private async connectWebSocket(): Promise<void> {
     try {
       const token = localStorage.getItem('token');
-      const socketUrl = `${environment.api_end_point}/api/v1/ws-scalehub`;
+      const socketUrl = `${getApiBaseUrl()}/api/v1/ws-scalehub`;
 
       console.log('[WebSocket] Đang kết nối đến:', socketUrl);
 

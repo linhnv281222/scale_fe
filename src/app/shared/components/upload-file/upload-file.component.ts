@@ -7,6 +7,7 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
+import { getApiBaseUrl } from '../../config/runtime-config';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { saveAs } from 'file-saver';
 import { NzResizeEvent } from 'ng-zorro-antd/resizable';
@@ -102,7 +103,7 @@ export class UploadFileComponent implements OnInit {
     try {
       const url = this.downloadUrl
         ? `${this.downloadUrl}/${file.path}`
-        : `${environment.api_end_point}/api/v1/files/${file.path}`;
+        : `${getApiBaseUrl()}/api/v1/files/${file.path}`;
 
       const token = localStorage.getItem('token');
       const language = localStorage.getItem('language') || 'vi_VN';
@@ -168,7 +169,7 @@ export class UploadFileComponent implements OnInit {
           this.currentFileName = file.fileName;
           const pdfUrl = this.previewUrl
             ? `${this.previewUrl}/${file.path}`
-            : `${environment.api_end_point}/api/v1/files/preview/${file.path}`;
+            : `${getApiBaseUrl()}/api/v1/files/preview/${file.path}`;
           this.currentFilePath =
             this.sanitizer.bypassSecurityTrustResourceUrl(pdfUrl);
           this.visible = true;
@@ -178,7 +179,7 @@ export class UploadFileComponent implements OnInit {
         case 'png':
           const imageUrl = this.previewUrl
             ? `${this.previewUrl}/${file.path}`
-            : `${environment.api_end_point}/api/v1/files/preview/${file.path}`;
+            : `${getApiBaseUrl()}/api/v1/files/preview/${file.path}`;
           this.iframeContentImage = this.sanitizer.bypassSecurityTrustHtml(
             `<html><body style="margin: 0;"><img src="${imageUrl}" style="width: 100%;"></body></html>`
           );
